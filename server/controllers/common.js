@@ -478,6 +478,18 @@ router.get('/*', async (req, res, next) => {
           })
         }
 
+        // -> Build breadcrumbs
+        const breadcrumbPaths = []
+        let currentBreadcrumbPath = ''
+        for (const part of page.path.split('/')) {
+          currentBreadcrumbPath = currentBreadcrumbPath ? `${currentBreadcrumbPath}/${part}` : part
+          breadcrumbPaths.push(currentBreadcrumbPath)
+        }
+        const breadcrumbTitles = _.fromPairs((await WIKI.models.knex.table('pageTree')
+          .where('localeCode', page.localeCode)
+          .whereIn('path', breadcrumbPaths)
+          .select('path', 'title')).map(t => [t.path, t.title]))
+
         // -> Build sidebar navigation
         let sdi = 1
         const sidebar = (await WIKI.models.navigation.getTree({ cache: true, locale: pageArgs.locale, groups: req.user.groups })).map(n => ({
@@ -518,6 +530,7 @@ router.get('/*', async (req, res, next) => {
             page,
             sidebar,
             injectCode,
+            breadcrumbTitles,
             isAuthenticated: req.user && req.user.id !== 2
           })
         } else {
@@ -529,6 +542,7 @@ router.get('/*', async (req, res, next) => {
           // -> Inject comments variables
           const commentTmpl = {
             codeTemplate: WIKI.data.commentProvider.codeTemplate,
+            providerKey: WIKI.data.commentProvider.key,
             head: WIKI.data.commentProvider.head,
             body: WIKI.data.commentProvider.body,
             main: WIKI.data.commentProvider.main
@@ -553,6 +567,7 @@ router.get('/*', async (req, res, next) => {
             page,
             sidebar,
             injectCode,
+            breadcrumbTitles,
             comments: commentTmpl,
             effectivePermissions,
             pageFilename

@@ -489,6 +489,10 @@ export default {
     filename: {
       type: String,
       default: ''
+    },
+    breadcrumbTitles: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -537,10 +541,23 @@ export default {
       }
     },
     breadcrumbs() {
-      return [{ path: '/', name: 'Home' }].concat(_.reduce(this.path.split('/'), (result, value, key) => {
+      const titles = this.breadcrumbTitles ? JSON.parse(Buffer.from(this.breadcrumbTitles, 'base64').toString()) : {}
+      const segments = this.path.split('/')
+      let currentLookupPath = ''
+      return [{ path: '/', name: 'Home' }].concat(_.reduce(segments, (result, value, key) => {
+        currentLookupPath = currentLookupPath ? `${currentLookupPath}/${value}` : value
+        const path = _.get(_.last(result), 'path', `/${this.locale}`) + `/${value}`
+        
+        // Use title from pageTree, fallback to segment value. 
+        // If it's the last segment, we can also use the current page title.
+        let name = _.get(titles, currentLookupPath, value)
+        if (key === segments.length - 1 && this.title && this.title !== 'Untitled Page') {
+          name = this.title
+        }
+
         result.push({
-          path: _.get(_.last(result), 'path', `/${this.locale}`) + `/${value}`,
-          name: value
+          path,
+          name
         })
         return result
       }, []))

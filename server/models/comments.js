@@ -19,6 +19,7 @@ module.exports = class Comment extends Model {
         id: {type: 'integer'},
         content: {type: 'string'},
         render: {type: 'string'},
+        selector: {type: 'string'},
         name: {type: 'string'},
         email: {type: 'string'},
         ip: {type: 'string'},
@@ -60,7 +61,7 @@ module.exports = class Comment extends Model {
   /**
    * Post New Comment
    */
-  static async postNewComment ({ pageId, replyTo, content, guestName, guestEmail, user, ip }) {
+  static async postNewComment ({ pageId, replyTo, content, selector, guestName, guestEmail, user, ip }) {
     // -> Input validation
     if (user.id === 2) {
       const validation = validate({
@@ -113,6 +114,7 @@ module.exports = class Comment extends Model {
       page,
       replyTo,
       content,
+      selector,
       user: {
         ...user,
         ...(user.id === 2) ? {

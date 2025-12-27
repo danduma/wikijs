@@ -40,6 +40,7 @@ type CommentMutation {
     pageId: Int!
     replyTo: Int
     content: String!
+    selector: String
     guestName: String
     guestEmail: String
   ): CommentCreateResponse @auth(requires: ["write:comments", "manage:system"]) @rateLimit(limit: 1, duration: 15)
@@ -79,6 +80,8 @@ type CommentPost {
   id: Int!
   content: String! @auth(requires: ["write:comments", "manage:comments", "manage:system"])
   render: String!
+  selector: String
+  replyTo: Int
   authorId: Int!
   authorName: String!
   authorEmail: String! @auth(requires: ["manage:system"])

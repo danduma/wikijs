@@ -52,7 +52,9 @@ module.exports = {
             ...c,
             authorName: c.name,
             authorEmail: c.email,
-            authorIP: c.ip
+            authorIP: c.ip,
+            selector: c.selector,
+            replyTo: c.replyTo
           }))
         } else {
           throw new WIKI.Error.CommentViewForbidden()
@@ -84,7 +86,9 @@ module.exports = {
             ...cm,
             authorName: cm.name,
             authorEmail: cm.email,
-            authorIP: cm.ip
+            authorIP: cm.ip,
+            selector: cm.selector,
+            replyTo: cm.replyTo
           }
         } else {
           throw new WIKI.Error.CommentViewForbidden()

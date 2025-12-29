@@ -158,7 +158,8 @@ module.exports = class Page extends Model {
       ],
       extra: {
         js: 'string',
-        css: 'string'
+        css: 'string',
+        comments: 'boolean'
       },
       title: 'string',
       toc: 'string',
@@ -273,6 +274,14 @@ module.exports = class Page extends Model {
       throw new WIKI.Error.PageEmptyContent()
     }
 
+    // -> Parse frontmatter for custom settings
+    const contentType = _.get(_.find(WIKI.data.editors, ['key', opts.editor]), `contentType`, 'text')
+    const parsedMetadata = WIKI.models.pages.parseMetadata(opts.content, contentType)
+    const pageCommentsEnabled = _.get(parsedMetadata, 'comments', true)
+    if (parsedMetadata.content) {
+      opts.content = parsedMetadata.content
+    }
+
     // -> Format CSS Scripts
     let scriptCss = ''
     if (WIKI.auth.checkAccess(opts.user, ['write:styles'], {
@@ -314,7 +323,8 @@ module.exports = class Page extends Model {
       toc: '[]',
       extra: JSON.stringify({
         js: scriptJs,
-        css: scriptCss
+        css: scriptCss,
+        comments: pageCommentsEnabled
       })
     })
     const page = await WIKI.models.pages.getPageFromDb({
@@ -387,6 +397,14 @@ module.exports = class Page extends Model {
       throw new WIKI.Error.PageEmptyContent()
     }
 
+    // -> Parse frontmatter for custom settings
+    const contentType = ogPage.contentType || 'markdown'
+    const parsedMetadata = WIKI.models.pages.parseMetadata(opts.content, contentType)
+    const pageCommentsEnabled = _.get(parsedMetadata, 'comments', _.get(ogPage, 'extra.comments', true))
+    if (parsedMetadata.content) {
+      opts.content = parsedMetadata.content
+    }
+
     // -> Create version snapshot
     await WIKI.models.pageHistory.addVersion({
       ...ogPage,
@@ -434,7 +452,8 @@ module.exports = class Page extends Model {
       extra: JSON.stringify({
         ...ogPage.extra,
         js: scriptJs,
-        css: scriptCss
+        css: scriptCss,
+        comments: pageCommentsEnabled
       })
     }).where('id', ogPage.id)
     let page = await WIKI.models.pages.getPageFromDb(ogPage.id)
@@ -1062,7 +1081,8 @@ module.exports = class Page extends Model {
       editorKey: page.editorKey,
       extra: {
         css: _.get(page, 'extra.css', ''),
-        js: _.get(page, 'extra.js', '')
+        js: _.get(page, 'extra.js', ''),
+        comments: _.get(page, 'extra.comments', true)
       },
       isPrivate: page.isPrivate === 1 || page.isPrivate === true,
       isPublished: page.isPublished === 1 || page.isPublished === true,

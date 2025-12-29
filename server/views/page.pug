@@ -5,7 +5,7 @@ block head
     style(type='text/css')!= injectCode.css
   if injectCode.head
     != injectCode.head
-  if config.features.featurePageComments
+  if config.features.featurePageComments && effectivePermissions.comments.read
     != comments.head
 
 block body
@@ -39,5 +39,5 @@ block body
         div!= comments.main
   if injectCode.body
     != injectCode.body
-  if config.features.featurePageComments
+  if config.features.featurePageComments && effectivePermissions.comments.read
     != comments.body

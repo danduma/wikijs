@@ -130,7 +130,7 @@ router.get(['/e', '/e/*'], async (req, res, next) => {
   pageArgs.tags = _.get(page, 'tags', [])
 
   // -> Effective Permissions
-  const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs)
+  const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs, page)
 
   const injectCode = {
     css: WIKI.config.theming.injectCSS,
@@ -263,7 +263,7 @@ router.get(['/h', '/h/*'], async (req, res, next) => {
 
   pageArgs.tags = _.get(page, 'tags', [])
 
-  const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs)
+  const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs, page)
 
   if (!effectivePermissions.history.read) {
     _.set(res.locals, 'pageMeta.title', 'Unauthorized')
@@ -347,7 +347,7 @@ router.get(['/s', '/s/*'], async (req, res, next) => {
   }
 
   // -> Effective Permissions
-  const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs)
+  const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs, page)
 
   _.set(res, 'locals.siteConfig.lang', pageArgs.locale)
   _.set(res, 'locals.siteConfig.rtl', req.i18n.dir() === 'rtl')
@@ -438,7 +438,7 @@ router.get('/*', async (req, res, next) => {
       pageArgs.tags = _.get(page, 'tags', [])
 
       // -> Effective Permissions
-      const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs)
+      const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs, page)
 
       // -> Check User Access
       if (!effectivePermissions.pages.read) {

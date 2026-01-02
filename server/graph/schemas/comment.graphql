@@ -17,6 +17,8 @@ extend type Mutation {
 type CommentQuery {
   providers: [CommentProvider] @auth(requires: ["manage:system"])
 
+  activeProviderKey: String! @auth(requires: ["read:comments", "manage:system"])
+
   list(
     locale: String!
     path: String!
@@ -41,6 +43,7 @@ type CommentMutation {
     replyTo: Int
     content: String!
     selector: String
+    selectedText: String
     guestName: String
     guestEmail: String
   ): CommentCreateResponse @auth(requires: ["write:comments", "manage:system"]) @rateLimit(limit: 1, duration: 15)
@@ -53,6 +56,15 @@ type CommentMutation {
   delete(
     id: Int!
   ): DefaultResponse @auth(requires: ["manage:comments", "manage:system"])
+
+  vote(
+    commentId: Int!
+    voteType: CommentVoteType!
+  ): CommentVoteResponse @auth(requires: ["write:comments", "manage:system"])
+
+  removeVote(
+    commentId: Int!
+  ): CommentVoteResponse @auth(requires: ["write:comments", "manage:system"])
 }
 
 # -----------------------------------------------
@@ -81,13 +93,27 @@ type CommentPost {
   content: String! @auth(requires: ["write:comments", "manage:comments", "manage:system"])
   render: String!
   selector: String
+  selectedText: String
   replyTo: Int
+  replyCount: Int!
+  voteCounts: CommentVoteCounts!
+  userVote: CommentVoteType
   authorId: Int!
   authorName: String!
   authorEmail: String! @auth(requires: ["manage:system"])
   authorIP: String! @auth(requires: ["manage:system"])
   createdAt: Date!
   updatedAt: Date!
+}
+
+enum CommentVoteType {
+  upvote
+  downvote
+}
+
+type CommentVoteCounts {
+  upvotes: Int!
+  downvotes: Int!
 }
 
 type CommentCreateResponse {
@@ -98,4 +124,10 @@ type CommentCreateResponse {
 type CommentUpdateResponse {
   responseResult: ResponseStatus
   render: String
+}
+
+type CommentVoteResponse {
+  responseResult: ResponseStatus
+  voteCounts: CommentVoteCounts!
+  userVote: CommentVoteType
 }

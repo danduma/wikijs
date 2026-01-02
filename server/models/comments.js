@@ -19,7 +19,11 @@ module.exports = class Comment extends Model {
         id: {type: 'integer'},
         content: {type: 'string'},
         render: {type: 'string'},
-        selector: {type: 'string'},
+        selector: {type: ['string', 'null']},
+        selectedText: {type: ['string', 'null']},
+        replyTo: {type: 'integer'},
+        pageId: {type: 'integer'},
+        authorId: {type: 'integer'},
         name: {type: 'string'},
         email: {type: 'string'},
         ip: {type: 'string'},
@@ -61,7 +65,8 @@ module.exports = class Comment extends Model {
   /**
    * Post New Comment
    */
-  static async postNewComment ({ pageId, replyTo, content, selector, guestName, guestEmail, user, ip }) {
+  static async postNewComment ({ pageId, replyTo, content, selector, selectedText, guestName, guestEmail, user, ip }) {
+    console.error(`(MODELS/COMMENTS) postNewComment: selector=${selector || 'none'}, text=${selectedText || 'none'}`)
     // -> Input validation
     if (user.id === 2) {
       const validation = validate({
@@ -95,6 +100,22 @@ module.exports = class Comment extends Model {
       throw new WIKI.Error.CommentContentMissing()
     }
 
+    // -> Enforce 1-level nesting: replies-to-replies always target the root comment.
+    // Also validate that the reply target exists and is part of the same page.
+    replyTo = _.toInteger(replyTo || 0)
+    if (replyTo > 0) {
+      const parent = await this.query().select('id', 'replyTo', 'pageId').findById(replyTo)
+      if (!parent) {
+        throw new WIKI.Error.CommentNotFound()
+      }
+      if (_.toInteger(parent.pageId) !== _.toInteger(pageId)) {
+        throw new WIKI.Error.InputInvalid('Invalid reply target.')
+      }
+      if (_.toInteger(parent.replyTo) > 0) {
+        replyTo = _.toInteger(parent.replyTo)
+      }
+    }
+
     // -> Load Page
     const page = await WIKI.models.pages.getPageFromDb(pageId)
     if (page) {
@@ -114,7 +135,8 @@ module.exports = class Comment extends Model {
       page,
       replyTo,
       content,
-      selector,
+      selector: selector || null,
+      selectedText: selectedText || null,
       user: {
         ...user,
         ...(user.id === 2) ? {

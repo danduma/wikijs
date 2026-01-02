@@ -1,5 +1,10 @@
 /* THEME SPECIFIC STYLES */
 
+/* Override excessive padding applied by Vuetify when breadcrumbs are hidden */
+.v-main {
+  padding-top: 64px !important;
+}
+
 .v-main .contents {
   color: mc('grey', '800');
   padding: .5rem 0 50px;

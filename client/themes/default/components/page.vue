@@ -622,13 +622,14 @@ export default {
 
     // -> Handle anchor scrolling
     if (window.location.hash && window.location.hash.length > 1) {
+      const decodedHash = decodeURIComponent(window.location.hash)
       if (document.readyState === 'complete') {
         this.$nextTick(() => {
-          this.$vuetify.goTo(decodeURIComponent(window.location.hash), this.scrollOpts)
+          this.$vuetify.goTo(decodedHash, this.scrollOpts)
         })
       } else {
         window.addEventListener('load', () => {
-          this.$vuetify.goTo(decodeURIComponent(window.location.hash), this.scrollOpts)
+          this.$vuetify.goTo(decodedHash, this.scrollOpts)
         })
       }
     }
@@ -699,9 +700,8 @@ export default {
     },
     goToComments (focusNewComment = false) {
       this.$vuetify.goTo('#discussion', this.scrollOpts)
-      if (focusNewComment) {
-        document.querySelector('#discussion-new').focus()
-      }
+      if (!focusNewComment) return
+      document.querySelector('#discussion-new')?.focus()
     }
   }
 }

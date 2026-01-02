@@ -3,6 +3,25 @@ const graphHelper = require('../../helpers/graph')
 
 /* global WIKI */
 
+async function getPageAccessFromCommentId (commentId) {
+  const pageId = await WIKI.data.commentProvider.getPageIdFromCommentId(commentId)
+  if (!pageId) {
+    throw new WIKI.Error.CommentNotFound()
+  }
+
+  const page = await WIKI.models.pages.query().select('localeCode', 'path').findById(pageId)
+    .withGraphJoined('tags')
+    .modifyGraph('tags', builder => {
+      builder.select('tag')
+    })
+
+  if (!page) {
+    throw new WIKI.Error.PageNotFound()
+  }
+
+  return page
+}
+
 module.exports = {
   Query: {
     async comments() { return {} }
@@ -37,6 +56,12 @@ module.exports = {
       })
     },
     /**
+     * Fetch active comment provider key (safe for non-admin clients)
+     */
+    async activeProviderKey () {
+      return _.get(WIKI, 'data.commentProvider.key', 'default')
+    },
+    /**
      * Fetch list of comments for a page
      */
     async list (obj, args, context) {
@@ -48,13 +73,22 @@ module.exports = {
       if (page) {
         if (WIKI.auth.checkAccess(context.req.user, ['read:comments'], { tags: page.tags, ...args })) {
           const comments = await WIKI.models.comments.query().where('pageId', page.id).orderBy('createdAt')
+          const commentIds = comments.map(c => c.id)
+          const voteCountsById = await WIKI.models.commentVotes.getVoteCountsForComments(commentIds)
+          const userVotesById = await WIKI.models.commentVotes.getUserVotesForComments({ commentIds, userId: context.req.user.id })
+          const replyCountsByParent = _.countBy(comments.filter(c => _.toInteger(c.replyTo) > 0), c => _.toInteger(c.replyTo))
+
           return comments.map(c => ({
             ...c,
             authorName: c.name,
             authorEmail: c.email,
             authorIP: c.ip,
             selector: c.selector,
-            replyTo: c.replyTo
+            selectedText: c.selectedText,
+            replyTo: c.replyTo,
+            replyCount: _.toInteger(replyCountsByParent[_.toInteger(c.id)] || 0),
+            voteCounts: _.get(voteCountsById, _.toInteger(c.id), { upvotes: 0, downvotes: 0 }),
+            userVote: _.get(userVotesById, _.toInteger(c.id), null)
           }))
         } else {
           throw new WIKI.Error.CommentViewForbidden()
@@ -82,13 +116,20 @@ module.exports = {
           locale: page.localeCode,
           tags: page.tags
         })) {
+          const voteCounts = await WIKI.models.commentVotes.getVoteCounts(cm.id)
+          const userVote = await WIKI.models.commentVotes.getUserVote({ commentId: cm.id, userId: context.req.user.id })
+          const replyCount = await WIKI.models.comments.query().where({ replyTo: cm.id }).count({ count: 'id' }).first()
           return {
             ...cm,
             authorName: cm.name,
             authorEmail: cm.email,
             authorIP: cm.ip,
             selector: cm.selector,
-            replyTo: cm.replyTo
+            selectedText: cm.selectedText,
+            replyTo: cm.replyTo,
+            replyCount: _.toInteger(_.get(replyCount, 'count', 0)),
+            voteCounts,
+            userVote
           }
         } else {
           throw new WIKI.Error.CommentViewForbidden()
@@ -104,6 +145,7 @@ module.exports = {
      * Create New Comment
      */
     async create (obj, args, context) {
+      console.error('(GRAPHQL) Mutation create comment args:', JSON.stringify(args))
       try {
         const cmId = await WIKI.models.comments.postNewComment({
           ...args,
@@ -151,6 +193,79 @@ module.exports = {
         }
       } catch (err) {
         return graphHelper.generateError(err)
+      }
+    },
+    async vote (obj, args, context) {
+      try {
+        if (context.req.user.id === 2) {
+          throw new WIKI.Error.CommentVoteForbidden()
+        }
+
+        const page = await getPageAccessFromCommentId(args.commentId)
+        if (!WIKI.auth.checkAccess(context.req.user, ['write:comments'], {
+          path: page.path,
+          locale: page.localeCode,
+          tags: page.tags
+        })) {
+          throw new WIKI.Error.CommentVoteForbidden()
+        }
+
+        await WIKI.models.commentVotes.vote({
+          commentId: args.commentId,
+          userId: context.req.user.id,
+          voteType: args.voteType
+        })
+
+        const voteCounts = await WIKI.models.commentVotes.getVoteCounts(args.commentId)
+        const userVote = await WIKI.models.commentVotes.getUserVote({ commentId: args.commentId, userId: context.req.user.id })
+
+        return {
+          responseResult: graphHelper.generateSuccess('Vote updated successfully'),
+          voteCounts,
+          userVote
+        }
+      } catch (err) {
+        return {
+          ...graphHelper.generateError(err),
+          voteCounts: { upvotes: 0, downvotes: 0 },
+          userVote: null
+        }
+      }
+    },
+    async removeVote (obj, args, context) {
+      try {
+        if (context.req.user.id === 2) {
+          throw new WIKI.Error.CommentVoteForbidden()
+        }
+
+        const page = await getPageAccessFromCommentId(args.commentId)
+        if (!WIKI.auth.checkAccess(context.req.user, ['write:comments'], {
+          path: page.path,
+          locale: page.localeCode,
+          tags: page.tags
+        })) {
+          throw new WIKI.Error.CommentVoteForbidden()
+        }
+
+        await WIKI.models.commentVotes.removeVote({
+          commentId: args.commentId,
+          userId: context.req.user.id
+        })
+
+        const voteCounts = await WIKI.models.commentVotes.getVoteCounts(args.commentId)
+        const userVote = await WIKI.models.commentVotes.getUserVote({ commentId: args.commentId, userId: context.req.user.id })
+
+        return {
+          responseResult: graphHelper.generateSuccess('Vote removed successfully'),
+          voteCounts,
+          userVote
+        }
+      } catch (err) {
+        return {
+          ...graphHelper.generateError(err),
+          voteCounts: { upvotes: 0, downvotes: 0 },
+          userVote: null
+        }
       }
     },
     /**

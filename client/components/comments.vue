@@ -1,11 +1,12 @@
 <template lang="pug">
-  div(v-intersect.once='onIntersect')
+  div
     v-btn.floating-comment-btn(
       v-if='showFloatingBtn && isContextualProvider'
       fab
       x-small
       color='primary'
       :style='floatingBtnStyle'
+      @mousedown.stop.prevent
       @click='openNewThread'
     )
       v-icon(small) mdi-comment-plus
@@ -15,27 +16,47 @@
       v-if='showThreadDialog'
       :style='threadWindowStyle'
     )
-      v-toolbar(color='primary', dark, dense, flat)
+      v-toolbar(
+        color='primary'
+        dark
+        dense
+        flat
+        style='cursor: move; user-select: none;'
+        @mousedown='startDrag'
+      )
         v-toolbar-title.body-1 {{ isNewThread ? "New Comment" : "Comment Thread" }}
         v-spacer
-        v-btn(icon, small, @click='showThreadDialog = false')
+        v-btn(icon, small, @click='closeThreadDialog')
           v-icon(small) mdi-close
-      
+
       .thread-content.pa-3
         //- Existing thread messages
-        template(v-if='!isNewThread')
-          .thread-message.mb-4(v-for='msg in activeThreadMessages' :key='msg.id')
+        template(v-if='!isNewThread && activeThreadRoot')
+          //- Root message
+          .thread-message.mb-4
             .d-flex.align-center.mb-1
               v-avatar(color='blue-grey', size='24')
-                span.white--text.caption {{ getInitials(msg.authorName) }}
-              .caption.ml-2.font-weight-bold {{ msg.authorName }}
+                span.white--text.caption {{ getInitials(activeThreadRoot.authorName) }}
+              .caption.ml-2.font-weight-bold {{ activeThreadRoot.authorName }}
               v-spacer
-              .overline.grey--text {{ msg.createdAt | moment('from') }}
-            .body-2.pl-8(v-html='msg.render')
+              .overline.grey--text {{ activeThreadRoot.createdAt | moment('from') }}
+            .body-2.pl-8(v-html='activeThreadRoot.render')
+
+          //- Nested replies
+          .thread-replies.pl-4.ml-2(v-if='activeThreadReplies.length > 0', style='border-left: 2px solid rgba(144, 164, 174, 0.2)')
+            .thread-message.mb-4(v-for='msg in activeThreadReplies' :key='msg.id')
+              .d-flex.align-center.mb-1
+                v-avatar(color='blue-grey', size='20')
+                  span.white--text.caption(style='font-size: 10px !important') {{ getInitials(msg.authorName) }}
+                .caption.ml-2.font-weight-bold {{ msg.authorName }}
+                v-spacer
+                .overline.grey--text {{ msg.createdAt | moment('from') }}
+              .body-2.pl-7(v-html='msg.render')
+
           v-divider.my-3
 
         //- Reply/New Comment Box
-        v-textarea(
+        v-textarea.thread-window-textarea(
           outlined
           flat
           dense
@@ -43,7 +64,8 @@
           hide-details
           v-model='newThreadContent'
           :placeholder='isNewThread ? "Write your comment..." : "Write a reply..."'
-          autofocus
+          ref='threadTextarea'
+          @keydown.enter='handleThreadEnter'
         )
         .d-flex.pt-2
           v-spacer
@@ -55,16 +77,10 @@
             :loading='isBusy'
           ) {{ isNewThread ? "Post" : "Reply" }}
 
-    .selected-text-preview.mb-3(v-if='selectedText && isContextualProvider && !showThreadDialog', style='position: relative;')
-      .caption.grey--text.mb-1 Replying to:
-      blockquote.pa-3(:class='$vuetify.theme.dark ? `grey darken-4` : `grey lighten-4`', style='border-left: 4px solid #90A4AE; position: relative;')
-        em {{ selectedText }}
-        v-btn(icon, x-small, @click='selectedText = ""; selectedSelector = ""; showFloatingBtn = false', style='position: absolute; top: 4px; right: 4px;')
-          v-icon(small) mdi-close
     v-textarea#discussion-new(
       outlined
       flat
-      :placeholder='selectedText ? `Replying to: "${selectedText.substring(0, 50)}${selectedText.length > 50 ? "..." : ""}"` : $t(`common:comments.newPlaceholder`)'
+      :placeholder='$t(`common:comments.newPlaceholder`)'
       auto-grow
       dense
       rows='3'
@@ -74,6 +90,7 @@
       :background-color='$vuetify.theme.dark ? `grey darken-5` : `white`'
       v-if='permissions.write'
       :aria-label='$t(`common:comments.fieldContent`)'
+      @keydown.enter='handleMainEnter'
     )
     v-row.mt-2(dense, v-if='!isAuthenticated && permissions.write')
       v-col(cols='12', lg='6')
@@ -128,12 +145,12 @@
       .caption.blue-grey--text.pl-3: em {{$t('common:comments.loading')}}
     v-timeline(
       dense
-      v-else-if='bottomComments && bottomComments.length > 0'
+      v-else-if='commentsWithReplies && commentsWithReplies.length > 0'
       )
       v-timeline-item.comments-post(
         color='pink darken-4'
         large
-        v-for='cm of bottomComments'
+        v-for='cm of commentsWithReplies'
         :key='`comment-` + cm.id'
         :id='`comment-post-id-` + cm.id'
         )
@@ -146,11 +163,13 @@
             .comments-post-actions(v-if='permissions.manage && !isBusy && commentEditId === 0')
               v-icon.mr-3(small, @click='editComment(cm)') mdi-pencil
               v-icon(small, @click='deleteCommentConfirm(cm)') mdi-delete
+
             .comments-post-name.caption: strong {{cm.authorName}}
             .comments-post-date.overline.grey--text {{cm.createdAt | moment('from') }} #[em(v-if='cm.createdAt !== cm.updatedAt') - {{$t('common:comments.modified', { reldate: $options.filters.moment(cm.updatedAt, 'from') })}}]
             .comments-post-context.caption.grey--text(v-if='cm.selector && isContextualProvider')
               v-icon(small, @click='highlightElement(cm.selector)', color='primary') mdi-target
-              span.ml-1(style='cursor: pointer;', @click='highlightElement(cm.selector)') View Context
+              span.ml-1(style='cursor: pointer; text-decoration: underline;', @click='highlightElement(cm.selector)') View Context
+
             .comments-post-content.mt-3(v-if='commentEditId !== cm.id', v-html='cm.render')
             .comments-post-editcontent.mt-3(v-else)
               v-textarea(
@@ -163,6 +182,7 @@
                 v-model='commentEditContent'
                 color='blue-grey darken-2'
                 :background-color='$vuetify.theme.dark ? `grey darken-5` : `white`'
+                @keydown.enter='handleEditEnter'
               )
               .d-flex.align-center.pt-3
                 v-spacer
@@ -171,7 +191,7 @@
                   color='blue-grey darken-2'
                   @click='editCommentCancel'
                   outlined
-                  )
+                )
                   v-icon(left) mdi-close
                   span.text-none {{$t('common:actions.cancel')}}
                 v-btn(
@@ -179,9 +199,122 @@
                   color='blue-grey darken-2'
                   @click='updateComment'
                   depressed
-                  )
+                )
                   v-icon(left) mdi-comment
                   span.text-none {{$t('common:comments.updateComment')}}
+
+            //- Reddit-like action bar under the comment
+            .comment-actions-row.mt-2(v-if='commentEditId !== cm.id')
+              CommentVoteButtons(
+                :comment-id='cm.id'
+                :upvotes='cm.voteCounts ? cm.voteCounts.upvotes : 0'
+                :downvotes='cm.voteCounts ? cm.voteCounts.downvotes : 0'
+                :user-vote='cm.userVote'
+                :disabled='!isAuthenticated'
+                @vote-changed='handleVoteChanged'
+              )
+              v-btn.comment-action-btn.ml-3(
+                v-if='permissions.write && !isBusy'
+                text
+                x-small
+                color='blue-grey'
+                :disabled='replyToId !== 0 && replyToId !== cm.id'
+                @click='startReply(cm.id)'
+              )
+                v-icon(left, small) mdi-comment-outline
+                span Reply
+                span.comment-action-count.ml-2(v-if='(cm.replyCount || 0) > 0') {{ cm.replyCount }}
+              v-btn.comment-action-btn.ml-2(
+                v-if='(cm.replyCount || 0) > 0'
+                text
+                x-small
+                color='blue-grey'
+                @click='toggleThread(cm.id)'
+              )
+                v-icon(left, small) {{ cm.isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+                span {{ cm.isExpanded ? 'Hide' : 'Show' }}
+
+            //- Inline reply form (root)
+            .comment-reply-form.mt-3(v-if='replyToId === cm.id')
+              v-textarea(
+                outlined
+                flat
+                auto-grow
+                dense
+                rows='2'
+                hide-details
+                v-model='replyContent'
+                placeholder='Write your reply...'
+                color='blue-grey darken-2'
+                :background-color='$vuetify.theme.dark ? `grey darken-5` : `white`'
+                :ref='`reply-box-${cm.id}`'
+                @keydown.enter='handleReplyEnter'
+              )
+              .d-flex.align-center.pt-2
+                v-spacer
+                v-btn.mr-2(text, small, @click='cancelReply')
+                  v-icon(left, small) mdi-close
+                  span Cancel
+                v-btn(color='primary', small, depressed, @click='postReply', :loading='isBusy')
+                  v-icon(left, small) mdi-send
+                  span Post Reply
+
+            //- Collapsible replies
+            .comment-replies.mt-3(v-if='cm.isExpanded && cm.replies && cm.replies.length > 0')
+              .reply-item(v-for='rp of cm.replies' :key='`reply-` + rp.id')
+                .d-flex.align-center
+                  .caption.font-weight-bold {{ rp.authorName }}
+                  v-spacer
+                  .overline.grey--text {{ rp.createdAt | moment('from') }}
+                .body-2.mt-2(v-html='rp.render')
+
+                .comment-actions-row.mt-2(v-if='commentEditId !== rp.id')
+                  CommentVoteButtons(
+                    :comment-id='rp.id'
+                    :upvotes='rp.voteCounts ? rp.voteCounts.upvotes : 0'
+                    :downvotes='rp.voteCounts ? rp.voteCounts.downvotes : 0'
+                    :user-vote='rp.userVote'
+                    :disabled='!isAuthenticated'
+                    @vote-changed='handleVoteChanged'
+                  )
+                  v-btn.comment-action-btn.ml-3(
+                    v-if='permissions.write && !isBusy'
+                    text
+                    x-small
+                    color='blue-grey'
+                    :disabled='replyToId !== 0 && replyToId !== rp.id'
+                    @click='startReply(rp.id)'
+                  )
+                    v-icon(left, small) mdi-comment-outline
+                    span Reply
+                  v-spacer
+                  template(v-if='permissions.manage && !isBusy && commentEditId === 0')
+                    v-icon.mr-3(small, @click='editComment(rp)') mdi-pencil
+                    v-icon(small, @click='deleteCommentConfirm(rp)') mdi-delete
+
+                .comment-reply-form.mt-3(v-if='replyToId === rp.id')
+                  v-textarea(
+                    outlined
+                    flat
+                    auto-grow
+                    dense
+                    rows='2'
+                    hide-details
+                    v-model='replyContent'
+                    placeholder='Write your reply...'
+                    color='blue-grey darken-2'
+                    :background-color='$vuetify.theme.dark ? `grey darken-5` : `white`'
+                    :ref='`reply-box-${rp.id}`'
+                    @keydown.enter='handleReplyEnter'
+                  )
+                  .d-flex.align-center.pt-2
+                    v-spacer
+                    v-btn.mr-2(text, small, @click='cancelReply')
+                      v-icon(left, small) mdi-close
+                      span Cancel
+                    v-btn(color='primary', small, depressed, @click='postReply', :loading='isBusy')
+                      v-icon(left, small) mdi-send
+                      span Post Reply
     .pt-5.text-center.body-2.blue-grey--text(v-else-if='permissions.write') {{$t('common:comments.beFirst')}}
     .text-center.body-2.blue-grey--text(v-else) {{$t('common:comments.none')}}
 
@@ -202,8 +335,12 @@ import gql from 'graphql-tag'
 import { get } from 'vuex-pathify'
 import validate from 'validate.js'
 import _ from 'lodash'
+import CommentVoteButtons from './comments/CommentVoteButtons.vue'
 
 export default {
+  components: {
+    CommentVoteButtons
+  },
   data () {
     return {
       newcomment: '',
@@ -217,6 +354,9 @@ export default {
       commentEditContent: null,
       deleteCommentDialogShown: false,
       isBusy: false,
+      expandedThreads: {},
+      replyToId: 0,
+      replyContent: '',
       selectedText: '',
       selectedSelector: '',
       isContextualProvider: false,
@@ -225,11 +365,18 @@ export default {
         top: '0px',
         left: '0px'
       },
+      pendingSelector: '',
+      pendingText: '',
+      currentSelector: '',
+      currentText: '',
       showThreadDialog: false,
       activeThread: null,
       threadReplies: [],
       newThreadContent: '',
       isNewThread: false,
+      isDragging: false,
+      dragOffset: { x: 0, y: 0 },
+      dragPosition: null,
       scrollOpts: {
         duration: 1500,
         offset: 0,
@@ -245,15 +392,39 @@ export default {
     bottomComments () {
       return this.comments.filter(c => !c.replyTo || c.replyTo === 0)
     },
-    activeThreadMessages () {
+    commentsWithReplies () {
+      const rootComments = this.comments.filter(c => !c.replyTo || c.replyTo === 0)
+      return rootComments.map(root => ({
+        ...root,
+        replies: this.comments.filter(c => c.replyTo === root.id),
+        isExpanded: this.expandedThreads[root.id] || false
+      }))
+    },
+    activeThreadRoot () {
+      if (!this.activeThread) return null
+      return this.comments.find(c => c.id === this.activeThread.id)
+    },
+    activeThreadReplies () {
       if (!this.activeThread) return []
-      const root = this.comments.find(c => c.id === this.activeThread.id)
-      const replies = this.comments.filter(c => c.replyTo === this.activeThread.id)
-      return root ? [root, ...replies] : replies
+      return this.comments.filter(c => c.replyTo === this.activeThread.id)
     },
     threadWindowStyle () {
+      if (this.dragPosition) {
+        return {
+          position: 'fixed',
+          top: `${this.dragPosition.y}px`,
+          left: `${this.dragPosition.x}px`,
+          width: '350px',
+          maxHeight: '500px',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 2210,
+          overflow: 'hidden'
+        }
+      }
+
       if (!this.floatingBtnStyle) return {}
-      
+
       const width = 350
       const height = 500
       let top = parseInt(this.floatingBtnStyle.top)
@@ -277,7 +448,7 @@ export default {
         maxHeight: `${height}px`,
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 1001,
+        zIndex: 2210,
         overflow: 'hidden'
       }
     }
@@ -302,33 +473,161 @@ export default {
     }
   },
   apollo: {
-    commentProviders: {
+    commentProviderKey: {
       query: gql`
         query {
           comments {
-            providers {
-              key
-              isEnabled
-            }
+            activeProviderKey
           }
         }
       `,
-      manual: true,
       result ({ data }) {
-        if (data && data.comments && data.comments.providers) {
-          const providers = data.comments.providers
-          const enabledProvider = providers.find(p => p.isEnabled)
-          this.isContextualProvider = enabledProvider && enabledProvider.key === 'contextual'
-        }
+        const key = _.get(data, 'comments.activeProviderKey', 'default')
+        this.isContextualProvider = key === 'contextual'
       },
       fetchPolicy: 'network-only'
     }
   },
   methods: {
-    onIntersect (entries, observer, isIntersecting) {
-      if (isIntersecting) {
-        this.fetch(true)
+    toggleThread (commentId) {
+      this.$set(this.expandedThreads, commentId, !this.expandedThreads[commentId])
+    },
+    handleVoteChanged ({ commentId, upvotes, downvotes, userVote }) {
+      const comment = this.comments.find(c => c.id === commentId)
+      if (comment) {
+        this.$set(comment, 'voteCounts', { upvotes, downvotes })
+        this.$set(comment, 'userVote', userVote)
       }
+    },
+    startReply (commentId) {
+      this.replyToId = commentId
+      this.replyContent = ''
+
+      const cm = this.comments.find(c => c.id === commentId)
+      const rootId = (cm && cm.replyTo && cm.replyTo > 0) ? cm.replyTo : commentId
+      if (!this.expandedThreads[rootId]) {
+        this.$set(this.expandedThreads, rootId, true)
+      }
+
+      this.$nextTick(() => {
+        const replyBox = this.$refs[`reply-box-${commentId}`]
+        const ref = Array.isArray(replyBox) ? replyBox[0] : replyBox
+        if (ref && typeof ref.focus === 'function') ref.focus()
+        else if (ref && ref.$el) ref.$el.querySelector('textarea')?.focus()
+      })
+    },
+    cancelReply () {
+      this.replyToId = 0
+      this.replyContent = ''
+    },
+    async postReply () {
+      if (!this.replyContent || this.replyContent.length < 2) {
+        this.$store.commit('showNotification', {
+          style: 'red',
+          message: 'Reply must be at least 2 characters.',
+          icon: 'alert'
+        })
+        return
+      }
+
+      let rules = {
+        comment: {
+          presence: { allowEmpty: false },
+          length: { minimum: 2 }
+        }
+      }
+      if (!this.isAuthenticated && this.permissions.write) {
+        rules.name = {
+          presence: { allowEmpty: false },
+          length: { minimum: 2, maximum: 255 }
+        }
+        rules.email = {
+          presence: { allowEmpty: false },
+          email: true
+        }
+      }
+      const validationResults = validate({
+        comment: this.replyContent,
+        name: this.guestName,
+        email: this.guestEmail
+      }, rules, { format: 'flat' })
+
+      if (validationResults) {
+        this.$store.commit('showNotification', {
+          style: 'red',
+          message: validationResults[0],
+          icon: 'alert'
+        })
+        return
+      }
+
+      this.isBusy = true
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`
+            mutation (
+              $pageId: Int!
+              $replyTo: Int
+              $content: String!
+              $guestName: String
+              $guestEmail: String
+            ) {
+              comments {
+                create(
+                  pageId: $pageId
+                  replyTo: $replyTo
+                  content: $content
+                  guestName: $guestName
+                  guestEmail: $guestEmail
+                ) {
+                  responseResult {
+                    succeeded
+                    errorCode
+                    slug
+                    message
+                  }
+                  id
+                }
+              }
+            }
+          `,
+          variables: {
+            pageId: this.pageId,
+            replyTo: this.replyToId,
+            content: this.replyContent,
+            guestName: !this.isAuthenticated ? this.guestName : null,
+            guestEmail: !this.isAuthenticated ? this.guestEmail : null
+          }
+        })
+
+        if (_.get(resp, 'data.comments.create.responseResult.succeeded', false)) {
+          this.$store.commit('showNotification', {
+            style: 'success',
+            message: 'Reply posted successfully.',
+            icon: 'check'
+          })
+
+          const repliedTo = this.replyToId
+          const replyTarget = this.comments.find(c => c.id === repliedTo)
+          const rootId = (replyTarget && replyTarget.replyTo && replyTarget.replyTo > 0) ? replyTarget.replyTo : repliedTo
+          this.replyToId = 0
+          this.replyContent = ''
+          await this.fetch(true)
+
+          this.$nextTick(() => {
+            this.$vuetify.goTo(`#comment-post-id-${rootId}`, this.scrollOpts)
+          })
+        } else {
+          throw new Error(_.get(resp, 'data.comments.create.responseResult.message', 'An unexpected error occurred.'))
+        }
+      } catch (err) {
+        this.$store.commit('showNotification', {
+          style: 'red',
+          message: err.message,
+          icon: 'alert'
+        })
+      }
+      this.isBusy = false
     },
     async fetch (silent = false) {
       this.isLoading = true
@@ -341,7 +640,11 @@ export default {
                   id
                   render
                   selector
+                  selectedText
                   replyTo
+                  replyCount
+                  voteCounts { upvotes downvotes }
+                  userVote
                   authorName
                   createdAt
                   updatedAt
@@ -357,6 +660,8 @@ export default {
         })
         this.comments = _.get(results, 'data.comments.list', []).map(c => {
           c.initials = this.getInitials(c.authorName)
+          if (!c.voteCounts) c.voteCounts = { upvotes: 0, downvotes: 0 }
+          if (typeof c.replyCount !== 'number') c.replyCount = 0
           return c
         })
 
@@ -672,82 +977,216 @@ export default {
       }
     },
     setupTextSelection () {
-      console.log('Comments: Setting up text selection listeners')
       // Listen for text selection on the page content
       document.addEventListener('selectionchange', this.handleTextSelection)
       document.addEventListener('mouseup', this.handleTextSelection)
       document.addEventListener('keyup', this.handleTextSelection)
+      document.addEventListener('keydown', this.handleGlobalKeyDown)
+      document.addEventListener('click', this.handleGlobalClick)
     },
     cleanupTextSelection () {
       document.removeEventListener('selectionchange', this.handleTextSelection)
       document.removeEventListener('mouseup', this.handleTextSelection)
       document.removeEventListener('keyup', this.handleTextSelection)
+      document.removeEventListener('keydown', this.handleGlobalKeyDown)
+      document.removeEventListener('click', this.handleGlobalClick)
+    },
+    handleGlobalClick (e) {
+      // If clicking an image in the content area, trigger the floating button
+      if (e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'PICTURE')) {
+        const contentArea = e.target.closest('.contents') || e.target.closest('.page-content')
+        if (contentArea) {
+          const rect = e.target.getBoundingClientRect()
+          this.selectedText = '[Image]'
+          this.selectedSelector = this.getCSSSelector(e.target)
+          this.pendingSelector = this.selectedSelector
+          this.pendingText = this.selectedText
+
+          console.log('Image clicked, showing floating button:', { selector: this.selectedSelector })
+
+          this.showFloatingBtn = true
+          this.floatingBtnStyle = {
+            position: 'fixed',
+            top: `${rect.top}px`,
+            left: `${rect.right + 5}px`,
+            zIndex: 2200
+          }
+          // Prevent further selection logic from hiding it immediately
+          e.stopPropagation()
+        }
+      }
+    },
+    handleGlobalKeyDown (e) {
+      if (e.key === 'Escape' && this.showThreadDialog) {
+        this.closeThreadDialog()
+      }
+    },
+    closeThreadDialog () {
+      this.showThreadDialog = false
+      this.showFloatingBtn = false
+      this.isDragging = false
+      this.dragPosition = null
+      this.selectedText = ''
+      this.selectedSelector = ''
+      this.pendingSelector = ''
+      this.pendingText = ''
+      this.currentSelector = ''
+      this.currentText = ''
+      this.clearActiveSelectionHighlight()
+      this.removeSelectionMarkers()
+    },
+    startDrag (e) {
+      this.isDragging = true
+      const rect = e.currentTarget.parentElement.getBoundingClientRect()
+      this.dragOffset = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      }
+      document.addEventListener('mousemove', this.onDrag)
+      document.addEventListener('mouseup', this.stopDrag)
+    },
+    onDrag (e) {
+      if (!this.isDragging) return
+      this.dragPosition = {
+        x: e.clientX - this.dragOffset.x,
+        y: e.clientY - this.dragOffset.y
+      }
+    },
+    stopDrag () {
+      this.isDragging = false
+      document.removeEventListener('mousemove', this.onDrag)
+      document.removeEventListener('mouseup', this.stopDrag)
+    },
+    removeSelectionMarkers () {
+      document.querySelectorAll('.active-selection-marker').forEach(el => {
+        const parent = el.parentNode
+        if (parent) {
+          while (el.firstChild) parent.insertBefore(el.firstChild, el)
+          parent.removeChild(el)
+        }
+      })
+      // Clean up image selection highlights
+      document.querySelectorAll('.selection-is-active').forEach(el => {
+        if (el.tagName === 'IMG' || el.tagName === 'PICTURE') {
+          el.style.outline = ''
+          el.classList.remove('selection-is-active')
+        }
+      })
     },
     handleTextSelection () {
-      const selection = window.getSelection()
-      const selectedText = selection.toString().trim()
+      // Don't update selection while a thread window is already open
+      if (this.showThreadDialog) return
 
-      if (selectedText.length > 0 && this.isContextualProvider) {
+      const selection = window.getSelection()
+      let selectedText = selection.toString().trim()
+      let targetNode = null
+      let targetRect = null
+
+      // If text selection is empty, check if we've selected an image node directly
+      if (selectedText.length === 0 && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0)
-        
-        // Check if selection is inside the page content (to avoid triggering on selecting text in comments)
-        let container = range.commonAncestorContainer
+        // Check for single image selection
+        if (range.startContainer === range.endContainer && range.endOffset - range.startOffset === 1) {
+          const node = range.startContainer.childNodes[range.startOffset]
+          if (node && (node.tagName === 'IMG' || node.tagName === 'PICTURE' || node.tagName === 'FIGURE')) {
+            targetNode = node
+            targetRect = node.getBoundingClientRect()
+            selectedText = '[Image]'
+          }
+        }
+      }
+
+      if ((selectedText.length > 0 || targetNode) && this.isContextualProvider) {
+        const range = selection.getRangeAt(0)
+
+        // Check if selection is inside the page content
+        let container = targetNode || range.commonAncestorContainer
         if (container.nodeType === Node.TEXT_NODE) container = container.parentElement
-        if (!container.closest('.contents') && !container.closest('.page-content')) return
+
+        const contentArea = container.closest('.contents') || container.closest('.page-content')
+        if (!contentArea) return
 
         const rects = range.getClientRects()
-        if (rects.length > 0) {
-          const lastRect = rects[rects.length - 1]
+        const rect = (rects.length > 0) ? rects[rects.length - 1] : (targetRect || container.getBoundingClientRect())
 
+        if (rect) {
           // Get the CSS selector for the selected element
           this.selectedText = selectedText
-          this.selectedSelector = this.getCSSSelector(range.commonAncestorContainer)
+          this.selectedSelector = this.getCSSSelector(container)
+          this.pendingSelector = this.selectedSelector
+          this.pendingText = this.selectedText
 
           // Position floating button
           this.showFloatingBtn = true
           this.floatingBtnStyle = {
             position: 'fixed',
-            top: `${lastRect.top - 30}px`,
-            left: `${lastRect.right + 5}px`,
-            zIndex: 1000
+            top: `${rect.top - 30}px`,
+            left: `${rect.right + 5}px`,
+            zIndex: 2200
           }
         }
       } else {
-        // Hide floating button if no text is selected, but keep selectedText for the comment box
+        // Hide floating button if no text is selected
         this.showFloatingBtn = false
       }
     },
     getCSSSelector (el) {
       if (el.nodeType === Node.TEXT_NODE) el = el.parentElement
       if (!el || el.tagName === 'HTML') return 'html'
-      
+
       const path = []
       while (el && el.nodeType === Node.ELEMENT_NODE) {
         let selector = el.tagName.toLowerCase()
-        if (el.id) {
-          selector += '#' + el.id
-          path.unshift(selector)
+
+        // Stop at content container for more stable selectors
+        if (el.classList.contains('contents') || el.classList.contains('page-content')) {
+          path.unshift('.' + el.className.split(' ').join('.'))
           break
-        } else {
-          let sib = el, nth = 1
-          while (sib = sib.previousElementSibling) {
-            if (sib.tagName.toLowerCase() === selector) nth++
-          }
-          if (nth !== 1) selector += ':nth-of-type(' + nth + ')'
         }
+
+        if (el.id) {
+          // Only use ID if it doesn't look dynamic (e.g. Wiki.js auto-generated IDs)
+          if (!/^[0-9-]+$/.test(el.id)) {
+            selector += '#' + el.id
+            path.unshift(selector)
+            break
+          }
+        }
+
+        let sib = el; let nth = 1
+        while ((sib = sib.previousElementSibling)) {
+          if (sib.tagName.toLowerCase() === selector) nth++
+        }
+        if (nth !== 1) selector += ':nth-of-type(' + nth + ')'
+
         path.unshift(selector)
         el = el.parentElement
       }
       return path.join(' > ')
     },
     highlightElement (selector) {
-      if (!selector) return
+      if (!selector) {
+        console.warn('highlightElement called with empty selector')
+        return
+      }
+
+      console.log('Attempting to highlight selector:', selector)
 
       try {
-        const element = document.querySelector(selector)
+        let element = document.querySelector(selector)
+
+        // If not found, try to find by text content as a fallback
+        if (!element && selector.includes('nth-of-type')) {
+          // Try a simpler version of the selector
+          const simpler = selector.split(' > ').pop().split(':')[0]
+          console.log('Exact selector failed, trying simpler match:', simpler)
+          element = document.querySelector(`.contents ${simpler}`)
+        }
+
         if (element) {
-          element.style.backgroundColor = 'rgba(255, 235, 59, 0.3)'
-          element.style.border = '2px solid #ffeb3b'
+          console.log('Element found, scrolling and highlighting:', element)
+          element.style.backgroundColor = 'rgba(255, 235, 59, 0.4)'
+          element.style.outline = '3px solid #ffeb3b'
           element.style.borderRadius = '3px'
           element.style.transition = 'all 0.3s ease'
 
@@ -757,10 +1196,17 @@ export default {
           // Remove highlight after 3 seconds
           setTimeout(() => {
             element.style.backgroundColor = ''
-            element.style.border = ''
+            element.style.outline = ''
             element.style.borderRadius = ''
             element.style.transition = ''
           }, 3000)
+        } else {
+          console.warn('Element STILL not found for selector:', selector)
+          this.$store.commit('showNotification', {
+            style: 'info',
+            message: 'Could not locate the original text on this page.',
+            icon: 'information'
+          })
         }
       } catch (e) {
         console.warn('Could not highlight element:', selector, e)
@@ -775,52 +1221,199 @@ export default {
       return initials
     },
     openNewThread () {
+      console.log('openNewThread called. Selector:', this.selectedSelector || this.pendingSelector, 'Text:', this.selectedText || this.pendingText)
       this.isNewThread = true
       this.activeThread = null
       this.newThreadContent = ''
+
+      this.currentSelector = this.selectedSelector || this.pendingSelector || ''
+      this.currentText = this.selectedText || this.pendingText || ''
+
+      // Set dialog to true early to prevent selection handlers from clearing our data
       this.showThreadDialog = true
       this.showFloatingBtn = false
+
+      const selection = window.getSelection()
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+
+        try {
+          // If it's a simple selection within one element, surround it
+          if (range.startContainer === range.endContainer) {
+            // Check if it's text or something else
+            if (range.startContainer.nodeType === Node.TEXT_NODE) {
+              const marker = document.createElement('span')
+              marker.className = 'active-selection-marker'
+              marker.style.backgroundColor = 'rgba(144, 164, 174, 0.4)'
+              marker.style.boxShadow = '0 0 0 2px rgba(144, 164, 174, 0.6)'
+              marker.style.borderRadius = '3px'
+              marker.style.padding = '2px 0'
+              range.surroundContents(marker)
+            } else {
+              // It's an element (like an image)
+              const node = range.startContainer.childNodes[range.startOffset]
+              if (node && node.nodeType === Node.ELEMENT_NODE) {
+                node.classList.add('selection-is-active')
+                node.style.outline = '3px solid rgba(144, 164, 174, 0.6)'
+                node.style.borderRadius = '4px'
+              }
+            }
+          } else {
+            // Complex selection across nodes - Collect nodes first to avoid infinite loops during DOM modification
+            const common = range.commonAncestorContainer
+            const walker = document.createTreeWalker(
+              common.nodeType === Node.ELEMENT_NODE ? common : common.parentElement,
+              NodeFilter.SHOW_TEXT,
+              {
+                acceptNode: (node) => {
+                  if (selection.containsNode(node, true)) return NodeFilter.FILTER_ACCEPT
+                  return NodeFilter.FILTER_REJECT
+                }
+              },
+              false
+            )
+
+            const nodesToWrap = []
+            let currentNode
+            while ((currentNode = walker.nextNode())) {
+              nodesToWrap.push(currentNode)
+            }
+
+            nodesToWrap.forEach(node => {
+              const marker = document.createElement('span')
+              marker.className = 'active-selection-marker'
+              marker.style.backgroundColor = 'rgba(144, 164, 174, 0.4)'
+
+              const nodeRange = document.createRange()
+              if (node === range.startContainer) {
+                nodeRange.setStart(node, range.startOffset)
+                nodeRange.setEnd(node, node.length)
+              } else if (node === range.endContainer) {
+                nodeRange.setStart(node, 0)
+                nodeRange.setEnd(node, range.endOffset)
+              } else {
+                nodeRange.selectNodeContents(node)
+              }
+
+              try {
+                nodeRange.surroundContents(marker)
+              } catch (e) {
+                console.warn('Could not surround node with marker:', e)
+              }
+            })
+
+            if (nodesToWrap.length === 0) {
+              this.applyActiveSelectionHighlight(this.currentSelector)
+            }
+          }
+        } catch (e) {
+          console.warn('Could not surround selection with markers:', e)
+          this.applyActiveSelectionHighlight(this.currentSelector)
+        }
+      } else {
+        this.applyActiveSelectionHighlight(this.currentSelector)
+      }
+
+      this.$nextTick(() => {
+        const el = document.querySelector('.thread-window-textarea textarea')
+        if (el) {
+          el.focus({ preventScroll: true })
+        }
+      })
+    },
+    applyActiveSelectionHighlight (selector) {
+      if (!selector) return
+      // If a specific text selection exists, we should probably not highlight the whole element
+      // as a fallback unless explicitly requested.
+      // But for NEW selections that failed to surround, it's still useful.
+      try {
+        const el = document.querySelector(selector)
+        if (el) {
+          // Check if it's a large block element
+          const isBlock = ['P', 'DIV', 'SECTION', 'ARTICLE', 'UL', 'OL', 'LI'].includes(el.tagName)
+
+          el.classList.add('selection-is-active')
+          el.style.backgroundColor = isBlock ? 'rgba(144, 164, 174, 0.1)' : 'rgba(144, 164, 174, 0.3)'
+          el.style.boxShadow = isBlock ? '' : '0 0 0 2px rgba(144, 164, 174, 0.5)'
+          el.style.borderRadius = '3px'
+        }
+      } catch (e) {}
+    },
+    clearActiveSelectionHighlight () {
+      document.querySelectorAll('.selection-is-active').forEach(el => {
+        el.classList.remove('selection-is-active')
+        el.style.boxShadow = ''
+        el.style.borderRadius = el.classList.contains('text-highlight-marker') ? '2px' : ''
+        el.style.backgroundColor = el.classList.contains('text-highlight-marker') ? 'rgba(144, 164, 174, 0.15)' : ''
+      })
     },
     openExistingThread (comment) {
       this.isNewThread = false
       this.activeThread = comment
       this.newThreadContent = ''
+      this.currentSelector = comment.selector || ''
+      this.currentText = ''
       this.showThreadDialog = true
+
+      // Try to find specific marker span first
+      const marker = document.querySelector(`.text-highlight-marker[data-comment-id="${comment.id}"]`)
+      if (marker) {
+        marker.classList.add('selection-is-active')
+        marker.style.backgroundColor = 'rgba(144, 164, 174, 0.4)'
+        marker.style.boxShadow = '0 0 0 2px rgba(144, 164, 174, 0.6)'
+        marker.style.borderRadius = '3px'
+      } else if (!comment.selectedText) {
+        // ONLY fallback if there was no specific text selected (commenting on the whole element)
+        this.applyActiveSelectionHighlight(this.currentSelector)
+      }
+
+      this.$nextTick(() => {
+        const el = document.querySelector('.thread-window-textarea textarea')
+        if (el) {
+          el.focus({ preventScroll: true })
+        }
+      })
     },
     async submitThreadComment () {
       if (this.newThreadContent.trim().length < 2) return
 
-      console.log('Submitting comment. isNewThread:', this.isNewThread, 'selector:', this.isNewThread ? this.selectedSelector : this.activeThread.selector)
+      // Replies should not carry context anchors; only root contextual comments do.
+      const selectorToSend = this.isNewThread ?
+        (this.currentSelector || this.selectedSelector || this.pendingSelector || null) :
+        null
+
+      const textToSend = this.isNewThread ?
+        (this.currentText || this.selectedText || this.pendingText || null) :
+        null
+
+      console.log('Submitting comment. isNewThread:', this.isNewThread, 'selector:', selectorToSend, 'text:', textToSend)
 
       this.isBusy = true
       try {
         const resp = await this.$apollo.mutate({
           mutation: gql`
-            mutation ($pageId: Int!, $replyTo: Int, $content: String!, $selector: String) {
-              comments {
-                create (pageId: $pageId, replyTo: $replyTo, content: $content, selector: $selector) {
-                  responseResult { succeeded message }
-                  id
-                }
+          mutation ($pageId: Int!, $replyTo: Int, $content: String!, $selector: String, $selectedText: String) {
+            comments {
+              create (pageId: $pageId, replyTo: $replyTo, content: $content, selector: $selector, selectedText: $selectedText) {
+                responseResult { succeeded message }
+                id
               }
             }
-          `,
+          }
+        `,
           variables: {
             pageId: this.pageId,
             replyTo: this.isNewThread ? 0 : this.activeThread.id,
             content: this.newThreadContent,
-            selector: this.isNewThread ? (this.selectedSelector || null) : (this.activeThread.selector || null)
+            selector: selectorToSend,
+            selectedText: textToSend
           }
         })
 
         if (_.get(resp, 'data.comments.create.responseResult.succeeded', false)) {
           console.log('Comment created successfully. ID:', _.get(resp, 'data.comments.create.id'))
           this.newThreadContent = ''
-          if (this.isNewThread) {
-            this.showThreadDialog = false
-            this.selectedText = ''
-            this.selectedSelector = ''
-          }
+          this.closeThreadDialog()
           await this.fetch()
         } else {
           console.error('Comment creation failed:', _.get(resp, 'data.comments.create.responseResult.message'))
@@ -831,12 +1424,39 @@ export default {
       }
       this.isBusy = false
     },
+    handleThreadEnter (e) {
+      if (e.shiftKey) return
+      e.preventDefault()
+      this.submitThreadComment()
+    },
+    handleMainEnter (e) {
+      if (e.shiftKey) return
+      e.preventDefault()
+      this.postComment()
+    },
+    handleReplyEnter (e) {
+      if (e.shiftKey) return
+      e.preventDefault()
+      this.postReply()
+    },
+    handleEditEnter (e) {
+      if (e.shiftKey) return
+      e.preventDefault()
+      this.updateComment()
+    },
     processContextualComments () {
       // Clear existing bubbles and highlights
       document.querySelectorAll('.comment-bubble').forEach(el => el.remove())
       document.querySelectorAll('.comment-highlight').forEach(el => {
         el.classList.remove('comment-highlight')
         el.style.backgroundColor = ''
+      })
+      document.querySelectorAll('.text-highlight-marker').forEach(el => {
+        const parent = el.parentNode
+        if (parent) {
+          while (el.firstChild) parent.insertBefore(el.firstChild, el)
+          parent.removeChild(el)
+        }
       })
 
       // Group root comments by selector
@@ -846,32 +1466,34 @@ export default {
         try {
           const el = document.querySelector(comment.selector)
           if (el) {
-            // Apply pale highlight
-            el.classList.add('comment-highlight')
-            el.style.backgroundColor = 'rgba(144, 164, 174, 0.15)'
-            el.style.borderRadius = '3px'
+            // Apply precise highlight if text is available
+            if (comment.selectedText) {
+              this.highlightTextWithinElement(el, comment.selectedText, comment.id)
+            } else {
+              // Apply pale highlight
+              el.classList.add('comment-highlight')
+              el.style.backgroundColor = 'rgba(144, 164, 174, 0.15)'
+              el.style.borderRadius = '3px'
+            }
 
             // Create bubble icon
             const bubble = document.createElement('div')
             bubble.className = 'comment-bubble'
+            bubble.setAttribute('data-comment-id', comment.id)
             bubble.innerHTML = '<i class="v-icon notranslate mdi mdi-comment-text theme--light" style="font-size: 18px; color: #607D8B;"></i>'
             bubble.style.position = 'absolute'
             bubble.style.cursor = 'pointer'
-            bubble.style.zIndex = '5'
-            
+            bubble.style.zIndex = '2200'
+
             // Position bubble to the right of the element
-            // We use offsetTop/offsetLeft relative to document to handle absolute positioning
-            const rect = el.getBoundingClientRect()
+            const rects = el.getClientRects()
+            const lastRect = rects.length > 0 ? rects[rects.length - 1] : el.getBoundingClientRect()
             const scrollX = window.scrollX || window.pageXOffset
             const scrollY = window.scrollY || window.pageYOffset
-            
-            // We want it at the last line. getClientRects() gives us individual lines for multi-line elements
-            const rects = el.getClientRects()
-            const lastRect = rects.length > 0 ? rects[rects.length - 1] : rect
-            
+
             bubble.style.top = `${lastRect.top + scrollY}px`
             bubble.style.left = `${lastRect.right + scrollX + 5}px`
-            
+
             bubble.onclick = (e) => {
               e.stopPropagation()
               this.floatingBtnStyle = {
@@ -880,16 +1502,47 @@ export default {
               }
               this.openExistingThread(comment)
             }
-            
+
             document.body.appendChild(bubble)
           }
         } catch (e) {
           console.warn('Could not process contextual comment:', comment.id, e)
         }
       })
+    },
+    highlightTextWithinElement (element, text, commentId) {
+      if (!text || !element) return
+      const cleanText = text.trim()
+      if (cleanText.length === 0) return
+
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false)
+      let node
+      while ((node = walker.nextNode())) {
+        const nodeValue = node.nodeValue || ''
+        const index = nodeValue.indexOf(cleanText)
+        if (index !== -1) {
+          const range = document.createRange()
+          range.setStart(node, index)
+          range.setEnd(node, index + cleanText.length)
+
+          const marker = document.createElement('span')
+          marker.className = 'text-highlight-marker'
+          marker.setAttribute('data-comment-id', commentId)
+          marker.style.backgroundColor = 'rgba(144, 164, 174, 0.15)'
+          marker.style.borderRadius = '2px'
+
+          try {
+            range.surroundContents(marker)
+          } catch (e) {
+            console.warn('Could not surround text with marker:', cleanText, e)
+          }
+          break
+        }
+      }
     }
   },
   mounted () {
+    this.fetch(true)
     if (this.isContextualProvider) {
       this.setupTextSelection()
     }
@@ -907,6 +1560,7 @@ export default {
 <style lang="scss">
 .floating-comment-btn {
   transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: 2200 !important;
   &:hover {
     transform: scale(1.2);
   }
@@ -914,6 +1568,7 @@ export default {
 
 .floating-thread-window {
   position: fixed;
+  z-index: 2210 !important;
   display: flex;
   flex-direction: column;
   background-color: white;
@@ -951,7 +1606,7 @@ export default {
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   transition: transform 0.2s ease;
-  
+
   &:hover {
     transform: scale(1.15);
     background-color: #ECEFF1;
@@ -961,6 +1616,24 @@ export default {
     background-color: #37474F;
     &:hover { background-color: #455A64; }
   }
+}
+
+.active-selection-marker {
+  transition: all 0.3s ease;
+  display: inline;
+}
+
+.text-highlight-marker {
+  transition: all 0.3s ease;
+  display: inline;
+}
+
+.comment-highlight {
+  transition: all 0.3s ease;
+}
+
+.selection-is-active {
+  transition: all 0.3s ease;
 }
 
 .comments-post {
@@ -1012,6 +1685,66 @@ export default {
       font-size: .85rem;
       font-family: Roboto Mono, monospace;
     }
+  }
+}
+
+.comment-replies {
+  border-left: 3px solid rgba(144, 164, 174, 0.2);
+  padding-left: 16px;
+
+  .reply-item {
+    background-color: rgba(144, 164, 174, 0.03);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+
+    &:hover {
+      background-color: rgba(144, 164, 174, 0.06);
+    }
+  }
+}
+
+.comment-reply-form {
+  background-color: rgba(144, 164, 174, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px dashed rgba(144, 164, 174, 0.3);
+}
+
+.comment-actions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.comment-action-btn {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
+.comment-action-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(144, 164, 174, 0.18);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.theme--dark {
+  .comment-actions-row {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .comment-action-count {
+    background: rgba(144, 164, 174, 0.22);
+    color: rgba(255, 255, 255, 0.8);
   }
 }
 </style>

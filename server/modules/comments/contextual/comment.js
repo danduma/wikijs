@@ -61,12 +61,14 @@ module.exports = {
   /**
    * Create New Comment
    */
-  async create ({ page, replyTo, content, selector, user }) {
+  async create ({ page, replyTo, content, selector, selectedText, user }) {
+    WIKI.logger.info(`(COMMENTS/CONTEXTUAL) Creating new comment with selector: ${selector || 'none'}, text: ${selectedText || 'none'}`)
     // -> Build New Comment
     const newComment = {
       content,
       render: DOMPurify.sanitize(mkdown.render(content)),
-      selector,
+      selector: selector || null,
+      selectedText: selectedText || null,
       replyTo,
       pageId: page.id,
       authorId: user.id,
@@ -116,7 +118,16 @@ module.exports = {
     }
 
     // -> Save Comment to DB
+    console.error(`(COMMENTS/CONTEXTUAL) Inserting into DB: selector=${selector || 'none'}, text=${selectedText || 'none'}`)
     const cm = await WIKI.models.comments.query().insert(newComment)
+    
+    // Explicit verification for selector
+    if ((selector && !cm.selector) || (selectedText && !cm.selectedText)) {
+       console.error(`(COMMENTS/CONTEXTUAL) Model insert failed to return selector/text! Forcing update for ID ${cm.id}`)
+       await WIKI.models.comments.query().patch({ selector, selectedText }).where('id', cm.id)
+    }
+
+    console.error(`(COMMENTS/CONTEXTUAL) New comment posted: ID=${cm.id}, selector=${selector || 'none'}`)
 
     // -> Return Comment ID
     return cm.id

@@ -117,6 +117,10 @@ module.exports = {
     message: 'You are not authorized to post a comment on this page.',
     code: 8002
   }),
+  CommentVoteForbidden: CustomError('CommentVoteForbidden', {
+    message: 'You are not permitted to vote on comments.',
+    code: 8007
+  }),
   CommentViewForbidden: CustomError('CommentViewForbidden', {
     message: 'You are not authorized to view comments for this page.',
     code: 8006

@@ -91,7 +91,9 @@ module.exports = {
         tags: newTags || currentPage.tags.map(t => t.tag),
         isPublished: _.get(pageData, 'isPublished', currentPage.isPublished),
         isPrivate: false,
-        content: pageData.content,
+        // Pass the raw file contents so Pages.updatePage can parse frontmatter settings
+        // (e.g. `comments: false`) before stripping it from the stored content.
+        content: itemContents,
         user: user,
         skipStorage: true
       })
@@ -107,7 +109,9 @@ module.exports = {
         tags: newTags || [],
         isPublished: _.get(pageData, 'isPublished', true),
         isPrivate: false,
-        content: pageData.content,
+        // Pass the raw file contents so Pages.createPage can parse frontmatter settings
+        // (e.g. `comments: false`) before stripping it from the stored content.
+        content: itemContents,
         user: user,
         editor: pageEditor,
         skipStorage: true

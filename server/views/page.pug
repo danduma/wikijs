@@ -26,7 +26,7 @@ block body
       :page-id=page.id
       sidebar=Buffer.from(JSON.stringify(sidebar)).toString('base64')
       nav-mode=config.nav.mode
-      comments-enabled=config.features.featurePageComments
+      comments-enabled=effectivePermissions.comments.read
       effective-permissions=Buffer.from(JSON.stringify(effectivePermissions)).toString('base64')
       comments-external=comments.codeTemplate
       edit-shortcuts=Buffer.from(JSON.stringify(config.editShortcuts)).toString('base64')
@@ -35,8 +35,9 @@ block body
       )
       template(slot='contents')
         div!= page.render
-      template(slot='comments')
-        div!= comments.main
+      if effectivePermissions.comments.read
+        template(slot='comments')
+          div!= comments.main
   if injectCode.body
     != injectCode.body
   if config.features.featurePageComments && effectivePermissions.comments.read

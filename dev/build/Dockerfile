@@ -44,6 +44,9 @@ COPY --chown=node:node ./dev/build/config.yml ./config.yml
 COPY --chown=node:node ./package.json ./package.json
 COPY --chown=node:node ./LICENSE ./LICENSE
 
+# Copy themes directory (for custom themes)
+COPY --chown=node:node ./themes ./themes
+
 USER node
 
 VOLUME ["/wiki/data/content"]

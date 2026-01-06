@@ -334,6 +334,7 @@
     "whatwg-fetch": "3.6.2",
     "write-file-webpack-plugin": "4.5.1",
     "xterm": "4.9.0",
+    "yaml-loader": "0.7.0",
     "zxcvbn": "4.4.2"
   },
   "resolutions": {

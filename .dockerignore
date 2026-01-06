@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Development
+.vscode
+.idea
+*.sublime-*
+.scannerwork
+
+# Build artifacts
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Dependencies (will be installed during build)
+# node_modules is needed for build, but exclude these specific paths
+node_modules/.cache
+.npm
+
+# Test files
+test/
+tests/
+test-results/
+coverage/
+*.test.js
+*.spec.js
+
+# Data directories (not needed in image)
+data/
+repo/
+uploads/
+content/
+temp/
+*.sqlite
+
+# Config files (has its own in build)
+config.yml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Deployment scripts (not needed in image)
+scripts/
+*.sh
+
+# Assets (will be built)
+assets/
+.webpack-cache
+.fusebox
+
+# Vibes (your other stuff)
+vibes/
+
+# Keep themes - they ARE needed!
+# !themes/

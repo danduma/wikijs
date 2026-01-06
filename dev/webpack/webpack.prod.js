@@ -166,6 +166,12 @@ module.exports = {
         ]
       },
       {
+        test: /\.ya?ml$/,
+        use: [
+          { loader: 'yaml-loader' }
+        ]
+      },
+      {
         test: /\.(graphql|gql)$/,
         exclude: /node_modules/,
         use: [

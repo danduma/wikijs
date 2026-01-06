@@ -92,6 +92,22 @@
             )
             v-icon(color='grey') mdi-magnify
 
+          //- APPEARANCE MODE (Auto / Day / Night)
+
+          v-tooltip(bottom)
+            template(v-slot:activator='{ on }')
+              v-btn(
+                icon
+                tile
+                height='64'
+                v-on='on'
+                @click='cycleAppearanceMode'
+                :aria-label='appearanceAriaLabel'
+                )
+                v-icon(color='grey') {{ appearanceIcon }}
+            span {{ appearanceTooltip }}
+          v-divider(vertical)
+
           //- LANGUAGES
 
           template(v-if='mode === `view` && locales.length > 0')
@@ -254,6 +270,7 @@ import { get, sync } from 'vuex-pathify'
 import _ from 'lodash'
 
 import movePageMutation from 'gql/common/common-pages-mutation-move.gql'
+import { setAppearanceMode } from '../../helpers/theme-manager'
 
 /* global siteConfig, siteLangs */
 
@@ -302,6 +319,7 @@ export default {
     path: get('page/path'),
     locale: get('page/locale'),
     mode: get('page/mode'),
+    appearanceMode: get('site/appearanceMode'),
     name: get('user/name'),
     email: get('user/email'),
     pictureUrl: get('user/pictureUrl'),
@@ -340,6 +358,42 @@ export default {
     hasAnyPagePermissions () {
       return this.hasAdminPermission || this.hasWritePagesPermission || this.hasManagePagesPermission ||
         this.hasDeletePagesPermission || this.hasReadSourcePermission || this.hasReadHistoryPermission
+    },
+    appearanceModeNormalized () {
+      return ['auto', 'light', 'dark'].includes(this.appearanceMode) ? this.appearanceMode : 'auto'
+    },
+    appearanceIcon () {
+      switch (this.appearanceModeNormalized) {
+        case 'light':
+          return 'mdi-white-balance-sunny'
+        case 'dark':
+          return 'mdi-weather-night'
+        case 'auto':
+        default:
+          return 'mdi-brightness-auto'
+      }
+    },
+    appearanceTooltip () {
+      switch (this.appearanceModeNormalized) {
+        case 'light':
+          return 'Appearance: Day'
+        case 'dark':
+          return 'Appearance: Night'
+        case 'auto':
+        default:
+          return 'Appearance: Auto (system)'
+      }
+    },
+    appearanceAriaLabel () {
+      switch (this.appearanceModeNormalized) {
+        case 'light':
+          return 'Appearance mode: Day'
+        case 'dark':
+          return 'Appearance mode: Night'
+        case 'auto':
+        default:
+          return 'Appearance mode: Auto'
+      }
     }
   },
   created () {
@@ -391,10 +445,10 @@ export default {
       }
     },
     searchEnter () {
-      this.$root.$emit('searchEnter', true)
+      this.$root.$emit('search-enter', true)
     },
     searchMove(dir) {
-      this.$root.$emit('searchMove', dir)
+      this.$root.$emit('search-move', dir)
     },
     pageNew () {
       this.newPageModal = true
@@ -477,6 +531,11 @@ export default {
     },
     goHome () {
       window.location.assign('/')
+    },
+    cycleAppearanceMode () {
+      const cur = this.appearanceModeNormalized
+      const next = (cur === 'auto') ? 'light' : (cur === 'light') ? 'dark' : 'auto'
+      setAppearanceMode(next, this.$store)
     }
   }
 }

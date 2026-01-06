@@ -32,6 +32,7 @@ import localization from './modules/localization'
 // ====================================
 
 import helpers from './helpers'
+import { initThemeManager } from './helpers/theme-manager'
 
 // ====================================
 // Initialize Global Vars
@@ -204,10 +205,7 @@ let bootstrap = () => {
 
   const i18n = localization.init()
 
-  let darkModeEnabled = siteConfig.darkMode
-  if ((store.get('user/appearance') || '').length > 0) {
-    darkModeEnabled = (store.get('user/appearance') === 'dark')
-  }
+  const cleanupTheme = initThemeManager(store)
 
   window.WIKI = new Vue({
     el: '#root',
@@ -219,11 +217,15 @@ let bootstrap = () => {
     vuetify: new Vuetify({
       rtl: siteConfig.rtl,
       theme: {
-        dark: darkModeEnabled
+        dark: store.get('site/dark')
       }
     }),
     mounted () {
       this.$moment.locale(siteConfig.lang)
+      this.$store.watch(
+        (state) => state.site.dark,
+        (newValue) => { this.$vuetify.theme.dark = newValue }
+      )
       if ((store.get('user/dateFormat') || '').length > 0) {
         this.$moment.updateLocale(this.$moment.locale(), {
           longDateFormat: {
@@ -234,6 +236,9 @@ let bootstrap = () => {
       if ((store.get('user/timezone') || '').length > 0) {
         this.$moment.tz.setDefault(store.get('user/timezone'))
       }
+    },
+    beforeDestroy () {
+      if (cleanupTheme) cleanupTheme()
     }
   })
 

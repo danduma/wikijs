@@ -52,7 +52,7 @@
                   v-divider.mt-3
                   v-switch(
                     inset
-                    v-model='darkMode'
+                    v-model='darkDefault'
                     :label='$t(`admin:theme.darkMode`)'
                     color='primary'
                     persistent-hint
@@ -180,11 +180,11 @@ export default {
         injectHead: '',
         injectBody: ''
       },
-      darkModeInitial: false
+      darkDefaultInitial: false
     }
   },
   computed: {
-    darkMode: sync('site/dark'),
+    darkDefault: sync('site/darkDefault'),
     headers() {
       return [
         {
@@ -214,17 +214,11 @@ export default {
       ]
     }
   },
-  watch: {
-    'darkMode' (newValue, oldValue) {
-      this.$vuetify.theme.dark = newValue
-    }
-  },
   mounted() {
-    this.darkModeInitial = this.darkMode
+    this.darkDefaultInitial = this.darkDefault
   },
   beforeDestroy() {
-    this.darkMode = this.darkModeInitial
-    this.$vuetify.theme.dark = this.darkModeInitial
+    this.darkDefault = this.darkDefaultInitial
   },
   methods: {
     async save () {
@@ -236,7 +230,7 @@ export default {
           variables: {
             theme: this.config.theme,
             iconset: this.config.iconset,
-            darkMode: this.darkMode,
+            darkMode: this.darkDefault,
             tocPosition: this.config.tocPosition,
             injectCSS: this.config.injectCSS,
             injectHead: this.config.injectHead,
@@ -245,7 +239,7 @@ export default {
         })
         const resp = _.get(respRaw, 'data.theming.setConfig.responseResult', {})
         if (resp.succeeded) {
-          this.darkModeInitial = this.darkMode
+          this.darkDefaultInitial = this.darkDefault
           this.$store.commit('showNotification', {
             message: 'Theme settings updated successfully.',
             style: 'success',

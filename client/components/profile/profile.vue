@@ -290,7 +290,7 @@
                     v-select(
                       ref='iptAppearance'
                       :items='appearances'
-                      v-model='user.appearance'
+                      v-model='appearanceMode'
                       :label='$t(`profile:appearance`)'
                       solo
                       flat
@@ -350,8 +350,9 @@ import Cookies from 'js-cookie'
 import validate from 'validate.js'
 
 import PasswordStrength from '../common/password-strength.vue'
+import { setAppearanceMode } from '../../helpers/theme-manager'
 
-/* global WIKI, siteConfig */
+/* global WIKI */
 
 export default {
   i18nOptions: {
@@ -364,6 +365,7 @@ export default {
     return {
       saveLoading: false,
       changePassLoading: false,
+      appearanceMode: '',
       user: {
         name: 'unknown',
         location: '',
@@ -656,11 +658,12 @@ export default {
       return [
         { text: this.$t('profile:appearanceDefault'), value: '' },
         { text: this.$t('profile:appearanceLight'), value: 'light' },
-        { text: this.$t('profile:appearanceDark'), value: 'dark' }
+        { text: this.$t('profile:appearanceDark'), value: 'dark' },
+        { text: 'Auto (system)', value: 'auto' }
       ]
     },
     currentAppearance () {
-      return _.get(_.find(this.appearances, ['value', this.user.appearance]), 'text', false) || this.$t('profile:appearanceDefault')
+      return _.get(_.find(this.appearances, ['value', this.appearanceMode]), 'text', false) || this.$t('profile:appearanceDefault')
     },
     pictureUrl: get('user/pictureUrl'),
     picture () {
@@ -683,14 +686,17 @@ export default {
     }
   },
   watch: {
-    'user.appearance': (newValue, oldValue) => {
-      if (newValue === '') {
-        WIKI.$vuetify.theme.dark = siteConfig.darkMode
-      } else {
-        WIKI.$vuetify.theme.dark = (newValue === 'dark')
+    appearanceMode (newValue) {
+      const normalized = (newValue === '') ? null : newValue
+      setAppearanceMode(normalized, this.$store)
+
+      // Keep server preference in sync for light/dark/default only.
+      // Auto mode is stored locally only.
+      if (newValue === '' || newValue === 'light' || newValue === 'dark') {
+        this.user.appearance = newValue
       }
     },
-    'user.dateFormat': (newValue, oldValue) => {
+    'user.dateFormat' (newValue, oldValue) {
       if (newValue === '') {
         WIKI.$moment.updateLocale(WIKI.$moment.locale(), null)
       } else {
@@ -701,13 +707,16 @@ export default {
         })
       }
     },
-    'user.timezone': (newValue, oldValue) => {
+    'user.timezone' (newValue, oldValue) {
       if (newValue === '') {
         WIKI.$moment.tz.setDefault()
       } else {
         WIKI.$moment.tz.setDefault(newValue)
       }
     }
+  },
+  mounted () {
+    this.appearanceMode = this.$store.get('site/appearanceMode') || ''
   },
   methods: {
     /**

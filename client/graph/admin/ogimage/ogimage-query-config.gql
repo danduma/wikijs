@@ -1,0 +1,14 @@
+{
+  ogImage {
+    config {
+      enabled
+      serviceBaseUrl
+      defaultTemplate
+      authMode
+      sharedSecret
+      headerName
+      timeoutMs
+    }
+  }
+}
+

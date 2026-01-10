@@ -145,6 +145,8 @@ module.exports = async () => {
   // Routing
   // ----------------------------------------
 
+  app.use('/_og', ctrl.ogimage)
+
   app.use(async (req, res, next) => {
     const theme = await themingHelper.ensureValidThemeSelection({ fallbackTheme: 'default', persist: true })
     res.locals.siteConfig = {

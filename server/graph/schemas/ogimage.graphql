@@ -1,0 +1,50 @@
+# ===============================================
+# OG IMAGE
+# ===============================================
+
+extend type Query {
+  ogImage: OgImageQuery
+}
+
+extend type Mutation {
+  ogImage: OgImageMutation
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+type OgImageQuery {
+  config: OgImageConfig @auth(requires: ["manage:system"])
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+type OgImageMutation {
+  updateConfig(
+    enabled: Boolean
+    serviceBaseUrl: String
+    defaultTemplate: String
+    authMode: String
+    sharedSecret: String
+    headerName: String
+    timeoutMs: Int
+  ): DefaultResponse @auth(requires: ["manage:system"])
+}
+
+# -----------------------------------------------
+# TYPES
+# -----------------------------------------------
+
+type OgImageConfig {
+  enabled: Boolean!
+  serviceBaseUrl: String!
+  defaultTemplate: String!
+  authMode: String!
+  sharedSecret: String!
+  headerName: String!
+  timeoutMs: Int!
+}
+

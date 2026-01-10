@@ -462,6 +462,7 @@ router.get('/*', async (req, res, next) => {
       if (page) {
         _.set(res.locals, 'pageMeta.title', page.title)
         _.set(res.locals, 'pageMeta.description', page.description)
+        _.set(res.locals, 'pageMeta.image', WIKI.models.ogImage.getImageUrl(page))
 
         // -> Check Publishing State
         let pageIsPublished = page.isPublished

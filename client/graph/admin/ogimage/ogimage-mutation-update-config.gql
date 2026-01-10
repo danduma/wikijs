@@ -1,0 +1,29 @@
+mutation (
+  $enabled: Boolean
+  $serviceBaseUrl: String
+  $defaultTemplate: String
+  $authMode: String
+  $sharedSecret: String
+  $headerName: String
+  $timeoutMs: Int
+) {
+  ogImage {
+    updateConfig(
+      enabled: $enabled
+      serviceBaseUrl: $serviceBaseUrl
+      defaultTemplate: $defaultTemplate
+      authMode: $authMode
+      sharedSecret: $sharedSecret
+      headerName: $headerName
+      timeoutMs: $timeoutMs
+    ) {
+      responseResult {
+        succeeded
+        errorCode
+        slug
+        message
+      }
+    }
+  }
+}
+

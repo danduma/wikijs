@@ -65,6 +65,9 @@
             v-list-item(to='/comments')
               v-list-item-avatar(size='24', tile): v-icon mdi-comment-text-outline
               v-list-item-title {{ $t('admin:comments.title') }}
+            v-list-item(to='/ogimage', color='primary')
+              v-list-item-avatar(size='24', tile): v-icon mdi-image-outline
+              v-list-item-title OG Images
             v-list-item(to='/rendering', color='primary')
               v-list-item-avatar(size='24', tile): v-icon mdi-cogs
               v-list-item-title {{ $t('admin:rendering.title') }}
@@ -160,6 +163,7 @@ const router = new VueRouter({
     { path: '/analytics', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-analytics.vue') },
     { path: '/auth', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-auth.vue') },
     { path: '/comments', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-comments.vue') },
+    { path: '/ogimage', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-ogimage.vue') },
     { path: '/rendering', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-rendering.vue') },
     { path: '/editor', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-editor.vue') },
     { path: '/extensions', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-extensions.vue') },

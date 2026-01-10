@@ -3,6 +3,7 @@ const { full: mdEmoji } = require('markdown-it-emoji')
 const { JSDOM } = require('jsdom')
 const createDOMPurify = require('dompurify')
 const _ = require('lodash')
+const commentPathHelper = require('../../helpers/comment-path')
 const { AkismetClient } = require('akismet-api')
 const moment = require('moment')
 
@@ -61,13 +62,14 @@ module.exports = {
   /**
    * Create New Comment
    */
-  async create ({ page, replyTo, content, user }) {
+  async create ({ page, commentPageId, commentPagePath, replyTo, content, user }) {
     // -> Build New Comment
     const newComment = {
       content,
       render: DOMPurify.sanitize(mkdown.render(content)),
       replyTo,
-      pageId: page.id,
+      pageId: commentPageId || page.id,
+      pagePath: commentPagePath || commentPathHelper.canonicalCommentPath(page.path, page.localeCode).key,
       authorId: user.id,
       name: user.name,
       email: user.email,
@@ -141,8 +143,29 @@ module.exports = {
    * Get the page ID from a comment ID
    */
   async getPageIdFromCommentId (id) {
-    const result = await WIKI.models.comments.query().select('pageId').findById(id)
-    return (result) ? result.pageId : false
+    const canonicalLocale = _.get(WIKI, 'config.lang.code', 'en')
+    const threadKeyIncludesLocale = _.get(WIKI, 'data.commentProvider.config.threadKeyIncludesLocale', false)
+    const result = await WIKI.models.comments.query().select('pageId', 'pagePath').findById(id)
+    if (!result) return false
+    if (result.pageId) return result.pageId
+
+    if (result.pagePath) {
+      const target = commentPathHelper.canonicalCommentPath(result.pagePath)
+      const preferredLocale = threadKeyIncludesLocale ? target.locale : canonicalLocale
+      const page = await WIKI.models.pages.query().select('id')
+        .findOne({ localeCode: preferredLocale, path: target.path })
+      if (page) {
+        await WIKI.models.comments.query().findById(id).patch({ pageId: page.id })
+        return page.id
+      }
+      const anyPage = await WIKI.models.pages.query().select('id').findOne({ path: target.path })
+      if (anyPage) {
+        await WIKI.models.comments.query().findById(id).patch({ pageId: anyPage.id })
+        return anyPage.id
+      }
+    }
+
+    return false
   },
   /**
    * Get a comment by ID

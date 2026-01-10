@@ -21,3 +21,9 @@ props:
     hint: 'Minimum delay (in seconds) between comments per account. Note that all guests are considered as a single account.'
     maxWidth: 400
     order: 2
+  threadKeyIncludesLocale:
+    type: Boolean
+    title: Comment threads are per-locale
+    default: false
+    hint: 'When enabled, locale prefixes (e.g. /en/, /es/) are treated as part of a page identity for comments. When disabled (default), all locales share one comment thread for the same path.'
+    order: 3

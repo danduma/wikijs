@@ -1,5 +1,6 @@
 const _ = require('lodash')
 const graphHelper = require('../../helpers/graph')
+const commentPathHelper = require('../../helpers/comment-path')
 
 /* global WIKI */
 
@@ -65,14 +66,15 @@ module.exports = {
      * Fetch list of comments for a page
      */
     async list (obj, args, context) {
-      const page = await WIKI.models.pages.query().select('pages.id').findOne({ localeCode: args.locale, path: args.path })
+      const target = commentPathHelper.canonicalCommentPath(args.path, args.locale)
+      const page = await WIKI.models.pages.query().select('pages.id').findOne({ localeCode: args.locale, path: target.path })
         .withGraphJoined('tags')
         .modifyGraph('tags', builder => {
           builder.select('tag')
         })
       if (page) {
-        if (WIKI.auth.checkAccess(context.req.user, ['read:comments'], { tags: page.tags, ...args })) {
-          const comments = await WIKI.models.comments.query().where('pageId', page.id).orderBy('createdAt')
+        if (WIKI.auth.checkAccess(context.req.user, ['read:comments'], { tags: page.tags, locale: args.locale, path: target.path })) {
+          const comments = await WIKI.models.comments.query().where('pagePath', target.key).orderBy('createdAt')
           const commentIds = comments.map(c => c.id)
           const voteCountsById = await WIKI.models.commentVotes.getVoteCountsForComments(commentIds)
           const userVotesById = await WIKI.models.commentVotes.getUserVotesForComments({ commentIds, userId: context.req.user.id })
@@ -80,6 +82,7 @@ module.exports = {
 
           return comments.map(c => ({
             ...c,
+            pagePath: c.pagePath || target.key,
             authorName: c.name,
             authorEmail: c.email,
             authorIP: c.ip,
@@ -102,14 +105,36 @@ module.exports = {
      */
     async single (obj, args, context) {
       const cm = await WIKI.data.commentProvider.getCommentById(args.id)
-      if (!cm || !cm.pageId) {
+      if (!cm) {
         throw new WIKI.Error.CommentNotFound()
       }
-      const page = await WIKI.models.pages.query().select('localeCode', 'path').findById(cm.pageId)
-        .withGraphJoined('tags')
-        .modifyGraph('tags', builder => {
-          builder.select('tag')
-        })
+      const canonicalLocale = _.get(WIKI, 'config.lang.code', 'en')
+      const threadKeyIncludesLocale = _.get(WIKI, 'data.commentProvider.config.threadKeyIncludesLocale', false)
+      let page = null
+      if (cm.pageId) {
+        page = await WIKI.models.pages.query().select('localeCode', 'path').findById(cm.pageId)
+          .withGraphJoined('tags')
+          .modifyGraph('tags', builder => {
+            builder.select('tag')
+          })
+      } else if (cm.pagePath) {
+        const target = commentPathHelper.canonicalCommentPath(cm.pagePath)
+        const preferredLocale = threadKeyIncludesLocale ? target.locale : canonicalLocale
+        page = await WIKI.models.pages.query().select('id', 'localeCode', 'path')
+          .findOne({ localeCode: preferredLocale, path: target.path })
+          .withGraphJoined('tags')
+          .modifyGraph('tags', builder => {
+            builder.select('tag')
+          })
+        if (!page) {
+          page = await WIKI.models.pages.query().select('id', 'localeCode', 'path')
+            .findOne({ path: target.path })
+            .withGraphJoined('tags')
+            .modifyGraph('tags', builder => {
+              builder.select('tag')
+            })
+        }
+      }
       if (page) {
         if (WIKI.auth.checkAccess(context.req.user, ['read:comments'], {
           path: page.path,
@@ -121,6 +146,7 @@ module.exports = {
           const replyCount = await WIKI.models.comments.query().where({ replyTo: cm.id }).count({ count: 'id' }).first()
           return {
             ...cm,
+            pagePath: cm.pagePath || commentPathHelper.canonicalCommentPath(page.path, page.localeCode).key,
             authorName: cm.name,
             authorEmail: cm.email,
             authorIP: cm.ip,
@@ -135,7 +161,7 @@ module.exports = {
           throw new WIKI.Error.CommentViewForbidden()
         }
       } else {
-        WIKI.logger.warn(`Comment #${cm.id} is linked to a page #${cm.pageId} that doesn't exist! [ERROR]`)
+        WIKI.logger.warn(`Comment #${cm.id} is linked to a page that doesn't exist! [ERROR]`)
         throw new WIKI.Error.CommentGenericError()
       }
     }

@@ -12,6 +12,7 @@ const CleanCSS = require('clean-css')
 const TurndownService = require('turndown')
 const turndownPluginGfm = require('@joplin/turndown-plugin-gfm').gfm
 const cheerio = require('cheerio')
+const commentPathHelper = require('../helpers/comment-path')
 
 /* global WIKI */
 
@@ -128,8 +129,37 @@ module.exports = class Page extends Model {
    * @see https://vincit.github.io/objection.js/api/types/#type-statichookarguments
    */
   static async beforeDelete({ asFindQuery }) {
-    const page = await asFindQuery().select('id')
-    await WIKI.models.comments.query().delete().where('pageId', page[0].id)
+    const pages = await asFindQuery().select('id')
+    const ids = pages.map(p => p.id)
+    if (ids.length < 1) return
+
+    // Preserve comments across page re-ingestion:
+    // null-out pageId (FK) but keep comments.pagePath as the stable identifier.
+    await WIKI.models.comments.query().patch({ pageId: null }).whereIn('pageId', ids)
+  }
+
+  /**
+   * Reconnect orphaned comments for a given page path.
+   *
+   * Since comments are shared across locales, we only reconnect the pageId cache
+   * to the canonical locale page to keep it deterministic.
+   */
+  static async reconnectCommentsForPage(page) {
+    const canonicalLocale = _.get(WIKI, 'config.lang.code', 'en')
+    const threadKeyIncludesLocale = _.get(WIKI, 'data.commentProvider.config.threadKeyIncludesLocale', false)
+    if (!page) return 0
+    if (!threadKeyIncludesLocale && page.localeCode !== canonicalLocale) return 0
+
+    const commentKey = commentPathHelper.canonicalCommentPath(page.path, page.localeCode).key
+    const updated = await WIKI.models.comments.query()
+      .patch({ pageId: page.id })
+      .where('pagePath', commentKey)
+      .whereNull('pageId')
+
+    if (updated > 0) {
+      WIKI.logger.info(`Reconnected ${updated} comments to canonical page: ${page.path}`)
+    }
+    return updated
   }
   /**
    * Cache Schema
@@ -333,6 +363,9 @@ module.exports = class Page extends Model {
       userId: opts.user.id,
       isPrivate: opts.isPrivate
     })
+
+    // -> Reconnect orphaned comments (re-ingestion support)
+    await WIKI.models.pages.reconnectCommentsForPage(page)
 
     // -> Save Tags
     if (opts.tags && opts.tags.length > 0) {
@@ -751,6 +784,14 @@ module.exports = class Page extends Model {
       title: destinationTitle,
       hash: destinationHash
     }).findById(page.id)
+
+    // -> Update comment threads to follow the new canonical identity key
+    const oldKey = commentPathHelper.canonicalCommentPath(page.path, page.localeCode).key
+    const newKey = commentPathHelper.canonicalCommentPath(opts.destinationPath, opts.destinationLocale).key
+    if (newKey !== oldKey) {
+      await WIKI.models.comments.query().patch({ pagePath: newKey }).where('pagePath', oldKey)
+    }
+
     await WIKI.models.pages.deletePageFromCache(page.hash)
     WIKI.events.outbound.emit('deletePageFromCache', page.hash)
 

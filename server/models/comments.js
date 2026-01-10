@@ -1,6 +1,7 @@
 const Model = require('objection').Model
 const validate = require('validate.js')
 const _ = require('lodash')
+const commentPathHelper = require('../helpers/comment-path')
 
 /* global WIKI */
 
@@ -23,6 +24,7 @@ module.exports = class Comment extends Model {
         selectedText: {type: ['string', 'null']},
         replyTo: {type: 'integer'},
         pageId: {type: 'integer'},
+        pagePath: {type: 'string'},
         authorId: {type: 'integer'},
         name: {type: 'string'},
         email: {type: 'string'},
@@ -65,8 +67,11 @@ module.exports = class Comment extends Model {
   /**
    * Post New Comment
    */
-  static async postNewComment ({ pageId, replyTo, content, selector, selectedText, guestName, guestEmail, user, ip }) {
+  static async postNewComment ({ pageId, pagePath, pageLocale, replyTo, content, selector, selectedText, guestName, guestEmail, user, ip }) {
     console.error(`(MODELS/COMMENTS) postNewComment: selector=${selector || 'none'}, text=${selectedText || 'none'}`)
+    const canonicalLocale = _.get(WIKI, 'config.lang.code', 'en')
+    const threadKeyIncludesLocale = _.get(WIKI, 'data.commentProvider.config.threadKeyIncludesLocale', false)
+
     // -> Input validation
     if (user.id === 2) {
       const validation = validate({
@@ -100,15 +105,54 @@ module.exports = class Comment extends Model {
       throw new WIKI.Error.CommentContentMissing()
     }
 
+    // -> Canonicalize target path for comment identity
+    let parsedTarget = null
+    if (pagePath) {
+      parsedTarget = commentPathHelper.canonicalCommentPath(pagePath, pageLocale || null)
+      pagePath = parsedTarget.key
+    }
+
+    // -> Load Page (for permission checks / provider metadata)
+    let page = null
+    if (pageId) {
+      page = await WIKI.models.pages.getPageFromDb(pageId)
+      if (page && !pagePath) {
+        parsedTarget = commentPathHelper.canonicalCommentPath(page.path, page.localeCode)
+        pagePath = parsedTarget.key
+      }
+    } else if (pagePath) {
+      // Prefer target locale when thread keys include locale; otherwise prefer canonical locale.
+      const preferredLocale = threadKeyIncludesLocale ? _.get(parsedTarget, 'locale', canonicalLocale) : canonicalLocale
+      const preferredPath = _.get(parsedTarget, 'path', null)
+
+      page = await WIKI.models.pages.query()
+        .findOne({ localeCode: preferredLocale, path: preferredPath })
+        .withGraphJoined('tags')
+        .modifyGraph('tags', builder => builder.select('tag'))
+
+      if (!page) {
+        page = await WIKI.models.pages.query()
+          .findOne({ path: preferredPath })
+          .withGraphJoined('tags')
+          .modifyGraph('tags', builder => builder.select('tag'))
+      }
+    } else {
+      throw new WIKI.Error.InputInvalid('Either pageId or pagePath required')
+    }
+
+    if (!page) {
+      throw new WIKI.Error.PageNotFound()
+    }
+
     // -> Enforce 1-level nesting: replies-to-replies always target the root comment.
-    // Also validate that the reply target exists and is part of the same page.
+    // Also validate that the reply target exists and is part of the same canonical pagePath.
     replyTo = _.toInteger(replyTo || 0)
     if (replyTo > 0) {
-      const parent = await this.query().select('id', 'replyTo', 'pageId').findById(replyTo)
+      const parent = await this.query().select('id', 'replyTo', 'pageId', 'pagePath').findById(replyTo)
       if (!parent) {
         throw new WIKI.Error.CommentNotFound()
       }
-      if (_.toInteger(parent.pageId) !== _.toInteger(pageId)) {
+      if (parent.pagePath && parent.pagePath !== pagePath) {
         throw new WIKI.Error.InputInvalid('Invalid reply target.')
       }
       if (_.toInteger(parent.replyTo) > 0) {
@@ -116,23 +160,28 @@ module.exports = class Comment extends Model {
       }
     }
 
-    // -> Load Page
-    const page = await WIKI.models.pages.getPageFromDb(pageId)
-    if (page) {
-      if (!WIKI.auth.checkAccess(user, ['write:comments'], {
-        path: page.path,
-        locale: page.localeCode,
-        tags: page.tags
-      })) {
-        throw new WIKI.Error.CommentPostForbidden()
-      }
-    } else {
-      throw new WIKI.Error.PageNotFound()
+    if (!WIKI.auth.checkAccess(user, ['write:comments'], {
+      path: page.path,
+      locale: page.localeCode,
+      tags: page.tags
+    })) {
+      throw new WIKI.Error.CommentPostForbidden()
+    }
+
+    // -> Deterministic pageId cache:
+    // Prefer canonical locale page id for this path (comments are keyed by pagePath).
+    let commentPageId = page.id
+    if (pagePath && !threadKeyIncludesLocale) {
+      const canonicalPage = await WIKI.models.pages.query().select('id')
+        .findOne({ localeCode: canonicalLocale, path: page.path })
+      if (canonicalPage) commentPageId = canonicalPage.id
     }
 
     // -> Process by comment provider
     return WIKI.data.commentProvider.create({
       page,
+      commentPageId,
+      commentPagePath: pagePath,
       replyTo,
       content,
       selector: selector || null,

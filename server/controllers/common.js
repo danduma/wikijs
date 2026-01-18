@@ -151,6 +151,10 @@ router.get(['/e', '/e/*'], async (req, res, next) => {
 
     // Handle missing extra field
     page.extra = page.extra || { css: '', js: '' }
+    page.extra.comments = _.get(page.extra, 'comments', true)
+    page.extra.toc = _.get(page.extra, 'toc', true)
+    page.extra.tags = _.get(page.extra, 'tags', true)
+    page.extra.history = _.get(page.extra, 'history', true)
 
     // -> Beautify Script CSS
     if (!_.isEmpty(page.extra.css)) {
@@ -181,7 +185,11 @@ router.get(['/e', '/e/*'], async (req, res, next) => {
       updatedAt: new Date().toISOString(),
       extra: {
         css: '',
-        js: ''
+        js: '',
+        comments: true,
+        toc: true,
+        tags: true,
+        history: true
       }
     }
 
@@ -525,6 +533,10 @@ router.get('/*', async (req, res, next) => {
 
         // Handle missing extra field
         page.extra = page.extra || { css: '', js: '' }
+        page.extra.comments = _.get(page.extra, 'comments', true)
+        page.extra.toc = _.get(page.extra, 'toc', true)
+        page.extra.tags = _.get(page.extra, 'tags', true)
+        page.extra.history = _.get(page.extra, 'history', true)
 
         if (!_.isEmpty(page.extra.css)) {
           injectCode.css = `${injectCode.css}\n${page.extra.css}`

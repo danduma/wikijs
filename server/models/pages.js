@@ -25,6 +25,16 @@ const frontmatterRegex = {
 const punctuationRegex = /[!,:;/\\_+\-=()&#@<>$~%^*[\]{}"'|]+|(\.\s)|(\s\.)/ig
 // const htmlEntitiesRegex = /(&#[0-9]{3};)|(&#x[a-zA-Z0-9]{2};)/ig
 
+const resolveFrontmatterFlag = (metadata, key, fallback, altKeys = []) => {
+  const keys = [key, ...altKeys]
+  for (const entry of keys) {
+    if (!entry) continue
+    const value = _.get(metadata, entry)
+    if (_.isBoolean(value)) return value
+  }
+  return fallback
+}
+
 /**
  * Pages model
  */
@@ -189,7 +199,10 @@ module.exports = class Page extends Model {
       extra: {
         js: 'string',
         css: 'string',
-        comments: 'boolean'
+        comments: 'boolean',
+        toc: 'boolean',
+        tags: 'boolean',
+        history: 'boolean'
       },
       title: 'string',
       toc: 'string',
@@ -307,7 +320,10 @@ module.exports = class Page extends Model {
     // -> Parse frontmatter for custom settings
     const contentType = _.get(_.find(WIKI.data.editors, ['key', opts.editor]), `contentType`, 'text')
     const parsedMetadata = WIKI.models.pages.parseMetadata(opts.content, contentType)
-    const pageCommentsEnabled = _.get(parsedMetadata, 'comments', true)
+    const pageCommentsEnabled = resolveFrontmatterFlag(parsedMetadata, 'comments', true)
+    const pageTocEnabled = resolveFrontmatterFlag(parsedMetadata, 'toc', true, ['showToc'])
+    const pageTagsEnabled = resolveFrontmatterFlag(parsedMetadata, 'tags', true, ['showTags'])
+    const pageHistoryEnabled = resolveFrontmatterFlag(parsedMetadata, 'history', true, ['showHistory'])
     if (parsedMetadata.content) {
       opts.content = parsedMetadata.content
     }
@@ -354,7 +370,10 @@ module.exports = class Page extends Model {
       extra: JSON.stringify({
         js: scriptJs,
         css: scriptCss,
-        comments: pageCommentsEnabled
+        comments: pageCommentsEnabled,
+        toc: pageTocEnabled,
+        tags: pageTagsEnabled,
+        history: pageHistoryEnabled
       })
     })
     const page = await WIKI.models.pages.getPageFromDb({
@@ -433,7 +452,11 @@ module.exports = class Page extends Model {
     // -> Parse frontmatter for custom settings
     const contentType = ogPage.contentType || 'markdown'
     const parsedMetadata = WIKI.models.pages.parseMetadata(opts.content, contentType)
-    const pageCommentsEnabled = _.get(parsedMetadata, 'comments', _.get(ogPage, 'extra.comments', true))
+    const existingExtra = _.isPlainObject(ogPage.extra) ? ogPage.extra : {}
+    const pageCommentsEnabled = resolveFrontmatterFlag(parsedMetadata, 'comments', _.get(existingExtra, 'comments', true))
+    const pageTocEnabled = resolveFrontmatterFlag(parsedMetadata, 'toc', _.get(existingExtra, 'toc', true), ['showToc'])
+    const pageTagsEnabled = resolveFrontmatterFlag(parsedMetadata, 'tags', _.get(existingExtra, 'tags', true), ['showTags'])
+    const pageHistoryEnabled = resolveFrontmatterFlag(parsedMetadata, 'history', _.get(existingExtra, 'history', true), ['showHistory'])
     if (parsedMetadata.content) {
       opts.content = parsedMetadata.content
     }
@@ -486,7 +509,10 @@ module.exports = class Page extends Model {
         ...ogPage.extra,
         js: scriptJs,
         css: scriptCss,
-        comments: pageCommentsEnabled
+        comments: pageCommentsEnabled,
+        toc: pageTocEnabled,
+        tags: pageTagsEnabled,
+        history: pageHistoryEnabled
       })
     }).where('id', ogPage.id)
     let page = await WIKI.models.pages.getPageFromDb(ogPage.id)
@@ -1123,7 +1149,10 @@ module.exports = class Page extends Model {
       extra: {
         css: _.get(page, 'extra.css', ''),
         js: _.get(page, 'extra.js', ''),
-        comments: _.get(page, 'extra.comments', true)
+        comments: _.get(page, 'extra.comments', true),
+        toc: _.get(page, 'extra.toc', true),
+        tags: _.get(page, 'extra.tags', true),
+        history: _.get(page, 'extra.history', true)
       },
       isPrivate: page.isPrivate === 1 || page.isPrivate === true,
       isPublished: page.isPublished === 1 || page.isPublished === true,

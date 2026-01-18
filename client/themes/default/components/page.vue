@@ -51,10 +51,10 @@
       v-container.grey.pa-0(fluid, :class='$vuetify.theme.dark ? `darken-4-l3` : `lighten-4`')
         v-row.page-header-section(no-gutters, align-content='center', style='height: 90px;')
           v-col.page-col-content.is-page-header(
-            :offset-xl='tocPosition === `left` ? 2 : 0'
-            :offset-lg='tocPosition === `left` ? 3 : 0'
-            :xl='tocPosition === `right` ? 10 : false'
-            :lg='tocPosition === `right` ? 9 : false'
+            :offset-xl='tocEnabled && tocPosition === `left` ? 2 : 0'
+            :offset-lg='tocEnabled && tocPosition === `left` ? 3 : 0'
+            :xl='tocEnabled && tocPosition === `right` ? 10 : false'
+            :lg='tocEnabled && tocPosition === `right` ? 9 : false'
             style='margin-top: auto; margin-bottom: auto;'
             :class='$vuetify.rtl ? `pr-4` : `pl-4`'
             )
@@ -63,7 +63,7 @@
               .caption.grey--text.text--darken-1 {{description}}
             .page-edit-shortcuts(
               v-if='editShortcutsObj.editMenuBar'
-              :class='tocPosition === `right` ? `is-right` : ``'
+              :class='tocEnabled && tocPosition === `right` ? `is-right` : ``'
               )
               v-btn(
                 v-if='editShortcutsObj.editMenuBtn'
@@ -86,7 +86,7 @@
       v-container.pl-5.pt-4(fluid, grid-list-xl)
         v-layout(row)
           v-flex.page-col-sd(
-            v-if='tocPosition !== `off` && $vuetify.breakpoint.lgAndUp'
+            v-if='tocEnabled && tocPosition !== `off` && $vuetify.breakpoint.lgAndUp'
             :order-xs1='tocPosition !== `right`'
             :order-xs2='tocPosition === `right`'
             lg3
@@ -106,7 +106,7 @@
                       v-list-item-title.px-3.caption.grey--text(:class='$vuetify.theme.dark ? `text--lighten-1` : `text--darken-1`') {{tocSubItem.title}}
                     //- v-divider(inset, v-if='tocIdx < toc.length - 1')
 
-            v-card.page-tags-card.mb-5(v-if='tags.length > 0')
+            v-card.page-tags-card.mb-5(v-if='tagsEnabled && tags.length > 0')
               .pa-5
                 .overline.teal--text.pb-2(:class='$vuetify.theme.dark ? `text--lighten-3` : ``') {{$t('common:page.tags')}}
                 v-chip.mr-1.mb-1(
@@ -174,7 +174,7 @@
                         :href='"/h/" + locale + "/" + path'
                         v-on='on'
                         x-small
-                        v-if='hasReadHistoryPermission'
+                        v-if='canReadHistory'
                         :aria-label='$t(`common:header.history`)'
                         )
                         v-icon(color='indigo', dense) mdi-history
@@ -222,8 +222,8 @@
 
           v-flex.page-col-content(
             xs12
-            :lg9='tocPosition !== `off`'
-            :xl10='tocPosition !== `off`'
+            :lg9='tocEnabled && tocPosition !== `off`'
+            :xl10='tocEnabled && tocPosition !== `off`'
             :order-xs1='tocPosition === `right`'
             :order-xs2='tocPosition !== `right`'
             )
@@ -251,7 +251,7 @@
                       :aria-label='$t(`common:page.editPage`)'
                       )
                       v-icon mdi-pencil
-                  v-tooltip(:right='$vuetify.rtl', :left='!$vuetify.rtl', v-if='hasReadHistoryPermission')
+                  v-tooltip(:right='$vuetify.rtl', :left='!$vuetify.rtl', v-if='canReadHistory')
                     template(v-slot:activator='{ on }')
                       v-btn(
                         fab
@@ -474,6 +474,18 @@ export default {
       type: Boolean,
       default: false
     },
+    tocEnabled: {
+      type: Boolean,
+      default: true
+    },
+    tagsEnabled: {
+      type: Boolean,
+      default: true
+    },
+    historyEnabled: {
+      type: Boolean,
+      default: true
+    },
     effectivePermissions: {
       type: String,
       default: ''
@@ -562,9 +574,12 @@ export default {
     hasDeletePagesPermission: get('page/effectivePermissions@pages.delete'),
     hasReadSourcePermission: get('page/effectivePermissions@source.read'),
     hasReadHistoryPermission: get('page/effectivePermissions@history.read'),
+    canReadHistory () {
+      return this.historyEnabled && this.hasReadHistoryPermission
+    },
     hasAnyPagePermissions () {
       return this.hasAdminPermission || this.hasWritePagesPermission || this.hasManagePagesPermission ||
-        this.hasDeletePagesPermission || this.hasReadSourcePermission || this.hasReadHistoryPermission
+        this.hasDeletePagesPermission || this.hasReadSourcePermission || this.canReadHistory
     },
     printView: sync('site/printView'),
     editMenuExternalUrl () {

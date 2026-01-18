@@ -452,6 +452,7 @@ module.exports = {
   getEffectivePermissions (req, page, pageObj = null) {
     // Check if page has comments disabled via frontmatter
     const pageCommentsEnabled = pageObj ? _.get(pageObj, 'extra.comments', true) : true
+    const pageHistoryEnabled = pageObj ? _.get(pageObj, 'extra.history', true) : true
 
     return {
       comments: {
@@ -460,7 +461,7 @@ module.exports = {
         manage: WIKI.config.features.featurePageComments && pageCommentsEnabled ? WIKI.auth.checkAccess(req.user, ['manage:comments'], page) : false
       },
       history: {
-        read: WIKI.auth.checkAccess(req.user, ['read:history'], page)
+        read: pageHistoryEnabled ? WIKI.auth.checkAccess(req.user, ['read:history'], page) : false
       },
       source: {
         read: WIKI.auth.checkAccess(req.user, ['read:source'], page)

@@ -27,6 +27,9 @@ block body
       sidebar=Buffer.from(JSON.stringify(sidebar)).toString('base64')
       nav-mode=config.nav.mode
       comments-enabled=effectivePermissions.comments.read
+      :toc-enabled=(page.extra && page.extra.toc === false ? 'false' : 'true')
+      :tags-enabled=(page.extra && page.extra.tags === false ? 'false' : 'true')
+      :history-enabled=(page.extra && page.extra.history === false ? 'false' : 'true')
       effective-permissions=Buffer.from(JSON.stringify(effectivePermissions)).toString('base64')
       comments-external=comments.codeTemplate
       edit-shortcuts=Buffer.from(JSON.stringify(config.editShortcuts)).toString('base64')

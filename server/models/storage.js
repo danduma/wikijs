@@ -7,6 +7,12 @@ const commonHelper = require('../helpers/common')
 
 /* global WIKI */
 
+const MAX_LOG_CHARS = 8000
+const trimLog = (log) => {
+  if (!log) return log
+  return log.length > MAX_LOG_CHARS ? log.slice(log.length - MAX_LOG_CHARS) : log
+}
+
 /**
  * Storage model
  */
@@ -69,6 +75,7 @@ module.exports = class Storage extends Model {
             state: {
               status: 'pending',
               message: '',
+              log: null,
               lastAttempt: null
             }
           })
@@ -129,14 +136,17 @@ module.exports = class Storage extends Model {
         target.fn = require(`../modules/storage/${target.key}/storage`)
         target.fn.config = target.config
         target.fn.mode = target.mode
+        const logLines = [`[${new Date().toISOString()}] Init start: ${target.key}`]
         try {
           await target.fn.init()
+          logLines.push(`[${new Date().toISOString()}] Init completed.`)
 
           // -> Save succeeded init state
           await WIKI.models.storage.query().patch({
             state: {
               status: 'operational',
               message: '',
+              log: trimLog(logLines.join('\n')),
               lastAttempt: new Date().toISOString()
             }
           }).where('key', target.key)
@@ -161,11 +171,16 @@ module.exports = class Storage extends Model {
             }, target.key)
           }
         } catch (err) {
+          logLines.push(`[${new Date().toISOString()}] ERROR: ${err.message}`)
+          if (err.stack) {
+            logLines.push(err.stack)
+          }
           // -> Save initialization error
           await WIKI.models.storage.query().patch({
             state: {
               status: 'error',
               message: err.message,
+              log: trimLog(logLines.join('\n')),
               lastAttempt: new Date().toISOString()
             }
           }).where('key', target.key)

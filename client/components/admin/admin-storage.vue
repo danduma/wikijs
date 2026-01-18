@@ -73,7 +73,8 @@
                           v-icon(color='red') mdi-information
                       v-card(width='450')
                         v-toolbar(flat, color='red', dark, dense) {{$t('admin:storage.errorMsg')}}
-                        v-card-text {{tgt.message}}
+                        v-card-text
+                          pre.storage-log {{tgt.log || tgt.message}}
 
               v-divider(v-if='n < status.length - 1')
             v-list-item(v-if='status.length < 1')
@@ -367,6 +368,14 @@ export default {
     max-width: 100%;
     max-height: 50px;
   }
+}
+
+.storage-log {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 </style>

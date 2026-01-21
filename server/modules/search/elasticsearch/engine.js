@@ -181,7 +181,8 @@ module.exports = {
           locale: r._source.locale,
           path: r._source.path,
           title: r._source.title,
-          description: r._source.description
+          description: r._source.description,
+          tags: r._source.tags
         })),
         suggestions: _.reject(_.get(results, 'suggest.suggestions', []).map(s => _.get(s, 'options[0].text', false)), s => !s),
         totalHits: _.get(results, this.config.apiVersion === '8.x' ? 'hits.total.value' : 'body.hits.total.value', _.get(results, this.config.apiVersion === '8.x' ? 'hits.total' : 'body.hits.total', 0))

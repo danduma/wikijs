@@ -48,7 +48,10 @@ module.exports = {
       })
       .limit(WIKI.config.search.maxHits)
     return {
-      results,
+      results: results.map(r => ({
+        ...r,
+        tags: r.tags ? r.tags.map(t => t.tag) : []
+      })),
       suggestions: [],
       totalHits: results.length
     }

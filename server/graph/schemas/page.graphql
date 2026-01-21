@@ -153,7 +153,7 @@ type PageMutation {
 
   render(
     id: Int!
-  ): DefaultResponse @auth(requires: ["manage:system"])
+  ): DefaultResponse @auth(requires: ["write:pages", "manage:pages", "manage:system"])
 
   restore(
     pageId: Int!
@@ -266,6 +266,7 @@ type PageSearchResult {
   description: String!
   path: String!
   locale: String!
+  tags: [String]
 }
 
 type PageListItem {

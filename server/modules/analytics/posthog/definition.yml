@@ -1,0 +1,25 @@
+key: posthog
+title: PostHog Analytics
+description: PostHog is a product analytics platform with session replay, feature flags, and more.
+author: PostHog
+logo: https://posthog.com/brand/posthog-logo.svg
+website: https://posthog.com
+isAvailable: true
+props:
+  projectApiKey:
+    type: String
+    title: Project API Key
+    hint: Find your Project API Key in your PostHog project settings.
+    order: 1
+  apiHost:
+    type: String
+    title: API Host
+    hint: The PostHog API host (e.g. https://us.i.posthog.com). Use your self-hosted URL if applicable; no trailing slash.
+    default: https://us.i.posthog.com
+    order: 2
+  defaults:
+    type: String
+    title: Defaults Snapshot Date
+    hint: Optional. Matches the defaults version from PostHog's snippet (e.g. 2025-11-30).
+    default: "2025-11-30"
+    order: 3

@@ -558,9 +558,15 @@ module.exports = {
      */
     async render (obj, args, context) {
       try {
-        const page = await WIKI.models.pages.query().findById(args.id)
+        const page = await WIKI.models.pages.query().select('id', 'path', 'localeCode').findById(args.id)
         if (!page) {
           throw new WIKI.Error.PageNotFound()
+        }
+        if (!WIKI.auth.checkAccess(context.req.user, ['write:pages', 'manage:pages'], {
+          path: page.path,
+          locale: page.localeCode
+        })) {
+          throw new WIKI.Error.PageUpdateForbidden()
         }
         await WIKI.models.pages.renderPage(page)
         return {

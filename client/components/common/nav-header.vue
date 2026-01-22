@@ -166,6 +166,9 @@
                 v-list-item.pl-4(@click='pageSource', v-if='mode !== `source` && hasReadSourcePermission')
                   v-list-item-avatar(size='24', tile): v-icon(color='indigo') mdi-code-tags
                   v-list-item-title.body-2 {{$t('common:header.viewSource')}}
+                v-list-item.pl-4(@click='pageRerender', v-if='hasWritePagesPermission', :disabled='rerenderLoading')
+                  v-list-item-avatar(size='24', tile): v-icon(:color='rerenderLoading ? `grey` : `indigo`') mdi-cube-scan
+                  v-list-item-title.body-2 Re-Render
                 v-list-item.pl-4(@click='pageConvert', v-if='hasWritePagesPermission')
                   v-list-item-avatar(size='24', tile): v-icon(color='indigo') mdi-lightning-bolt
                   v-list-item-title.body-2 {{$t('common:header.convert')}}
@@ -270,6 +273,7 @@ import { get, sync } from 'vuex-pathify'
 import _ from 'lodash'
 
 import movePageMutation from 'gql/common/common-pages-mutation-move.gql'
+import gql from 'graphql-tag'
 import { setAppearanceMode } from '../../helpers/theme-manager'
 
 /* global siteConfig, siteLangs */
@@ -295,6 +299,7 @@ export default {
       searchIsShown: true,
       searchAdvMenuShown: false,
       newPageModal: false,
+      rerenderLoading: false,
       movePageModal: false,
       convertPageModal: false,
       deletePageModal: false,
@@ -467,6 +472,47 @@ export default {
     },
     pageSource () {
       window.location.assign(`/s/${this.locale}/${this.path}`)
+    },
+    async pageRerender () {
+      if (this.rerenderLoading) return
+      const pageId = this.$store.get('page/id')
+      if (!pageId) return
+      this.rerenderLoading = true
+      this.$store.commit(`loadingStart`, 'page-rerender')
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`
+            mutation($id: Int!) {
+              pages {
+                render(id: $id) {
+                  responseResult {
+                    succeeded
+                    errorCode
+                    message
+                  }
+                }
+              }
+            }
+          `,
+          variables: {
+            id: pageId
+          }
+        })
+        const result = _.get(resp, 'data.pages.render.responseResult', {})
+        if (result.succeeded) {
+          this.$store.commit('showNotification', {
+            style: 'success',
+            message: 'Page re-rendered successfully.',
+            icon: 'check'
+          })
+        } else {
+          throw new Error(result.message || this.$t('common:error.unexpected'))
+        }
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+      this.$store.commit(`loadingStop`, 'page-rerender')
+      this.rerenderLoading = false
     },
     pageDuplicate () {
       const pathParts = this.path.split('/')

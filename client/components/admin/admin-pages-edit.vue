@@ -39,9 +39,9 @@
                 v-list-item-icon
                   v-icon(color='indigo') mdi-pencil
                 v-list-item-title Edit
-              v-list-item(@click='', disabled)
+              v-list-item(@click='rerenderPage', :disabled='rerenderLoading')
                 v-list-item-icon
-                  v-icon(color='grey') mdi-cube-scan
+                  v-icon(:color='rerenderLoading ? `grey` : `indigo`') mdi-cube-scan
                 v-list-item-title Re-Render
               v-list-item(@click='', disabled)
                 v-list-item-icon
@@ -163,6 +163,7 @@
 <script>
 import _ from 'lodash'
 import { StatusIndicator } from 'vue-status-indicator'
+import gql from 'graphql-tag'
 
 import pageQuery from 'gql/admin/pages/pages-query-single.gql'
 import deletePageMutation from 'gql/common/common-pages-mutation-delete.gql'
@@ -175,7 +176,8 @@ export default {
     return {
       deletePageDialog: false,
       page: {},
-      loading: false
+      loading: false,
+      rerenderLoading: false
     }
   },
   methods: {
@@ -205,11 +207,43 @@ export default {
       this.$store.commit(`loadingStop`, 'page-delete')
     },
     async rerenderPage() {
-      this.$store.commit('showNotification', {
-        style: 'indigo',
-        message: `Coming soon...`,
-        icon: 'directions_boat'
-      })
+      if (!this.page.id) return
+      this.rerenderLoading = true
+      this.$store.commit(`loadingStart`, 'page-rerender')
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`
+            mutation($id: Int!) {
+              pages {
+                render(id: $id) {
+                  responseResult {
+                    succeeded
+                    errorCode
+                    message
+                  }
+                }
+              }
+            }
+          `,
+          variables: {
+            id: this.page.id
+          }
+        })
+        const result = _.get(resp, 'data.pages.render.responseResult', {})
+        if (result.succeeded) {
+          this.$store.commit('showNotification', {
+            style: 'success',
+            message: 'Page re-rendered successfully.',
+            icon: 'check'
+          })
+        } else {
+          throw new Error(result.message || this.$t('common:error.unexpected'))
+        }
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+      this.$store.commit(`loadingStop`, 'page-rerender')
+      this.rerenderLoading = false
     }
   },
   apollo: {

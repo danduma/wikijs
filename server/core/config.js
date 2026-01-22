@@ -84,6 +84,10 @@ module.exports = {
     let conf = await WIKI.models.settings.getConfig()
     if (conf) {
       WIKI.config = _.defaultsDeep(conf, WIKI.config)
+      if (!_.has(WIKI.config, 'theming.showTags')) {
+        _.set(WIKI.config, 'theming.showTags', true)
+        await this.saveToDb(['theming'], false)
+      }
     } else {
       WIKI.logger.warn('DB Configuration is empty or incomplete. Switching to Setup mode...')
       WIKI.config.setup = true

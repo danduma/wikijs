@@ -72,6 +72,14 @@
                     persistent-hint
                     hint='Select whether the table of contents is shown on the left, right or not at all.'
                     )
+                  v-switch.mt-3(
+                    inset
+                    v-model='config.showTags'
+                    :label='$t(`admin:theme.displayTags`)'
+                    color='primary'
+                    persistent-hint
+                    :hint='$t(`admin:theme.displayTagsHint`)'
+                    )
             v-flex(lg6 xs12)
               //- v-card.animated.fadeInUp.wait-p2s
               //-   v-toolbar(color='teal', dark, dense, flat)
@@ -176,6 +184,7 @@ export default {
         darkMode: false,
         iconset: '',
         tocPosition: 'left',
+        showTags: true,
         injectCSS: '',
         injectHead: '',
         injectBody: ''
@@ -232,6 +241,7 @@ export default {
             iconset: this.config.iconset,
             darkMode: this.darkDefault,
             tocPosition: this.config.tocPosition,
+            showTags: this.config.showTags,
             injectCSS: this.config.injectCSS,
             injectHead: this.config.injectHead,
             injectBody: this.config.injectBody

@@ -61,6 +61,7 @@ defaults:
       iconset: 'md'
       darkMode: false
       tocPosition: 'left'
+      showTags: true
     auth:
       autoLogin: false
       enforce2FA: false

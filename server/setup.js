@@ -128,6 +128,7 @@ module.exports = () => {
         theme: 'default',
         darkMode: false,
         iconset: 'mdi',
+        showTags: true,
         injectCSS: '',
         injectHead: '',
         injectBody: ''

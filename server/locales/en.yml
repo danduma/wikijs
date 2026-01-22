@@ -1,0 +1,4 @@
+admin:
+  theme:
+    displayTags: 'Display Tags'
+    displayTagsHint: 'Show tags below the page title and in the sidebar.'

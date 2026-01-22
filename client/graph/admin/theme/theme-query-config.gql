@@ -10,6 +10,7 @@ query {
       iconset
       darkMode
       tocPosition
+      showTags
       injectCSS
       injectHead
       injectBody

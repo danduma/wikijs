@@ -10,6 +10,7 @@ const os = require('os')
 
 const pageHelper = require('../../../helpers/page')
 const assetHelper = require('../../../helpers/asset')
+const ignoreHelper = require('../../../helpers/ignore')
 const commonDisk = require('../disk/common')
 
 /* global WIKI */
@@ -145,9 +146,8 @@ module.exports = {
 
       const diff = await this.git.diffSummary(['-M', currentCommitLog.hash, latestCommitLog.hash])
       if (_.get(diff, 'files', []).length > 0) {
-        let filesToProcess = []
         const filePattern = /(.*?)(?:{(.*?))? => (?:(.*?)})?(.*)/
-        for (const f of diff.files) {
+        const parsedFiles = diff.files.map(f => {
           const fMatch = f.file.match(filePattern)
           const fNames = {
             old: null,
@@ -163,7 +163,50 @@ module.exports = {
             fNames.old = (fMatch[1] + fMatch[2] + fMatch[4]).replace('//', '/')
             fNames.new = (fMatch[1] + fMatch[3] + fMatch[4]).replace('//', '/')
           }
-          const fPath = path.join(this.repoPath, fNames.new)
+
+          fNames.old = (fNames.old || '').replace(/\\/g, '/')
+          fNames.new = (fNames.new || '').replace(/\\/g, '/')
+          return { f, fNames }
+        })
+
+        if (parsedFiles.some(({ fNames }) => fNames.old === '.wikijsignore' || fNames.new === '.wikijsignore')) {
+          ignoreHelper.clearCache(this.repoPath)
+        }
+
+        const ignoreChecker = await ignoreHelper.getIgnoreChecker(this.repoPath)
+
+        let filesToProcess = []
+        for (const { f, fNames } of parsedFiles) {
+          const ignoredOld = ignoreHelper.matches(ignoreChecker, fNames.old)
+          const ignoredNew = ignoreHelper.matches(ignoreChecker, fNames.new)
+
+          if (ignoredOld && ignoredNew) {
+            WIKI.logger.debug(`(STORAGE/GIT) Skipping ignored change: ${f.file}`)
+            continue
+          }
+
+          let effectiveOld = fNames.old
+          let effectiveNew = fNames.new
+          let effectiveDiff = f
+
+          if (!ignoredOld && ignoredNew) {
+            // Treat as delete of the old path.
+            effectiveOld = fNames.old
+            effectiveNew = fNames.old
+            effectiveDiff = {
+              ...f,
+              deletions: 1,
+              insertions: 0,
+              before: 1,
+              after: 0
+            }
+          } else if (ignoredOld && !ignoredNew) {
+            // Treat as create/import of the new path.
+            effectiveOld = fNames.new
+            effectiveNew = fNames.new
+          }
+
+          const fPath = path.join(this.repoPath, effectiveNew)
           let fStats = { size: 0 }
           try {
             fStats = await fs.stat(fPath)
@@ -175,13 +218,13 @@ module.exports = {
           }
 
           filesToProcess.push({
-            ...f,
+            ...effectiveDiff,
             file: {
               path: fPath,
               stats: fStats
             },
-            oldPath: fNames.old,
-            relPath: fNames.new
+            oldPath: effectiveOld,
+            relPath: effectiveNew
           })
         }
         await this.processFiles(filesToProcess, rootUser)
@@ -434,21 +477,29 @@ module.exports = {
     WIKI.logger.info(`(STORAGE/GIT) Importing all content from local Git repo to the DB...`)
 
     const rootUser = await WIKI.models.users.getRootUser()
+    const ignoreChecker = await ignoreHelper.getIgnoreChecker(this.repoPath)
 
     await pipeline(
       klaw(this.repoPath, {
         filter: (f) => {
-          return !_.includes(f, '.git')
+          const relPath = path.relative(this.repoPath, f).replace(/\\/g, '/')
+          if (relPath && relPath.split('/').includes('.git')) return false
+          if (relPath && ignoreHelper.matches(ignoreChecker, relPath)) return false
+          return true
         }
       }),
       new stream.Transform({
         objectMode: true,
         transform: async (file, enc, cb) => {
-          const relPath = file.path.substr(this.repoPath.length + 1)
+          const relPath = path.relative(this.repoPath, file.path).replace(/\\/g, '/')
           if (file.stats.size < 1) {
             // Skip directories and zero-byte files
             return cb()
           } else if (relPath && relPath.length > 3) {
+            if (await ignoreHelper.shouldIgnore(this.repoPath, relPath)) {
+              WIKI.logger.debug(`(STORAGE/GIT) Skipping ignored file: ${relPath}`)
+              return cb()
+            }
             WIKI.logger.info(`(STORAGE/GIT) Processing ${relPath}...`)
             await this.processFiles([{
               user: rootUser,

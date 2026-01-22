@@ -8,6 +8,7 @@ const mime = require('mime-types').lookup
 const _ = require('lodash')
 
 const pageHelper = require('../../../helpers/page.js')
+const ignoreHelper = require('../../../helpers/ignore')
 
 /* global WIKI */
 
@@ -15,21 +16,29 @@ module.exports = {
   assetFolders: null,
   async importFromDisk ({ fullPath, moduleName }) {
     const rootUser = await WIKI.models.users.getRootUser()
+    const ignoreChecker = await ignoreHelper.getIgnoreChecker(fullPath)
 
     await pipeline(
       klaw(fullPath, {
         filter: (f) => {
-          return !_.includes(f, '.git')
+          const relPath = path.relative(fullPath, f).replace(/\\/g, '/')
+          if (relPath && relPath.split('/').includes('.git')) return false
+          if (relPath && ignoreHelper.matches(ignoreChecker, relPath)) return false
+          return true
         }
       }),
       new stream.Transform({
         objectMode: true,
         transform: async (file, enc, cb) => {
-          const relPath = file.path.substr(fullPath.length + 1)
+          const relPath = path.relative(fullPath, file.path).replace(/\\/g, '/')
           if (file.stats.size < 1) {
             // Skip directories and zero-byte files
             return cb()
           } else if (relPath && relPath.length > 3) {
+            if (await ignoreHelper.shouldIgnore(fullPath, relPath)) {
+              WIKI.logger.debug(`(STORAGE/${moduleName}) Skipping ignored file: ${relPath}`)
+              return cb()
+            }
             WIKI.logger.info(`(STORAGE/${moduleName}) Processing ${relPath}...`)
             const contentType = pageHelper.getContentType(relPath)
             if (contentType) {
@@ -92,7 +101,7 @@ module.exports = {
         isPublished: _.get(pageData, 'isPublished', currentPage.isPublished),
         isPrivate: false,
         // Pass the raw file contents so Pages.updatePage can parse frontmatter settings
-        // (e.g. `comments: false`) before stripping it from the stored content.
+        // (e.g. `showComments: false`) before stripping it from the stored content.
         content: itemContents,
         user: user,
         skipStorage: true
@@ -110,7 +119,7 @@ module.exports = {
         isPublished: _.get(pageData, 'isPublished', true),
         isPrivate: false,
         // Pass the raw file contents so Pages.createPage can parse frontmatter settings
-        // (e.g. `comments: false`) before stripping it from the stored content.
+        // (e.g. `showComments: false`) before stripping it from the stored content.
         content: itemContents,
         user: user,
         editor: pageEditor,

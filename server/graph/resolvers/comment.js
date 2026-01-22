@@ -23,6 +23,43 @@ async function getPageAccessFromCommentId (commentId) {
   return page
 }
 
+async function fetchCommentsForPage ({ args, context, includeResolved }) {
+  const target = commentPathHelper.canonicalCommentPath(args.path, args.locale)
+  const page = await WIKI.models.pages.query().select('pages.id').findOne({ localeCode: args.locale, path: target.path })
+    .withGraphJoined('tags')
+    .modifyGraph('tags', builder => {
+      builder.select('tag')
+    })
+  if (!page) {
+    return []
+  }
+
+  if (!WIKI.auth.checkAccess(context.req.user, ['read:comments'], { tags: page.tags, locale: args.locale, path: target.path })) {
+    throw new WIKI.Error.CommentViewForbidden()
+  }
+
+  const baseQuery = WIKI.models.comments.query().where('pagePath', target.key)
+  const comments = await (includeResolved ? baseQuery : baseQuery.where('isResolved', false)).orderBy('createdAt')
+  const commentIds = comments.map(c => c.id)
+  const voteCountsById = await WIKI.models.commentVotes.getVoteCountsForComments(commentIds)
+  const userVotesById = await WIKI.models.commentVotes.getUserVotesForComments({ commentIds, userId: context.req.user.id })
+  const replyCountsByParent = _.countBy(comments.filter(c => _.toInteger(c.replyTo) > 0), c => _.toInteger(c.replyTo))
+
+  return comments.map(c => ({
+    ...c,
+    pagePath: c.pagePath || target.key,
+    authorName: c.name,
+    authorEmail: c.email,
+    authorIP: c.ip,
+    selector: c.selector,
+    selectedText: c.selectedText,
+    replyTo: c.replyTo,
+    replyCount: _.toInteger(replyCountsByParent[_.toInteger(c.id)] || 0),
+    voteCounts: _.get(voteCountsById, _.toInteger(c.id), { upvotes: 0, downvotes: 0 }),
+    userVote: _.get(userVotesById, _.toInteger(c.id), null)
+  }))
+}
+
 module.exports = {
   Query: {
     async comments() { return {} }
@@ -66,39 +103,21 @@ module.exports = {
      * Fetch list of comments for a page
      */
     async list (obj, args, context) {
-      const target = commentPathHelper.canonicalCommentPath(args.path, args.locale)
-      const page = await WIKI.models.pages.query().select('pages.id').findOne({ localeCode: args.locale, path: target.path })
-        .withGraphJoined('tags')
-        .modifyGraph('tags', builder => {
-          builder.select('tag')
-        })
-      if (page) {
-        if (WIKI.auth.checkAccess(context.req.user, ['read:comments'], { tags: page.tags, locale: args.locale, path: target.path })) {
-          const comments = await WIKI.models.comments.query().where('pagePath', target.key).orderBy('createdAt')
-          const commentIds = comments.map(c => c.id)
-          const voteCountsById = await WIKI.models.commentVotes.getVoteCountsForComments(commentIds)
-          const userVotesById = await WIKI.models.commentVotes.getUserVotesForComments({ commentIds, userId: context.req.user.id })
-          const replyCountsByParent = _.countBy(comments.filter(c => _.toInteger(c.replyTo) > 0), c => _.toInteger(c.replyTo))
-
-          return comments.map(c => ({
-            ...c,
-            pagePath: c.pagePath || target.key,
-            authorName: c.name,
-            authorEmail: c.email,
-            authorIP: c.ip,
-            selector: c.selector,
-            selectedText: c.selectedText,
-            replyTo: c.replyTo,
-            replyCount: _.toInteger(replyCountsByParent[_.toInteger(c.id)] || 0),
-            voteCounts: _.get(voteCountsById, _.toInteger(c.id), { upvotes: 0, downvotes: 0 }),
-            userVote: _.get(userVotesById, _.toInteger(c.id), null)
-          }))
-        } else {
-          throw new WIKI.Error.CommentViewForbidden()
-        }
-      } else {
-        return []
-      }
+      return fetchCommentsForPage({
+        args,
+        context,
+        includeResolved: false
+      })
+    },
+    /**
+     * Fetch list of all comments for a page (pending + resolved)
+     */
+    async listAll (obj, args, context) {
+      return fetchCommentsForPage({
+        args,
+        context,
+        includeResolved: true
+      })
     },
     /**
      * Fetch a single comment
@@ -219,6 +238,25 @@ module.exports = {
         }
       } catch (err) {
         return graphHelper.generateError(err)
+      }
+    },
+    async setResolved (obj, args, context) {
+      try {
+        const affectedIds = await WIKI.models.comments.setResolved({
+          id: args.id,
+          isResolved: args.isResolved,
+          user: context.req.user,
+          ip: context.req.ip
+        })
+        return {
+          responseResult: graphHelper.generateSuccess('Comment resolution updated successfully'),
+          affectedIds
+        }
+      } catch (err) {
+        return {
+          ...graphHelper.generateError(err),
+          affectedIds: []
+        }
       }
     },
     async vote (obj, args, context) {

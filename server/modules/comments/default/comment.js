@@ -3,7 +3,7 @@ const { full: mdEmoji } = require('markdown-it-emoji')
 const { JSDOM } = require('jsdom')
 const createDOMPurify = require('dompurify')
 const _ = require('lodash')
-const commentPathHelper = require('../../helpers/comment-path')
+const commentPathHelper = require('../../../helpers/comment-path')
 const { AkismetClient } = require('akismet-api')
 const moment = require('moment')
 
@@ -73,7 +73,10 @@ module.exports = {
       authorId: user.id,
       name: user.name,
       email: user.email,
-      ip: user.ip
+      ip: user.ip,
+      isResolved: false,
+      resolvedBy: null,
+      resolvedAt: null
     }
 
     // -> Check for Spam with Akismet

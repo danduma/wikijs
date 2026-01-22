@@ -29,6 +29,9 @@ module.exports = class Comment extends Model {
         name: {type: 'string'},
         email: {type: 'string'},
         ip: {type: 'string'},
+        isResolved: {type: 'boolean'},
+        resolvedBy: {type: ['integer', 'null']},
+        resolvedAt: {type: ['string', 'null']},
         createdAt: {type: 'string'},
         updatedAt: {type: 'string'}
       }
@@ -262,5 +265,57 @@ module.exports = class Comment extends Model {
         ip
       }
     })
+  }
+
+  /**
+   * Resolve / Unresolve Comment Thread
+   */
+  static async setResolved ({ id, isResolved, user, ip }) {
+    const comment = await this.query().select('id', 'replyTo', 'pageId', 'pagePath').findById(id)
+    if (!comment) {
+      throw new WIKI.Error.CommentNotFound()
+    }
+
+    const pageId = await WIKI.data.commentProvider.getPageIdFromCommentId(id)
+    if (!pageId) {
+      throw new WIKI.Error.CommentNotFound()
+    }
+    const page = await WIKI.models.pages.getPageFromDb(pageId)
+    if (!page) {
+      throw new WIKI.Error.PageNotFound()
+    }
+
+    if (!WIKI.auth.checkAccess(user, ['manage:comments'], {
+      path: page.path,
+      locale: page.localeCode,
+      tags: page.tags
+    })) {
+      throw new WIKI.Error.CommentManageForbidden()
+    }
+
+    const rootId = (_.toInteger(comment.replyTo) > 0) ? _.toInteger(comment.replyTo) : comment.id
+    const threadQuery = this.query().select('id')
+      .where(builder => {
+        builder.where('id', rootId).orWhere('replyTo', rootId)
+      })
+
+    if (comment.pagePath) {
+      threadQuery.andWhere('pagePath', comment.pagePath)
+    } else if (comment.pageId) {
+      threadQuery.andWhere('pageId', comment.pageId)
+    }
+
+    const threadComments = await threadQuery
+    const affectedIds = threadComments.map(c => c.id)
+
+    if (affectedIds.length > 0) {
+      await this.query().whereIn('id', affectedIds).patch({
+        isResolved: !!isResolved,
+        resolvedBy: isResolved ? user.id : null,
+        resolvedAt: isResolved ? new Date().toISOString() : null
+      })
+    }
+
+    return affectedIds
   }
 }

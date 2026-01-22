@@ -100,13 +100,13 @@ module.exports = class CommentProvider extends Model {
 
   static async initProvider() {
     const commentProvider = await WIKI.models.commentProviders.query().findOne('isEnabled', true)
-    if (commentProvider) {
+      if (commentProvider) {
       WIKI.data.commentProvider = {
         ..._.find(WIKI.data.commentProviders, ['key', commentProvider.key]),
         head: '',
         bodyStart: '',
         bodyEnd: '',
-        main: '<comments></comments>'
+        main: `<comments provider-key="${commentProvider.key}"></comments>`
       }
 
       if (WIKI.data.commentProvider.codeTemplate) {

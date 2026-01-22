@@ -1,81 +1,98 @@
 <template lang="pug">
   div
-    v-btn.floating-comment-btn(
-      v-if='showFloatingBtn && isContextualProvider'
-      fab
-      x-small
-      color='primary'
-      :style='floatingBtnStyle'
-      @mousedown.stop.prevent
-      @click='openNewThread'
+    //- Contextual selection FAB must escape theme sidebars that use CSS transforms.
+    //- Render it using attach-to-body dialogs (Vuetify portals) so `position: fixed` is relative to the viewport.
+    v-dialog(
+      v-model='showFloatingBtn'
+      v-if='isContextualProvider'
+      attach='.v-application'
+      hide-overlay
+      persistent
+      :retain-focus='false'
+      content-class='contextual-fab-dialog'
     )
-      v-icon(small) mdi-comment-plus
-
-    //- Floating Thread Window
-    v-card.floating-thread-window.elevation-10(
-      v-if='showThreadDialog'
-      :style='threadWindowStyle'
-    )
-      v-toolbar(
-        color='primary'
-        dark
-        dense
-        flat
-        style='cursor: move; user-select: none;'
-        @mousedown='startDrag'
-      )
-        v-toolbar-title.body-1 {{ isNewThread ? "New Comment" : "Comment Thread" }}
-        v-spacer
-        v-btn(icon, small, @click='closeThreadDialog')
-          v-icon(small) mdi-close
-
-      .thread-content.pa-3
-        //- Existing thread messages
-        template(v-if='!isNewThread && activeThreadRoot')
-          //- Root message
-          .thread-message.mb-4
-            .d-flex.align-center.mb-1
-              v-avatar(color='blue-grey', size='24')
-                span.white--text.caption {{ getInitials(activeThreadRoot.authorName) }}
-              .caption.ml-2.font-weight-bold {{ activeThreadRoot.authorName }}
-              v-spacer
-              .overline.grey--text {{ activeThreadRoot.createdAt | moment('from') }}
-            .body-2.pl-8(v-html='activeThreadRoot.render')
-
-          //- Nested replies
-          .thread-replies.pl-4.ml-2(v-if='activeThreadReplies.length > 0', style='border-left: 2px solid rgba(144, 164, 174, 0.2)')
-            .thread-message.mb-4(v-for='msg in activeThreadReplies' :key='msg.id')
-              .d-flex.align-center.mb-1
-                v-avatar(color='blue-grey', size='20')
-                  span.white--text.caption(style='font-size: 10px !important') {{ getInitials(msg.authorName) }}
-                .caption.ml-2.font-weight-bold {{ msg.authorName }}
-                v-spacer
-                .overline.grey--text {{ msg.createdAt | moment('from') }}
-              .body-2.pl-7(v-html='msg.render')
-
-          v-divider.my-3
-
-        //- Reply/New Comment Box
-        v-textarea.thread-window-textarea(
-          outlined
-          flat
-          dense
-          rows='3'
-          hide-details
-          v-model='newThreadContent'
-          :placeholder='isNewThread ? "Write your comment..." : "Write a reply..."'
-          ref='threadTextarea'
-          @keydown.enter='handleThreadEnter'
+      div.contextual-fab-wrapper(:style='floatingBtnStyle', ref='contextualFab', data-ui-id='LongevidenceContextualCommentFab')
+        v-btn.floating-comment-btn(
+          fab
+          x-small
+          color='primary'
+          @mousedown.stop.prevent
+          @click.stop='openNewThread'
+          data-ui-id='LongevidenceContextualCommentFabButton'
         )
-        .d-flex.pt-2
-          v-spacer
-          v-btn(
+          v-icon(small) mdi-comment-plus
+
+    v-dialog(
+      v-model='showThreadDialog'
+      v-if='isContextualProvider'
+      attach='.v-application'
+      hide-overlay
+      persistent
+      :retain-focus='false'
+      content-class='contextual-thread-dialog'
+    )
+      div.contextual-thread-wrapper(:style='threadWindowStyle', ref='threadWindow', data-ui-id='LongevidenceContextualCommentThreadWindow')
+        v-card.floating-thread-window.elevation-10
+          v-toolbar(
             color='primary'
-            small
-            depressed
-            @click='submitThreadComment'
-            :loading='isBusy'
-          ) {{ isNewThread ? "Post" : "Reply" }}
+            dark
+            dense
+            flat
+            style='cursor: move; user-select: none;'
+            @mousedown='startDrag'
+          )
+            v-toolbar-title.body-1 {{ isNewThread ? "New Comment" : "Comment Thread" }}
+            v-spacer
+            v-btn(icon, small, @click='closeThreadDialog')
+              v-icon(small) mdi-close
+
+          .thread-content.pa-3
+            //- Existing thread messages
+            template(v-if='!isNewThread && activeThreadRoot')
+              //- Root message
+              .thread-message.mb-4
+                .d-flex.align-center.mb-1
+                  v-avatar(color='blue-grey', size='24')
+                    span.white--text.caption {{ getInitials(activeThreadRoot.authorName) }}
+                  .caption.ml-2.font-weight-bold {{ activeThreadRoot.authorName }}
+                  v-spacer
+                  .overline.grey--text {{ activeThreadRoot.createdAt | moment('from') }}
+                .body-2.pl-8(v-html='activeThreadRoot.render')
+
+              //- Nested replies
+              .thread-replies.pl-4.ml-2(v-if='activeThreadReplies.length > 0', style='border-left: 2px solid rgba(144, 164, 174, 0.2)')
+                .thread-message.mb-4(v-for='msg in activeThreadReplies' :key='msg.id')
+                  .d-flex.align-center.mb-1
+                    v-avatar(color='blue-grey', size='20')
+                      span.white--text.caption(style='font-size: 10px !important') {{ getInitials(msg.authorName) }}
+                    .caption.ml-2.font-weight-bold {{ msg.authorName }}
+                    v-spacer
+                    .overline.grey--text {{ msg.createdAt | moment('from') }}
+                  .body-2.pl-7(v-html='msg.render')
+
+              v-divider.my-3
+
+            //- Reply/New Comment Box
+            v-textarea.thread-window-textarea(
+              outlined
+              flat
+              dense
+              rows='3'
+              hide-details
+              v-model='newThreadContent'
+              :placeholder='isNewThread ? "Write your comment..." : "Write a reply..."'
+              ref='threadTextarea'
+              @keydown.enter='handleThreadEnter'
+            )
+            .d-flex.pt-2
+              v-spacer
+              v-btn(
+                color='primary'
+                small
+                depressed
+                @click='submitThreadComment'
+                :loading='isBusy'
+              ) {{ isNewThread ? "Post" : "Reply" }}
 
     v-textarea#discussion-new(
       outlined
@@ -162,6 +179,7 @@
           v-card-text
             .comments-post-actions(v-if='permissions.manage && !isBusy && commentEditId === 0')
               v-icon.mr-3(small, @click='editComment(cm)') mdi-pencil
+              v-icon.mr-3(small, @click='resolveComment(cm)') mdi-check-circle
               v-icon(small, @click='deleteCommentConfirm(cm)') mdi-delete
 
             .comments-post-name.caption: strong {{cm.authorName}}
@@ -290,6 +308,7 @@
                   v-spacer
                   template(v-if='permissions.manage && !isBusy && commentEditId === 0')
                     v-icon.mr-3(small, @click='editComment(rp)') mdi-pencil
+                    v-icon.mr-3(small, @click='resolveComment(rp)') mdi-check-circle
                     v-icon(small, @click='deleteCommentConfirm(rp)') mdi-delete
 
                 .comment-reply-form.mt-3(v-if='replyToId === rp.id')
@@ -336,8 +355,15 @@ import { get } from 'vuex-pathify'
 import validate from 'validate.js'
 import _ from 'lodash'
 import CommentVoteButtons from './comments/CommentVoteButtons.vue'
+import { findSelectorElement, getElementPagePositionFromElement, getElementViewportPositionFromElement } from '../helpers/comments-positioning'
 
 export default {
+  props: {
+    providerKey: {
+      type: String,
+      default: null
+    }
+  },
   components: {
     CommentVoteButtons
   },
@@ -359,7 +385,7 @@ export default {
       replyContent: '',
       selectedText: '',
       selectedSelector: '',
-      isContextualProvider: false,
+      commentProviderKey: null,
       showFloatingBtn: false,
       floatingBtnStyle: {
         top: '0px',
@@ -374,6 +400,7 @@ export default {
       threadReplies: [],
       newThreadContent: '',
       isNewThread: false,
+      isMouseDown: false,
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       dragPosition: null,
@@ -389,6 +416,20 @@ export default {
     permissions: get('page/effectivePermissions@comments'),
     isAuthenticated: get('user/authenticated'),
     userDisplayName: get('user/name'),
+    isContextualProvider () {
+      // Determine active provider in a way that works for non-admin users:
+      // 1) prop from server-rendered `<comments provider-key="...">`
+      // 2) GraphQL query fallback
+      // 3) global `siteConfig` fallback (server-injected)
+      const key = _.defaultTo(
+        this.providerKey,
+        _.defaultTo(
+          _.get(this.commentProviderKey, 'activeProviderKey', null),
+          (typeof siteConfig !== 'undefined') ? _.get(siteConfig, 'commentProviderKey', null) : null
+        )
+      )
+      return key === 'contextual'
+    },
     bottomComments () {
       return this.comments.filter(c => !c.replyTo || c.replyTo === 0)
     },
@@ -476,15 +517,12 @@ export default {
     commentProviderKey: {
       query: gql`
         query {
-          comments {
+          commentProviderKey: comments {
             activeProviderKey
           }
         }
       `,
-      result ({ data }) {
-        const key = _.get(data, 'comments.activeProviderKey', 'default')
-        this.isContextualProvider = key === 'contextual'
-      },
+      update: (data) => _.get(data, 'commentProviderKey', null),
       fetchPolicy: 'network-only'
     }
   },
@@ -646,6 +684,9 @@ export default {
                   voteCounts { upvotes downvotes }
                   userVote
                   authorName
+                  isResolved
+                  resolvedBy
+                  resolvedAt
                   createdAt
                   updatedAt
                 }
@@ -664,6 +705,7 @@ export default {
           if (typeof c.replyCount !== 'number') c.replyCount = 0
           return c
         })
+        this.$root.$emit('comments-updated', this.comments)
 
         // Process contextual comments
         this.$nextTick(() => {
@@ -966,6 +1008,61 @@ export default {
       this.isBusy = false
       this.$store.commit(`loadingStop`, 'comments-delete')
     },
+    /**
+     * Resolve Comment Thread
+     */
+    async resolveComment (cm) {
+      this.$store.commit(`loadingStart`, 'comments-resolve')
+      this.isBusy = true
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`
+            mutation (
+              $id: Int!
+              $isResolved: Boolean!
+            ) {
+              comments {
+                setResolved (
+                  id: $id,
+                  isResolved: $isResolved
+                ) {
+                  responseResult {
+                    succeeded
+                    errorCode
+                    slug
+                    message
+                  }
+                  affectedIds
+                }
+              }
+            }
+          `,
+          variables: {
+            id: cm.id,
+            isResolved: true
+          }
+        })
+
+        if (_.get(resp, 'data.comments.setResolved.responseResult.succeeded', false)) {
+          this.$store.commit('showNotification', {
+            style: 'success',
+            message: 'Comment resolved successfully.',
+            icon: 'check'
+          })
+          await this.fetch(true)
+        } else {
+          throw new Error(_.get(resp, 'data.comments.setResolved.responseResult.message', 'An unexpected error occurred.'))
+        }
+      } catch (err) {
+        this.$store.commit('showNotification', {
+          style: 'red',
+          message: err.message,
+          icon: 'alert'
+        })
+      }
+      this.isBusy = false
+      this.$store.commit(`loadingStop`, 'comments-resolve')
+    },
     goToComments (focusNewComment = false) {
       this.showFloatingBtn = false
       this.$vuetify.goTo('#discussion', this.scrollOpts)
@@ -977,21 +1074,56 @@ export default {
       }
     },
     setupTextSelection () {
-      // Listen for text selection on the page content
-      document.addEventListener('selectionchange', this.handleTextSelection)
-      document.addEventListener('mouseup', this.handleTextSelection)
+      // Listen for text selection on the page content.
+      // Avoid reacting during a mouse-drag selection: updating the UI mid-drag can
+      // interrupt selection (e.g. by placing an element under the cursor).
+      document.addEventListener('mousedown', this.handleSelectionMouseDown)
+      document.addEventListener('mouseup', this.handleSelectionMouseUp)
       document.addEventListener('keyup', this.handleTextSelection)
       document.addEventListener('keydown', this.handleGlobalKeyDown)
       document.addEventListener('click', this.handleGlobalClick)
     },
     cleanupTextSelection () {
-      document.removeEventListener('selectionchange', this.handleTextSelection)
-      document.removeEventListener('mouseup', this.handleTextSelection)
+      document.removeEventListener('mousedown', this.handleSelectionMouseDown)
+      document.removeEventListener('mouseup', this.handleSelectionMouseUp)
       document.removeEventListener('keyup', this.handleTextSelection)
       document.removeEventListener('keydown', this.handleGlobalKeyDown)
       document.removeEventListener('click', this.handleGlobalClick)
     },
+    handleSelectionMouseDown (e) {
+      const target = e && e.target
+      if (!target || !target.closest) return
+      const contentArea = target.closest('.contents') || target.closest('.page-content')
+      if (contentArea) {
+        this.isMouseDown = true
+      }
+    },
+    handleSelectionMouseUp () {
+      if (this.isMouseDown) {
+        this.isMouseDown = false
+        this.handleTextSelection()
+      }
+    },
     handleGlobalClick (e) {
+      // Ignore clicks originating from the contextual FAB itself. The FAB click
+      // opens the dialog; without this guard (or in cases where propagation
+      // isn't fully stopped by the component), it can be treated as an
+      // "outside" click and immediately close the thread window.
+      const fab = this.$refs.contextualFab
+      const fabEl = (fab && fab.$el) ? fab.$el : fab
+      if (fabEl && typeof fabEl.contains === 'function' && fabEl.contains(e.target)) {
+        return
+      }
+
+      if (this.showThreadDialog) {
+        const threadWindow = this.$refs.threadWindow
+        const el = (threadWindow && threadWindow.$el) ? threadWindow.$el : threadWindow
+        if (el && typeof el.contains === 'function' && !el.contains(e.target)) {
+          this.closeThreadDialog()
+          return
+        }
+      }
+
       // If clicking an image in the content area, trigger the floating button
       if (e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'PICTURE')) {
         const contentArea = e.target.closest('.contents') || e.target.closest('.page-content')
@@ -1076,6 +1208,8 @@ export default {
     handleTextSelection () {
       // Don't update selection while a thread window is already open
       if (this.showThreadDialog) return
+      // Don't change UI mid selection-drag.
+      if (this.isMouseDown) return
 
       const selection = window.getSelection()
       let selectedText = selection.toString().trim()
@@ -1450,6 +1584,7 @@ export default {
       document.querySelectorAll('.comment-highlight').forEach(el => {
         el.classList.remove('comment-highlight')
         el.style.backgroundColor = ''
+        el.removeAttribute('data-ui-id')
       })
       document.querySelectorAll('.text-highlight-marker').forEach(el => {
         const parent = el.parentNode
@@ -1464,7 +1599,7 @@ export default {
 
       contextualRoots.forEach(comment => {
         try {
-          const el = document.querySelector(comment.selector)
+          const el = findSelectorElement(comment.selector)
           if (el) {
             // Apply precise highlight if text is available
             if (comment.selectedText) {
@@ -1474,31 +1609,33 @@ export default {
               el.classList.add('comment-highlight')
               el.style.backgroundColor = 'rgba(144, 164, 174, 0.15)'
               el.style.borderRadius = '3px'
+              el.setAttribute('data-ui-id', 'LongevidenceInlineCommentHighlight')
             }
 
             // Create bubble icon
             const bubble = document.createElement('div')
             bubble.className = 'comment-bubble'
             bubble.setAttribute('data-comment-id', comment.id)
+            bubble.setAttribute('data-ui-id', 'LongevidenceInlineCommentBubble')
             bubble.innerHTML = '<i class="v-icon notranslate mdi mdi-comment-text theme--light" style="font-size: 18px; color: #607D8B;"></i>'
             bubble.style.position = 'absolute'
             bubble.style.cursor = 'pointer'
-            bubble.style.zIndex = '2200'
+            // Keep below Vuetify modal scrims (e.g. search overlay), but above page content.
+            bubble.style.zIndex = '1800'
 
             // Position bubble to the right of the element
-            const rects = el.getClientRects()
-            const lastRect = rects.length > 0 ? rects[rects.length - 1] : el.getBoundingClientRect()
-            const scrollX = window.scrollX || window.pageXOffset
-            const scrollY = window.scrollY || window.pageYOffset
+            const pagePos = getElementPagePositionFromElement(el)
+            const viewportPos = getElementViewportPositionFromElement(el)
+            if (!pagePos || !viewportPos) return
 
-            bubble.style.top = `${lastRect.top + scrollY}px`
-            bubble.style.left = `${lastRect.right + scrollX + 5}px`
+            bubble.style.top = `${pagePos.top}px`
+            bubble.style.left = `${pagePos.right + 5}px`
 
             bubble.onclick = (e) => {
               e.stopPropagation()
               this.floatingBtnStyle = {
-                top: `${lastRect.top}px`,
-                left: `${lastRect.right}px`
+                top: `${viewportPos.top}px`,
+                left: `${viewportPos.right}px`
               }
               this.openExistingThread(comment)
             }
@@ -1528,6 +1665,7 @@ export default {
           const marker = document.createElement('span')
           marker.className = 'text-highlight-marker'
           marker.setAttribute('data-comment-id', commentId)
+          marker.setAttribute('data-ui-id', 'LongevidenceInlineCommentHighlight')
           marker.style.backgroundColor = 'rgba(144, 164, 174, 0.15)'
           marker.style.borderRadius = '2px'
 
@@ -1558,6 +1696,48 @@ export default {
 </script>
 
 <style lang="scss">
+.contextual-fab-dialog { pointer-events: none; }
+.contextual-thread-dialog { pointer-events: auto; }
+
+.contextual-fab-wrapper,
+.contextual-thread-wrapper {
+  pointer-events: auto;
+}
+
+.contextual-fab-wrapper {
+  // Don't let the wrapper block selection-drag; only the button itself should be clickable.
+  pointer-events: none;
+}
+
+.contextual-fab-wrapper .floating-comment-btn {
+  pointer-events: auto;
+}
+
+.contextual-fab-dialog,
+.contextual-thread-dialog {
+  // Ensure the dialog wrapper doesn't introduce layout, shadows, or fonts
+  // when we position the actual UI ourselves via inline styles.
+  box-shadow: none !important;
+  background: transparent !important;
+
+  // Vuetify's dialog content wrapper can still affect layout/appearance.
+  &,
+  .v-dialog__content,
+  .v-overlay__content,
+  .v-overlay__scrim {
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .v-dialog {
+    margin: 0;
+    box-shadow: none !important;
+    background: transparent !important;
+    max-width: none;
+    width: auto;
+  }
+}
+
 .floating-comment-btn {
   transition: transform 0.2s ease, opacity 0.2s ease;
   z-index: 2200 !important;
@@ -1567,8 +1747,6 @@ export default {
 }
 
 .floating-thread-window {
-  position: fixed;
-  z-index: 2210 !important;
   display: flex;
   flex-direction: column;
   background-color: white;
@@ -1598,6 +1776,7 @@ export default {
 
 .comment-bubble {
   background-color: white;
+  z-index: 1800;
   border-radius: 50%;
   width: 30px;
   height: 30px;

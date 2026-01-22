@@ -71,7 +71,8 @@
           v-divider
           .pa-4
             .overline.grey--text Preview
-            .body-2.grey--text.text--darken-2 The HTML will emit an absolute URL pointing at this wiki: `/_og/<pageId>.png?...`.
+            .body-2.grey--text.text--darken-2
+              | The HTML will emit an absolute URL pointing at this wiki: /_og/[pageId].png with query parameters.
 
 </template>
 

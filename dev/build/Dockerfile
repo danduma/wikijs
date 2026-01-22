@@ -7,16 +7,22 @@ RUN apk add yarn g++ make cmake python3 --no-cache
 
 WORKDIR /wiki
 
+# Copy only dependency files first (for better caching)
+COPY ./package.json ./package.json
+COPY ./yarn.lock ./yarn.lock
+COPY ./patches ./patches
+
+# Install dependencies (this layer will be cached if package.json/yarn.lock don't change)
+RUN yarn --frozen-lockfile --non-interactive
+
+# Now copy source code (changes here won't invalidate dependency install)
 COPY ./client ./client
 COPY ./dev ./dev
-COPY ./patches ./patches
-COPY ./package.json ./package.json
 COPY ./.babelrc ./.babelrc
 COPY ./.eslintignore ./.eslintignore
 COPY ./.eslintrc.yml ./.eslintrc.yml
 
-RUN yarn cache clean
-RUN yarn --frozen-lockfile --non-interactive
+# Build and prepare production dependencies
 RUN yarn build
 RUN rm -rf /wiki/node_modules
 RUN yarn --production --frozen-lockfile --non-interactive
@@ -44,8 +50,8 @@ COPY --chown=node:node ./dev/build/config.yml ./config.yml
 COPY --chown=node:node ./package.json ./package.json
 COPY --chown=node:node ./LICENSE ./LICENSE
 
-# Copy themes directory (for custom themes)
-COPY --chown=node:node ./themes ./themes
+# Copy compiled client themes from assets stage (includes custom themes)
+COPY --chown=node:node --from=assets /wiki/client/themes ./client/themes
 
 USER node
 

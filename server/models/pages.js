@@ -202,7 +202,8 @@ module.exports = class Page extends Model {
         comments: 'boolean',
         toc: 'boolean',
         tags: 'boolean',
-        history: 'boolean'
+        history: 'boolean',
+        search: 'boolean'
       },
       title: 'string',
       toc: 'string',
@@ -320,10 +321,11 @@ module.exports = class Page extends Model {
     // -> Parse frontmatter for custom settings
     const contentType = _.get(_.find(WIKI.data.editors, ['key', opts.editor]), `contentType`, 'text')
     const parsedMetadata = WIKI.models.pages.parseMetadata(opts.content, contentType)
-    const pageCommentsEnabled = resolveFrontmatterFlag(parsedMetadata, 'comments', true)
-    const pageTocEnabled = resolveFrontmatterFlag(parsedMetadata, 'toc', true, ['showToc'])
-    const pageTagsEnabled = resolveFrontmatterFlag(parsedMetadata, 'tags', true, ['showTags'])
-    const pageHistoryEnabled = resolveFrontmatterFlag(parsedMetadata, 'history', true, ['showHistory'])
+    const pageCommentsEnabled = resolveFrontmatterFlag(parsedMetadata, 'showComments', true)
+    const pageTocEnabled = resolveFrontmatterFlag(parsedMetadata, 'showToc', true)
+    const pageTagsEnabled = resolveFrontmatterFlag(parsedMetadata, 'showTags', true)
+    const pageHistoryEnabled = resolveFrontmatterFlag(parsedMetadata, 'showHistory', true)
+    const pageSearchEnabled = resolveFrontmatterFlag(parsedMetadata, 'showSearch', true)
     if (parsedMetadata.content) {
       opts.content = parsedMetadata.content
     }
@@ -373,7 +375,8 @@ module.exports = class Page extends Model {
         comments: pageCommentsEnabled,
         toc: pageTocEnabled,
         tags: pageTagsEnabled,
-        history: pageHistoryEnabled
+        history: pageHistoryEnabled,
+        search: pageSearchEnabled
       })
     })
     const page = await WIKI.models.pages.getPageFromDb({
@@ -453,10 +456,11 @@ module.exports = class Page extends Model {
     const contentType = ogPage.contentType || 'markdown'
     const parsedMetadata = WIKI.models.pages.parseMetadata(opts.content, contentType)
     const existingExtra = _.isPlainObject(ogPage.extra) ? ogPage.extra : {}
-    const pageCommentsEnabled = resolveFrontmatterFlag(parsedMetadata, 'comments', _.get(existingExtra, 'comments', true))
-    const pageTocEnabled = resolveFrontmatterFlag(parsedMetadata, 'toc', _.get(existingExtra, 'toc', true), ['showToc'])
-    const pageTagsEnabled = resolveFrontmatterFlag(parsedMetadata, 'tags', _.get(existingExtra, 'tags', true), ['showTags'])
-    const pageHistoryEnabled = resolveFrontmatterFlag(parsedMetadata, 'history', _.get(existingExtra, 'history', true), ['showHistory'])
+    const pageCommentsEnabled = resolveFrontmatterFlag(parsedMetadata, 'showComments', _.get(existingExtra, 'comments', true))
+    const pageTocEnabled = resolveFrontmatterFlag(parsedMetadata, 'showToc', _.get(existingExtra, 'toc', true))
+    const pageTagsEnabled = resolveFrontmatterFlag(parsedMetadata, 'showTags', _.get(existingExtra, 'tags', true))
+    const pageHistoryEnabled = resolveFrontmatterFlag(parsedMetadata, 'showHistory', _.get(existingExtra, 'history', true))
+    const pageSearchEnabled = resolveFrontmatterFlag(parsedMetadata, 'showSearch', _.get(existingExtra, 'search', true))
     if (parsedMetadata.content) {
       opts.content = parsedMetadata.content
     }
@@ -512,7 +516,8 @@ module.exports = class Page extends Model {
         comments: pageCommentsEnabled,
         toc: pageTocEnabled,
         tags: pageTagsEnabled,
-        history: pageHistoryEnabled
+        history: pageHistoryEnabled,
+        search: pageSearchEnabled
       })
     }).where('id', ogPage.id)
     let page = await WIKI.models.pages.getPageFromDb(ogPage.id)
@@ -1152,7 +1157,8 @@ module.exports = class Page extends Model {
         comments: _.get(page, 'extra.comments', true),
         toc: _.get(page, 'extra.toc', true),
         tags: _.get(page, 'extra.tags', true),
-        history: _.get(page, 'extra.history', true)
+        history: _.get(page, 'extra.history', true),
+        search: _.get(page, 'extra.search', true)
       },
       isPrivate: page.isPrivate === 1 || page.isPrivate === true,
       isPublished: page.isPublished === 1 || page.isPublished === true,

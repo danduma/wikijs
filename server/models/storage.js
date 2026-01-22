@@ -232,11 +232,21 @@ module.exports = class Storage extends Model {
   }
 
   static async executeAction(targetKey, handler) {
+    const logLines = [`[${new Date().toISOString()}] Action start: ${handler}`]
     try {
       const target = _.find(this.targets, ['key', targetKey])
       if (target) {
         if (_.hasIn(target.fn, handler)) {
           await target.fn[handler]()
+          logLines.push(`[${new Date().toISOString()}] Action completed.`)
+          await WIKI.models.storage.query().patch({
+            state: {
+              status: 'operational',
+              message: '',
+              log: trimLog(logLines.join('\n')),
+              lastAttempt: new Date().toISOString()
+            }
+          }).where('key', targetKey)
         } else {
           throw new Error('Invalid Handler for Storage Target')
         }
@@ -244,6 +254,18 @@ module.exports = class Storage extends Model {
         throw new Error('Invalid or Inactive Storage Target')
       }
     } catch (err) {
+      logLines.push(`[${new Date().toISOString()}] ERROR: ${err.message}`)
+      if (err.stack) {
+        logLines.push(err.stack)
+      }
+      await WIKI.models.storage.query().patch({
+        state: {
+          status: 'error',
+          message: err.message,
+          log: trimLog(logLines.join('\n')),
+          lastAttempt: new Date().toISOString()
+        }
+      }).where('key', targetKey)
       WIKI.logger.warn(err)
       throw err
     }

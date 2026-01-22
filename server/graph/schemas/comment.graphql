@@ -25,6 +25,11 @@ type CommentQuery {
     path: String!
   ): [CommentPost]! @auth(requires: ["read:comments"])
 
+  listAll(
+    locale: String!
+    path: String!
+  ): [CommentPost]! @auth(requires: ["read:comments"])
+
   single(
     id: Int!
   ): CommentPost @auth(requires: ["read:comments"])
@@ -59,6 +64,11 @@ type CommentMutation {
   delete(
     id: Int!
   ): DefaultResponse @auth(requires: ["manage:comments"])
+
+  setResolved(
+    id: Int!
+    isResolved: Boolean!
+  ): CommentResolveResponse @auth(requires: ["manage:comments"])
 
   vote(
     commentId: Int!
@@ -106,6 +116,9 @@ type CommentPost {
   authorName: String!
   authorEmail: String! @auth(requires: ["manage:system"])
   authorIP: String! @auth(requires: ["manage:system"])
+  isResolved: Boolean!
+  resolvedBy: Int
+  resolvedAt: Date
   createdAt: Date!
   updatedAt: Date!
 }
@@ -128,6 +141,11 @@ type CommentCreateResponse {
 type CommentUpdateResponse {
   responseResult: ResponseStatus
   render: String
+}
+
+type CommentResolveResponse {
+  responseResult: ResponseStatus
+  affectedIds: [Int]!
 }
 
 type CommentVoteResponse {

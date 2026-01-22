@@ -2,6 +2,8 @@ const { SchemaDirectiveVisitor } = require('graphql-tools')
 const { defaultFieldResolver } = require('graphql')
 const _ = require('lodash')
 
+/* global WIKI */
+
 class AuthDirective extends SchemaDirectiveVisitor {
   visitObject(type) {
     this.ensureFieldsWrapped(type)
@@ -43,7 +45,11 @@ class AuthDirective extends SchemaDirectiveVisitor {
         if (!context.req.user) {
           throw new Error('Unauthorized')
         }
-        if (!_.some(context.req.user.permissions, pm => _.includes(requiredScopes, pm))) {
+
+        // Use the same authorization logic as the rest of the app.
+        // `req.user.permissions` isn't guaranteed to exist (e.g. guest user instances),
+        // and page rules are evaluated inside resolvers when needed.
+        if (!WIKI.auth.checkAccess(context.req.user, requiredScopes)) {
           throw new Error('Forbidden')
         }
 

@@ -1,0 +1,10 @@
+key: htmlLongevidenceComponents
+title: Longevidence Components
+description: Convert tagged markdown blocks into Longevidence HTML components
+author: longevidence
+icon: mdi-shape-square-plus
+enabledDefault: true
+dependsOn: htmlCore
+step: post
+order: 200
+props: {}

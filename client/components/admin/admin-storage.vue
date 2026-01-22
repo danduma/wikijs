@@ -69,8 +69,7 @@
                   v-list-item-action
                     v-menu
                       template(v-slot:activator='{ on }')
-                        v-btn(icon, v-on='on')
-                          v-icon(color='red') mdi-information
+                        v-btn(text, small, color='red', v-on='on') Show logs
                       v-card(width='450')
                         v-toolbar(flat, color='red', dark, dense) {{$t('admin:storage.errorMsg')}}
                         v-card-text

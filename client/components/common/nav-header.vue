@@ -70,7 +70,7 @@
                 @keyup.up='searchMove(`up`)'
                 autocomplete='none'
               )
-            v-tooltip(bottom)
+            v-tooltip(bottom, v-if='showTags')
               template(v-slot:activator='{ on }')
                 v-btn.ml-2.mr-0(icon, v-on='on', href='/t', :aria-label='$t(`common:header.browseTags`)')
                   v-icon(color='grey') mdi-tag-multiple
@@ -261,11 +261,7 @@
     page-delete(v-model='deletePageModal', v-if='path && path.length')
     page-convert(v-model='convertPageModal', v-if='path && path.length')
 
-    .nav-header-dev(v-if='isDevMode')
-      v-icon mdi-alert
-      div
-        .overline DEVELOPMENT VERSION
-        .overline This code base is NOT for production use!
+    //- dev banner removed per request
 </template>
 
 <script>
@@ -321,6 +317,7 @@ export default {
     isLoading: get('isLoading'),
     title: get('site/title'),
     logoUrl: get('site/logoUrl'),
+    showTags: get('site/showTags'),
     path: get('page/path'),
     locale: get('page/locale'),
     mode: get('page/mode'),

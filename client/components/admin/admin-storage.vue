@@ -67,11 +67,21 @@
                     v-list-item-title.body-2 {{tgt.title}}
                     v-list-item-subtitle.red--text.caption {{$t('admin:storage.lastSyncAttempt', { time: $options.filters.moment(tgt.lastAttempt, 'from') })}}
                   v-list-item-action
-                    v-menu
+                    v-menu(
+                      close-on-content-click='false'
+                      :value='errorMenuKey === tgt.key'
+                      @input='val => (errorMenuKey = val ? tgt.key : null)'
+                    )
                       template(v-slot:activator='{ on }')
                         v-btn(text, small, color='red', v-on='on') Show logs
                       v-card(width='450')
-                        v-toolbar(flat, color='red', dark, dense) {{$t('admin:storage.errorMsg')}}
+                        v-toolbar(flat, color='red', dark, dense)
+                          span {{$t('admin:storage.errorMsg')}}
+                          v-spacer
+                          v-btn(icon, small, @click.stop='copyStorageLog(tgt)')
+                            span.copy-emoji 📋
+                          v-btn(icon, small, @click.stop='errorMenuKey = null')
+                            v-icon color='white' mdi-close
                         v-card-text
                           pre.storage-log {{tgt.log || tgt.message}}
 
@@ -250,7 +260,8 @@ export default {
         supportedModes: []
       },
       targets: [],
-      status: []
+      status: [],
+      errorMenuKey: null
     }
   },
   computed: {
@@ -267,6 +278,35 @@ export default {
     }
   },
   methods: {
+    async copyStorageLog(tgt) {
+      const text = _.get(tgt, 'log', '') || _.get(tgt, 'message', '')
+      try {
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text)
+        } else {
+          const el = document.createElement('textarea')
+          el.value = text
+          el.setAttribute('readonly', '')
+          el.style.position = 'absolute'
+          el.style.left = '-9999px'
+          document.body.appendChild(el)
+          el.select()
+          document.execCommand('copy')
+          document.body.removeChild(el)
+        }
+        this.$store.commit('showNotification', {
+          message: 'Log copied to clipboard.',
+          style: 'success',
+          icon: 'content_copy'
+        })
+      } catch (err) {
+        this.$store.commit('showNotification', {
+          message: 'Failed to copy log to clipboard.',
+          style: 'red',
+          icon: 'warning'
+        })
+      }
+    },
     async refresh() {
       await this.$apollo.queries.targets.refetch()
       this.$store.commit('showNotification', {
@@ -375,6 +415,11 @@ export default {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.copy-emoji {
+  font-size: 16px;
+  line-height: 1;
 }
 
 </style>

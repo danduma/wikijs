@@ -112,3 +112,9 @@ actions:
   - handler: purge
     label: Purge Local Repository
     hint: If you have unrelated merge histories, clearing the local repository can resolve this issue. This will not affect the remote repository or perform any commit.
+  - handler: reset
+    label: Reset to Remote
+    hint: <b>Destructive!</b> This will discard all local changes and reset the local repository to match the remote repository. Use this if you have conflicts that you want to resolve by accepting the remote version.
+  - handler: abort
+    label: Abort Merge/Rebase
+    hint: If you are stuck in a merge or rebase state, this will attempt to abort the operation and return to the previous state.

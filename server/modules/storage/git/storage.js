@@ -571,5 +571,26 @@ module.exports = {
     await fs.emptyDir(this.repoPath)
     WIKI.logger.info('(STORAGE/GIT) Local repository is now empty. Reinitializing...')
     await this.init()
+  },
+  async reset() {
+    WIKI.logger.info(`(STORAGE/GIT) Resetting to remote...`)
+    await this.git.fetch('origin')
+    await this.git.reset(['--hard', `origin/${this.config.branch}`])
+    WIKI.logger.info(`(STORAGE/GIT) Reset complete.`)
+  },
+  async abort() {
+    WIKI.logger.info(`(STORAGE/GIT) Aborting merge/rebase...`)
+    try {
+      await this.git.rebase(['--abort'])
+      WIKI.logger.info(`(STORAGE/GIT) Rebase aborted.`)
+    } catch (err) {
+      try {
+        await this.git.merge(['--abort'])
+        WIKI.logger.info(`(STORAGE/GIT) Merge aborted.`)
+      } catch (err2) {
+        WIKI.logger.warn(`(STORAGE/GIT) Failed to abort: ${err2.message}`)
+        throw new Error('Failed to abort merge or rebase. You might not be in a merge/rebase state.')
+      }
+    }
   }
 }

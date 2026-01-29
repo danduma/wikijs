@@ -1,0 +1,10 @@
+key: htmlLongevidenceMetrics
+title: Longevidence Metrics
+description: Render longevidence effect/score tags into static HTML + payload
+author: longevidence
+icon: mdi-chart-box
+enabledDefault: true
+dependsOn: htmlCore
+step: post
+order: 210
+props: {}

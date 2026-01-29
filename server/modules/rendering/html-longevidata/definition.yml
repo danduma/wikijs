@@ -1,0 +1,22 @@
+key: htmlLongevidata
+title: LongeviData Widget
+description: Renders interactive LongeviData research tables from inline HTML markers
+author: longevidence
+icon: mdi-table-search
+enabledDefault: true
+dependsOn: htmlCore
+step: post
+order: 300
+props:
+  apiBaseUrl:
+    type: String
+    default: 'http://localhost:8000'
+    title: LongeviData API Base URL
+    hint: Base URL of the LongeviData research API service
+    order: 1
+  apiToken:
+    type: String
+    default: ''
+    title: API Bearer Token
+    hint: Authentication token for the LongeviData API
+    order: 2

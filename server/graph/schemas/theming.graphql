@@ -30,6 +30,7 @@ type ThemingMutation {
     darkMode: Boolean!
     tocPosition: String
     showTags: Boolean
+    showReturnToTop: Boolean
     injectCSS: String
     injectHead: String
     injectBody: String
@@ -47,6 +48,7 @@ type ThemingConfig {
   darkMode: Boolean!
   tocPosition: String
   showTags: Boolean
+  showReturnToTop: Boolean
   injectCSS: String
   injectHead: String
   injectBody: String

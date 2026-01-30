@@ -2,3 +2,5 @@ admin:
   theme:
     displayTags: 'Display Tags'
     displayTagsHint: 'Show tags below the page title and in the sidebar.'
+    displayReturnToTop: 'Display Return to Top'
+    displayReturnToTopHint: 'Show the floating Return to Top button on pages.'

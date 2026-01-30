@@ -62,6 +62,7 @@ defaults:
       darkMode: false
       tocPosition: 'left'
       showTags: true
+      showReturnToTop: true
     auth:
       autoLogin: false
       enforce2FA: false

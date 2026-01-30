@@ -82,6 +82,7 @@ module.exports = {
         darkMode: WIKI.config.theming.darkMode,
         tocPosition: WIKI.config.theming.tocPosition || 'left',
         showTags: WIKI.config.theming.showTags !== false,
+        showReturnToTop: WIKI.config.theming.showReturnToTop !== false,
         injectCSS: new CleanCSS({ format: 'beautify' }).minify(WIKI.config.theming.injectCSS).styles,
         injectHead: WIKI.config.theming.injectHead,
         injectBody: WIKI.config.theming.injectBody
@@ -107,6 +108,7 @@ module.exports = {
           darkMode: args.darkMode,
           tocPosition: args.tocPosition || 'left',
           showTags: _.isBoolean(args.showTags) ? args.showTags : (WIKI.config.theming.showTags !== false),
+          showReturnToTop: _.isBoolean(args.showReturnToTop) ? args.showReturnToTop : (WIKI.config.theming.showReturnToTop !== false),
           injectCSS: args.injectCSS || '',
           injectHead: args.injectHead || '',
           injectBody: args.injectBody || ''

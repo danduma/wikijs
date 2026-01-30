@@ -129,6 +129,7 @@ module.exports = () => {
         darkMode: false,
         iconset: 'mdi',
         showTags: true,
+        showReturnToTop: true,
         injectCSS: '',
         injectHead: '',
         injectBody: ''

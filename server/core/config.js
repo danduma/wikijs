@@ -88,6 +88,10 @@ module.exports = {
         _.set(WIKI.config, 'theming.showTags', true)
         await this.saveToDb(['theming'], false)
       }
+      if (!_.has(WIKI.config, 'theming.showReturnToTop')) {
+        _.set(WIKI.config, 'theming.showReturnToTop', true)
+        await this.saveToDb(['theming'], false)
+      }
     } else {
       WIKI.logger.warn('DB Configuration is empty or incomplete. Switching to Setup mode...')
       WIKI.config.setup = true

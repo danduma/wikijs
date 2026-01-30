@@ -154,6 +154,8 @@ module.exports = async () => {
       theme,
       darkMode: WIKI.config.theming.darkMode,
       tocPosition: WIKI.config.theming.tocPosition || 'left',
+      showTags: WIKI.config.theming.showTags !== false,
+      showReturnToTop: WIKI.config.theming.showReturnToTop !== false,
       lang: WIKI.config.lang.code,
       rtl: WIKI.config.lang.rtl,
       company: WIKI.config.company,

@@ -11,6 +11,7 @@ query {
       darkMode
       tocPosition
       showTags
+      showReturnToTop
       injectCSS
       injectHead
       injectBody

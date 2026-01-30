@@ -80,6 +80,14 @@
                     persistent-hint
                     :hint='$t(`admin:theme.displayTagsHint`)'
                     )
+                  v-switch.mt-3(
+                    inset
+                    v-model='config.showReturnToTop'
+                    :label='$t(`admin:theme.displayReturnToTop`)'
+                    color='primary'
+                    persistent-hint
+                    :hint='$t(`admin:theme.displayReturnToTopHint`)'
+                    )
             v-flex(lg6 xs12)
               //- v-card.animated.fadeInUp.wait-p2s
               //-   v-toolbar(color='teal', dark, dense, flat)
@@ -185,6 +193,7 @@ export default {
         iconset: '',
         tocPosition: 'left',
         showTags: true,
+        showReturnToTop: true,
         injectCSS: '',
         injectHead: '',
         injectBody: ''
@@ -242,6 +251,7 @@ export default {
             darkMode: this.darkDefault,
             tocPosition: this.config.tocPosition,
             showTags: this.config.showTags,
+            showReturnToTop: this.config.showReturnToTop,
             injectCSS: this.config.injectCSS,
             injectHead: this.config.injectHead,
             injectBody: this.config.injectBody

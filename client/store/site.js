@@ -11,6 +11,8 @@ const state = {
   appearanceMode: 'auto',
   systemPrefersDark: false,
   tocPosition: siteConfig.tocPosition,
+  showTags: siteConfig.showTags,
+  showReturnToTop: siteConfig.showReturnToTop,
   mascot: true,
   title: siteConfig.title,
   logoUrl: siteConfig.logoUrl,

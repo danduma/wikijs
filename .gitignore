@@ -48,5 +48,8 @@ test-results/
 # Localization Resources
 /server/locales/**/*.yml
 
-client/themes/longevidence/*
 /vibes/*
+
+/devops
+
+wikijs.code-workspace

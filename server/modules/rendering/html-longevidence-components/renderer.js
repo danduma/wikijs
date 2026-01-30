@@ -89,10 +89,10 @@ const buildFaq = ($, sectionNode) => {
     if (!currentItem) return
     const $item = $(currentItem)
     $item.find('.toc-anchor').remove()
-    const summary = $('<summary></summary>')
+    const summary = $('<summary class="fold-summary"></summary>')
     summary.html($item.html())
-    const details = $('<details class="faq-item"></details>')
-    const contentWrapper = $('<div class="faq-content"></div>')
+    const details = $('<details class="fold faq-item"></details>')
+    const contentWrapper = $('<div class="fold-content faq-content"></div>')
     currentContent
       .filter(node => !isWhitespaceText(node))
       .forEach(node => {

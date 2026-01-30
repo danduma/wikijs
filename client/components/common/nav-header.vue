@@ -372,7 +372,7 @@ export default {
           return 'mdi-weather-night'
         case 'auto':
         default:
-          return 'mdi-brightness-auto'
+          return 'mdi-theme-light-dark'
       }
     },
     appearanceTooltip () {

@@ -127,6 +127,15 @@ module.exports = {
         loader: 'vue-loader'
       },
       {
+        test: /\.md$/,
+        include: [
+          path.join(process.cwd(), 'client/themes')
+        ],
+        use: [
+          { loader: 'ignore-loader' }
+        ]
+      },
+      {
         test: /\.pug$/,
         exclude: [
           path.join(process.cwd(), 'dev')

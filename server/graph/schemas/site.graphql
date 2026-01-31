@@ -61,6 +61,24 @@ type SiteMutation {
     securityHSTSDuration: Int
     securityCSP: Boolean
     securityCSPDirectives: String
+    anonViewLimitEnabled: Boolean
+    anonViewLimitCount: Int
+    anonViewLimitResetHours: Int
+    anonViewLimitExemptPaths: [String]
+    anonViewLimitExemptTags: [String]
+    anonViewLimitExemptBots: Boolean
+    anonViewLimitTruncatePercent: Int
+    anonViewLimitHashSecret: String
+    anonViewLimitWarnThreshold: Int
+    anonViewLimitNoIndexOnLimit: Boolean
+    conversionCtaEnabled: Boolean
+    conversionCtaVariants: [String]
+    conversionCtaFrequencyHours: Int
+    conversionCtaSoftPromptPages: Int
+    externalUserPortalEnabled: Boolean
+    externalUserPortalBaseUrl: String
+    externalUserPortalApiKey: String
+    externalUserPortalTimeoutMs: Int
     uploadMaxFileSize: Int
     uploadMaxFiles: Int
     uploadScanSVG: Boolean
@@ -111,6 +129,24 @@ type SiteConfig {
   securityHSTSDuration: Int
   securityCSP: Boolean
   securityCSPDirectives: String
+  anonViewLimitEnabled: Boolean
+  anonViewLimitCount: Int
+  anonViewLimitResetHours: Int
+  anonViewLimitExemptPaths: [String]
+  anonViewLimitExemptTags: [String]
+  anonViewLimitExemptBots: Boolean
+  anonViewLimitTruncatePercent: Int
+  anonViewLimitHashSecret: String
+  anonViewLimitWarnThreshold: Int
+  anonViewLimitNoIndexOnLimit: Boolean
+  conversionCtaEnabled: Boolean
+  conversionCtaVariants: [String]
+  conversionCtaFrequencyHours: Int
+  conversionCtaSoftPromptPages: Int
+  externalUserPortalEnabled: Boolean
+  externalUserPortalBaseUrl: String
+  externalUserPortalApiKey: String
+  externalUserPortalTimeoutMs: Int
   uploadMaxFileSize: Int
   uploadMaxFiles: Int
   uploadScanSVG: Boolean

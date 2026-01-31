@@ -546,6 +546,22 @@ router.get('/*', async (req, res, next) => {
           injectCode.body = `${injectCode.body}\n${page.extra.js}`
         }
 
+        // -> Anonymous view limiting
+        let anonViewLimit = null
+        if (WIKI.anonViewLimit && WIKI.anonViewLimit.isEnabled()) {
+          anonViewLimit = await WIKI.anonViewLimit.evaluate(req, res, pageArgs, page)
+          if (anonViewLimit && anonViewLimit.limitReached) {
+            page.render = WIKI.anonViewLimit.truncateContent(page.render, anonViewLimit.truncatePercent)
+            if (anonViewLimit.noIndex) {
+              res.set('X-Robots-Tag', 'noindex, nofollow')
+              _.set(res.locals, 'pageMeta.robots', 'noindex, nofollow')
+            }
+            res.cookie('loginRedirect', req.path, { maxAge: 15 * 60 * 1000 })
+          } else if (anonViewLimit && anonViewLimit.softPrompt) {
+            res.cookie('loginRedirect', req.path, { maxAge: 15 * 60 * 1000 })
+          }
+        }
+
         if (req.query.legacy || (req.get('user-agent') && req.get('user-agent').indexOf('Trident') >= 0)) {
           // -> Convert page TOC
           if (_.isString(page.toc)) {
@@ -558,7 +574,8 @@ router.get('/*', async (req, res, next) => {
             sidebar,
             injectCode,
             breadcrumbs,
-            isAuthenticated: req.user && req.user.id !== 2
+            isAuthenticated: req.user && req.user.id !== 2,
+            anonViewLimit
           })
         } else {
           // -> Convert page TOC
@@ -597,7 +614,8 @@ router.get('/*', async (req, res, next) => {
             breadcrumbs,
             comments: commentTmpl,
             effectivePermissions,
-            pageFilename
+            pageFilename,
+            anonViewLimit
           })
         }
       } else if (pageArgs.path === 'home') {

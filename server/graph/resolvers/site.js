@@ -31,6 +31,24 @@ module.exports = {
         authJwtAudience: WIKI.config.auth.audience,
         authJwtExpiration: WIKI.config.auth.tokenExpiration,
         authJwtRenewablePeriod: WIKI.config.auth.tokenRenewal,
+        anonViewLimitEnabled: WIKI.config.anonViewLimit.enabled,
+        anonViewLimitCount: WIKI.config.anonViewLimit.count,
+        anonViewLimitResetHours: WIKI.config.anonViewLimit.resetHours,
+        anonViewLimitExemptPaths: WIKI.config.anonViewLimit.exemptPaths,
+        anonViewLimitExemptTags: WIKI.config.anonViewLimit.exemptTags,
+        anonViewLimitExemptBots: WIKI.config.anonViewLimit.exemptBots,
+        anonViewLimitTruncatePercent: WIKI.config.anonViewLimit.truncatePercent,
+        anonViewLimitHashSecret: WIKI.config.anonViewLimit.hashSecret,
+        anonViewLimitWarnThreshold: WIKI.config.anonViewLimit.warnThreshold,
+        anonViewLimitNoIndexOnLimit: WIKI.config.anonViewLimit.noIndexOnLimit,
+        conversionCtaEnabled: WIKI.config.conversionCta.enabled,
+        conversionCtaVariants: WIKI.config.conversionCta.variants,
+        conversionCtaFrequencyHours: WIKI.config.conversionCta.frequencyHours,
+        conversionCtaSoftPromptPages: WIKI.config.conversionCta.softPromptPages,
+        externalUserPortalEnabled: WIKI.config.externalUserPortal.enabled,
+        externalUserPortalBaseUrl: WIKI.config.externalUserPortal.baseUrl,
+        externalUserPortalApiKey: WIKI.config.externalUserPortal.apiKey,
+        externalUserPortalTimeoutMs: WIKI.config.externalUserPortal.timeoutMs,
         uploadMaxFileSize: WIKI.config.uploads.maxFileSize,
         uploadMaxFiles: WIKI.config.uploads.maxFiles,
         uploadScanSVG: WIKI.config.uploads.scanSVG,
@@ -125,7 +143,38 @@ module.exports = {
           forceDownload: _.get(args, 'uploadForceDownload', WIKI.config.uploads.forceDownload)
         }
 
-        await WIKI.configSvc.saveToDb(['host', 'title', 'company', 'contentLicense', 'footerOverride', 'seo', 'logoUrl', 'pageExtensions', 'auth', 'editShortcuts', 'features', 'security', 'uploads'])
+        WIKI.config.anonViewLimit = {
+          enabled: _.get(args, 'anonViewLimitEnabled', WIKI.config.anonViewLimit.enabled),
+          count: _.get(args, 'anonViewLimitCount', WIKI.config.anonViewLimit.count),
+          resetHours: _.get(args, 'anonViewLimitResetHours', WIKI.config.anonViewLimit.resetHours),
+          exemptPaths: _.get(args, 'anonViewLimitExemptPaths', WIKI.config.anonViewLimit.exemptPaths),
+          exemptTags: _.get(args, 'anonViewLimitExemptTags', WIKI.config.anonViewLimit.exemptTags),
+          exemptBots: _.get(args, 'anonViewLimitExemptBots', WIKI.config.anonViewLimit.exemptBots),
+          truncatePercent: _.get(args, 'anonViewLimitTruncatePercent', WIKI.config.anonViewLimit.truncatePercent),
+          hashSecret: _.get(args, 'anonViewLimitHashSecret', WIKI.config.anonViewLimit.hashSecret),
+          warnThreshold: _.get(args, 'anonViewLimitWarnThreshold', WIKI.config.anonViewLimit.warnThreshold),
+          noIndexOnLimit: _.get(args, 'anonViewLimitNoIndexOnLimit', WIKI.config.anonViewLimit.noIndexOnLimit)
+        }
+
+        WIKI.config.conversionCta = {
+          enabled: _.get(args, 'conversionCtaEnabled', WIKI.config.conversionCta.enabled),
+          variants: _.get(args, 'conversionCtaVariants', WIKI.config.conversionCta.variants),
+          frequencyHours: _.get(args, 'conversionCtaFrequencyHours', WIKI.config.conversionCta.frequencyHours),
+          softPromptPages: _.get(args, 'conversionCtaSoftPromptPages', WIKI.config.conversionCta.softPromptPages)
+        }
+
+        WIKI.config.externalUserPortal = {
+          enabled: _.get(args, 'externalUserPortalEnabled', WIKI.config.externalUserPortal.enabled),
+          baseUrl: _.get(args, 'externalUserPortalBaseUrl', WIKI.config.externalUserPortal.baseUrl),
+          apiKey: _.get(args, 'externalUserPortalApiKey', WIKI.config.externalUserPortal.apiKey),
+          timeoutMs: _.get(args, 'externalUserPortalTimeoutMs', WIKI.config.externalUserPortal.timeoutMs)
+        }
+
+        await WIKI.configSvc.saveToDb(['host', 'title', 'company', 'contentLicense', 'footerOverride', 'seo', 'logoUrl', 'pageExtensions', 'auth', 'editShortcuts', 'features', 'security', 'uploads', 'anonViewLimit', 'conversionCta', 'externalUserPortal'])
+
+        if (WIKI.anonViewLimit) {
+          WIKI.anonViewLimit.refresh()
+        }
 
         if (WIKI.config.security.securityTrustProxy) {
           WIKI.app.enable('trust proxy')

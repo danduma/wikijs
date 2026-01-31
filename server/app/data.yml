@@ -93,6 +93,28 @@ defaults:
       securityHSTSDuration: 300
       securityCSP: false
       securityCSPDirectives: ''
+    anonViewLimit:
+      enabled: false
+      count: 3
+      resetHours: 24
+      exemptPaths: []
+      exemptTags: []
+      exemptBots: false
+      truncatePercent: 30
+      hashSecret: ''
+      warnThreshold: 1
+      noIndexOnLimit: true
+    conversionCta:
+      enabled: true
+      variants:
+        - default
+      frequencyHours: 24
+      softPromptPages: 1
+    externalUserPortal:
+      enabled: false
+      baseUrl: ''
+      apiKey: ''
+      timeoutMs: 5000
     server:
       sslRedir: false
     uploads:

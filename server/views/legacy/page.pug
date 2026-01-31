@@ -38,6 +38,11 @@ block body
             .page-header-right-title Last edited on
             .page-header-right-updated= page.updatedAt
         .page-contents.v-content
+          if anonViewLimit && anonViewLimit.limitReached
+            .anon-view-legacy-banner
+              strong= t('common:conversion.limitedNotice')
+              span &nbsp;
+              a(href='/login')= t('common:conversion.signIn')
           .contents
             div!= page.render
           if page.toc.length

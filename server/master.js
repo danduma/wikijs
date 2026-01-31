@@ -22,6 +22,7 @@ module.exports = async () => {
   WIKI.lang = require('./core/localization').init()
   WIKI.mail = require('./core/mail').init()
   WIKI.system = require('./core/system').init()
+  WIKI.anonViewLimit = require('./core/anonViewLimit').init()
 
   // ----------------------------------------
   // Load middlewares
@@ -87,6 +88,7 @@ module.exports = async () => {
   }))
   app.use(WIKI.auth.passport.initialize())
   app.use(WIKI.auth.authenticate)
+  app.use(mw.anonViewLimit)
 
   // ----------------------------------------
   // GraphQL Server

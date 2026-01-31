@@ -326,8 +326,32 @@
               span {{$t('common:page.editPage')}}
             v-alert.mb-5(v-if='!isPublished', color='red', outlined, icon='mdi-minus-circle', dense)
               .caption {{$t('common:page.unpublishedWarning')}}
-            .contents(ref='container')
+            v-alert.mb-4(
+              v-if='(showSoftPrompt || warnReached) && !limitReached'
+              color='blue-grey'
+              outlined
+              dense
+              icon='mdi-account-arrow-right'
+              )
+              .d-flex.align-center.flex-wrap
+                .mr-4(v-if='remainingViewsText') {{ remainingViewsText }}
+                span {{$t('common:conversion.body')}}
+                v-spacer
+                template(v-if='showSoftPrompt')
+                  v-btn.ml-2(color='primary', small, @click='ctaSignIn') {{$t('common:conversion.signIn')}}
+                  v-btn.ml-2(color='grey', small, text, @click='ctaRegister') {{$t('common:conversion.createAccount')}}
+            .contents(ref='container', :class='{ \"anon-view-limited\": limitReached }')
               slot(name='contents')
+              .anon-view-fade(v-if='limitReached')
+              .anon-view-cta(v-if='showLimitCta')
+                v-card.anon-view-cta-card(:class='ctaVariant ? `anon-view-cta-variant-${ctaVariant}` : ``', elevation='6')
+                  .overline.text-uppercase {{$t('common:conversion.limitedNotice')}}
+                  .title.mt-2 {{$t('common:conversion.title')}}
+                  .body-2.mt-2 {{$t('common:conversion.body')}}
+                  .caption.mt-2(v-if='remainingViewsText') {{ remainingViewsText }}
+                  .mt-4
+                    v-btn(color='primary', @click='ctaSignIn') {{$t('common:conversion.signIn')}}
+                    v-btn.ml-2(color='grey', text, @click='ctaRegister') {{$t('common:conversion.createAccount')}}
             .comments-container#discussion(v-if='commentsEnabled && commentsPerms.read && !printView')
               .comments-header
                 v-icon.mr-2(dark) mdi-comment-text-outline
@@ -505,6 +529,34 @@ export default {
     initialBreadcrumbs: {
       type: String,
       default: ''
+    },
+    limitReached: {
+      type: Boolean,
+      default: false
+    },
+    remainingViews: {
+      type: Number,
+      default: -1
+    },
+    softPrompt: {
+      type: Boolean,
+      default: false
+    },
+    warnReached: {
+      type: Boolean,
+      default: false
+    },
+    ctaEnabled: {
+      type: Boolean,
+      default: false
+    },
+    ctaVariant: {
+      type: String,
+      default: ''
+    },
+    ctaFrequencyHours: {
+      type: Number,
+      default: 24
     }
   },
   data() {
@@ -536,7 +588,8 @@ export default {
           }
         }
       },
-      winWidth: 0
+      winWidth: 0,
+      ctaSoftPromptVisible: false
     }
   },
   computed: {
@@ -588,6 +641,21 @@ export default {
       } else {
         return ''
       }
+    },
+    remainingViewsText () {
+      if (this.remainingViews === 1) {
+        return this.$t('common:conversion.remainingOne')
+      }
+      if (this.remainingViews > 1) {
+        return this.$t('common:conversion.remaining', { count: this.remainingViews })
+      }
+      return ''
+    },
+    showSoftPrompt () {
+      return this.ctaSoftPromptVisible && this.ctaEnabled && !this.printView
+    },
+    showLimitCta () {
+      return this.limitReached && this.ctaEnabled && !this.printView
     }
   },
   created() {
@@ -619,6 +687,8 @@ export default {
     if (this.$vuetify.theme.dark) {
       this.scrollStyle.bar.background = '#424242'
     }
+
+    this.initCtaVisibility()
 
     // -> Check side navigation visibility
     this.handleSideNavVisibility()
@@ -663,6 +733,33 @@ export default {
     })
   },
   methods: {
+    initCtaVisibility () {
+      if (this.limitReached && this.ctaEnabled) {
+        this.recordCtaShown()
+        return
+      }
+      if (this.softPrompt && this.ctaEnabled && this.canShowCta()) {
+        this.ctaSoftPromptVisible = true
+        this.recordCtaShown()
+      }
+    },
+    canShowCta () {
+      if (!window || !window.localStorage) return true
+      const lastShown = parseInt(window.localStorage.getItem('conversionCtaLastShown') || '0', 10)
+      if (!lastShown) return true
+      const hours = Math.max(1, this.ctaFrequencyHours || 24)
+      return (Date.now() - lastShown) >= hours * 3600 * 1000
+    },
+    recordCtaShown () {
+      if (!window || !window.localStorage) return
+      window.localStorage.setItem('conversionCtaLastShown', Date.now().toString())
+    },
+    ctaSignIn () {
+      window.location.assign('/login')
+    },
+    ctaRegister () {
+      window.location.assign('/register')
+    },
     goHome () {
       window.location.assign('/')
     },
@@ -801,6 +898,42 @@ export default {
       }
     }
   }
+}
+
+.contents.anon-view-limited {
+  position: relative;
+}
+
+.anon-view-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 180px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85));
+  pointer-events: none;
+  z-index: 2;
+
+  @at-root .theme--dark & {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85));
+  }
+}
+
+.anon-view-cta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  display: flex;
+  justify-content: center;
+  z-index: 3;
+  padding: 0 16px;
+}
+
+.anon-view-cta-card {
+  max-width: 560px;
+  width: 100%;
+  padding: 20px 24px;
 }
 
 </style>

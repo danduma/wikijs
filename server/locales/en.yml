@@ -4,3 +4,10 @@ admin:
     displayTagsHint: 'Show tags below the page title and in the sidebar.'
     displayReturnToTop: 'Display Return to Top'
     displayReturnToTopHint: 'Show the floating Return to Top button on pages.'
+
+common:
+  medical:
+    title: Medical Disclaimer
+    pill: Medical disclaimer
+    intro: 'Our medical disclaimer via our <b>terms of service</b>:'
+    text: 'All material, text, images, downloads, attachments, and any other content whatsoever contained on or within Examine.com is for informational purposes only and is not intended to substitute the advice, diagnosis, or treatment from a qualified medical professional. The User should always speak to the User''s doctor, physician, or other qualified medical professional with any medical questions the User may have. Examine and its editors do not advocate nutritional supplementation over proper medical advice or treatment, and no page on Examine.com advocates nutritional supplementation over proper medical advice or treatment. If the User is using any pharmaceuticals or drugs given to the User by a doctor or received with a prescription, the User must consult with the doctor in question or an equally qualified medical professional prior to using any nutritional supplementation. If the User is undergoing medical therapies, then the User must consult with the User''s respective therapist or medical professional about possible interactions between the User''s treatment (including pharmaceuticals and/or drugs) and possible nutritional supplements or practices mentioned on Examine.com and its content.'

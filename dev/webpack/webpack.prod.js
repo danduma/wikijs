@@ -36,8 +36,8 @@ module.exports = {
   output: {
     path: path.join(process.cwd(), 'assets'),
     publicPath: '/_assets/',
-    filename: `js/[name].js?${now}`,
-    chunkFilename: `js/[name].js?${now}`,
+    filename: 'js/[name].[contenthash].js',
+    chunkFilename: 'js/[name].[contenthash].js',
     globalObject: 'this',
     crossOriginLoading: 'use-credentials'
   },

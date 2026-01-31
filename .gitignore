@@ -45,8 +45,6 @@ server/views/setup.pug
 test-results/
 .scannerwork
 
-# Localization Resources
-/server/locales/**/*.yml
 
 /vibes/*
 
@@ -54,5 +52,11 @@ test-results/
 
 wikijs.code-workspace
 
-/client/themes/*
-!/client/themes/default/
+client/themes/*
+!client/themes/default/
+
+# Browser snapshots
+*_snapshot.json
+
+# Local scripts
+/scripts/

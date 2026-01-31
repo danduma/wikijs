@@ -364,9 +364,21 @@ const transformCallouts = ($) => {
   })
 }
 
+const buildMedicalDisclaimer = ($, headingNode) => {
+  if (!isHeading(headingNode)) return
+  const $heading = $(headingNode)
+
+  const pill = $('<span class="medical-disclaimer-pill">Medical disclaimer</span>')
+  $heading.append(pill)
+}
+
 module.exports = {
   init (input) {
     const $ = cheerio.load(input, { decodeEntities: true })
+
+    $('.medical-disclaimer').each((idx, node) => {
+      buildMedicalDisclaimer($, node)
+    })
 
     $('.faq-section').each((idx, node) => {
       buildFaq($, node)

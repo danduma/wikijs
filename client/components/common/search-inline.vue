@@ -179,6 +179,29 @@ export default {
   }
 }
 
+.theme--light .search-inline.is-theme-overlay {
+  .v-input__slot {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+  }
+
+  .v-input--is-focused .v-input__slot {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+    border-color: rgba(0,0,0,0.0);
+  }
+
+  .v-label,
+  input,
+  .v-icon {
+    color: #333333 !important;
+  }
+
+  .v-icon {
+    opacity: 0.6;
+  }
+}
+
 .theme--dark .search-inline.is-theme-overlay {
   .v-input__slot {
     background-color: #1c1c1c !important;

@@ -104,7 +104,7 @@ input CommentProviderInput {
 type CommentPost {
   id: Int!
   pagePath: String!
-  content: String! @auth(requires: ["write:comments", "manage:comments", "manage:system"])
+  content: String! @auth(requires: ["read:comments", "write:comments", "manage:comments", "manage:system"])
   render: String!
   selector: String
   selectedText: String

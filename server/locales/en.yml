@@ -4,6 +4,9 @@ admin:
     displayTagsHint: 'Show tags below the page title and in the sidebar.'
     displayReturnToTop: 'Display Return to Top'
     displayReturnToTopHint: 'Show the floating Return to Top button on pages.'
+conversion:
+  title: 'Conversion'
+  subtitle: 'Encourage visitors to sign in and create accounts.'
 
 common:
   medical:

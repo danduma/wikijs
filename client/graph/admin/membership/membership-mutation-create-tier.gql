@@ -1,0 +1,42 @@
+mutation ($key: String!, $name: String!, $description: String, $sortOrder: Int, $isDefault: Boolean, $isActive: Boolean, $features: [String], $maxLongevidataRows: Int, $stripeProductId: String, $stripePriceId: String) {
+  membership {
+    createTier(
+      key: $key
+      name: $name
+      description: $description
+      sortOrder: $sortOrder
+      isDefault: $isDefault
+      isActive: $isActive
+      features: $features
+      maxLongevidataRows: $maxLongevidataRows
+      stripeProductId: $stripeProductId
+      stripePriceId: $stripePriceId
+    ) {
+      responseResult {
+        succeeded
+        errorCode
+        slug
+        message
+      }
+      tier {
+        id
+        key
+        name
+        description
+        sortOrder
+        isDefault
+        isActive
+        features
+        maxLongevidataRows
+        stripeProductId
+        stripePriceId
+        displayPrice
+        currency
+        billingPeriod
+        ctaText
+        badgeText
+        userCount
+      }
+    }
+  }
+}

@@ -43,6 +43,8 @@ block body
       :cta-enabled=(anonViewLimit && anonViewLimit.ctaEnabled ? true : false)
       cta-variant=(anonViewLimit && anonViewLimit.ctaVariant ? anonViewLimit.ctaVariant : '')
       :cta-frequency-hours=(config.conversionCta && config.conversionCta.frequencyHours ? config.conversionCta.frequencyHours : 24)
+      :membership-max-rows=(membershipInfo && membershipInfo.maxRows !== undefined ? membershipInfo.maxRows : null)
+      membership-tier-key=(membershipInfo && membershipInfo.tierKey ? membershipInfo.tierKey : 'free')
       )
       template(slot='contents')
         div!= page.render

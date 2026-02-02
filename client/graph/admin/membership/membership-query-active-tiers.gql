@@ -1,0 +1,18 @@
+query {
+  membership {
+    activeTiers {
+      key
+      name
+      description
+      sortOrder
+      isDefault
+      features
+      maxLongevidataRows
+      displayPrice
+      currency
+      billingPeriod
+      ctaText
+      badgeText
+    }
+  }
+}

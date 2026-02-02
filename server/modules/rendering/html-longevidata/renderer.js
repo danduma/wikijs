@@ -1,6 +1,9 @@
 const cheerio = require('cheerio')
 const rp = require('request-promise')
 const Base64 = require('js-base64').Base64
+const longevidata = require('../../../helpers/longevidata')
+
+/* global WIKI */
 
 module.exports = {
   init: async function (input, config) {
@@ -12,6 +15,18 @@ module.exports = {
     }
 
     const promises = []
+    let previewMaxRows = 4
+
+    try {
+      if (typeof WIKI !== 'undefined' && WIKI && WIKI.models && WIKI.models.membershipTiers) {
+        const defaultTier = await WIKI.models.membershipTiers.getDefault()
+        if (defaultTier && defaultTier.maxLongevidataRows !== undefined) {
+          previewMaxRows = defaultTier.maxLongevidataRows
+        }
+      }
+    } catch (err) {
+      previewMaxRows = 4
+    }
 
     widgets.each((i, elm) => {
       const $elm = $(elm)
@@ -47,12 +62,12 @@ module.exports = {
         rp(options)
           .then(data => {
             // Success: Render table
-            renderStaticTable($, $elm, type, name, data)
+            renderStaticTable($, $elm, type, name, data, previewMaxRows)
           })
           .catch(err => {
             // Failure: Render error/empty state
             console.error(`LongeviData API Error for ${type} ${entityId}:`, err.message)
-            renderErrorState($, $elm, name)
+            renderErrorState($, $elm, name, err.message)
           })
       )
     })
@@ -60,6 +75,33 @@ module.exports = {
     await Promise.all(promises)
 
     return $.html()
+  },
+
+  testConnection: async function (config) {
+    if (!config.apiBaseUrl) {
+      throw new Error('API Base URL is missing')
+    }
+
+    try {
+      // Test request to verify connection and auth
+      await rp({
+        uri: `${config.apiBaseUrl}/api/research/outcomes?limit=1`,
+        headers: {
+          'Authorization': `Bearer ${config.apiToken}`
+        },
+        json: true,
+        timeout: 5000
+      })
+      return true
+    } catch (err) {
+      if (err.statusCode === 401) {
+        throw new Error('Authentication failed (401). Check your API Token.')
+      } else if (err.statusCode === 404) {
+        throw new Error('API endpoint not found (404). Check API Base URL.')
+      } else {
+        throw new Error(`Connection failed: ${err.message}`)
+      }
+    }
   }
 }
 
@@ -67,9 +109,16 @@ module.exports = {
 // Static Rendering Helpers
 // ----------------------------------------------------------------------------
 
-function renderStaticTable($, $elm, type, name, data) {
-  // 1. Set data-initial attribute
-  const jsonStr = JSON.stringify(data)
+function renderStaticTable($, $elm, type, name, data, previewMaxRows) {
+  const orderedOutcomes = longevidata.orderOutcomes(data.outcomes || [], type)
+  const totalOutcomes = orderedOutcomes.length
+  const previewOutcomes = longevidata.limitOutcomes(orderedOutcomes, previewMaxRows)
+
+  // 1. Set data-initial attribute (preview only)
+  const jsonStr = JSON.stringify({
+    outcomes: previewOutcomes,
+    totalOutcomes
+  })
   $elm.attr('data-initial', Base64.encode(jsonStr))
 
   // 2. Build HTML structure
@@ -78,7 +127,7 @@ function renderStaticTable($, $elm, type, name, data) {
   // Header
   $widget.append(`
     <div class="longevidata-header">
-      <h4>Examine Database: ${name}</h4>
+      <h4>LongeviData: ${name}</h4>
     </div>
   `)
 
@@ -123,7 +172,8 @@ function renderStaticTable($, $elm, type, name, data) {
   const $tbody = $('<tbody></tbody>')
   
   // Group outcomes
-  const groups = groupOutcomes(data.outcomes || [], type)
+  const groups = longevidata.groupOutcomes(previewOutcomes, type).sort((a, b) => b.totalStudies - a.totalStudies)
+  let rowIndex = 0
 
   groups.forEach(group => {
     // Group Row
@@ -148,8 +198,9 @@ function renderStaticTable($, $elm, type, name, data) {
     // I'll render them.
     
     group.outcomes.forEach(outcome => {
+      const dataIndex = rowIndex++
       $tbody.append(`
-        <tr class="longevidata-outcome-row">
+        <tr class="longevidata-outcome-row" data-row-index="${dataIndex}">
           <td></td>
           <td>${outcome.vocabulary_term || outcome.outcome_name}</td>
           <td><span class="${getGradeClass(outcome.grade_rating)}">${getGradeLabel(outcome.grade_rating)}</span></td>
@@ -170,14 +221,15 @@ function renderStaticTable($, $elm, type, name, data) {
   $elm.empty().append($widget)
 }
 
-function renderErrorState($, $elm, name) {
+function renderErrorState($, $elm, name, errorDetail) {
   $elm.html(`
     <div class="longevidata-widget-error">
       <div class="longevidata-header">
-        <h4>Examine Database: ${name}</h4>
+        <h4>LongeviData: ${name}</h4>
       </div>
       <div style="padding: 20px; text-align: center; color: #666;">
         Unable to load research data. Please try again later.
+        ${errorDetail ? `<br><small style="color:red; margin-top: 10px; display:block;">${errorDetail}</small>` : ''}
       </div>
     </div>
   `)
@@ -186,38 +238,6 @@ function renderErrorState($, $elm, name) {
 // ----------------------------------------------------------------------------
 // Data Helpers
 // ----------------------------------------------------------------------------
-
-function groupOutcomes(outcomes, type) {
-  const groups = {}
-  
-  outcomes.forEach(outcome => {
-    let groupKey = ''
-    let groupName = ''
-    
-    // Assuming API response structure. Adjusting based on standard Examine/LongeviData patterns.
-    if (type === 'intervention') {
-      groupKey = outcome.condition_id || outcome.condition_name
-      groupName = outcome.condition_name || 'Unknown Condition'
-    } else {
-      groupKey = outcome.intervention_id || outcome.intervention_name
-      groupName = outcome.intervention_name || 'Unknown Intervention'
-    }
-    
-    if (!groups[groupKey]) {
-      groups[groupKey] = {
-        id: groupKey,
-        name: groupName,
-        outcomes: [],
-        totalStudies: 0
-      }
-    }
-    
-    groups[groupKey].outcomes.push(outcome)
-    groups[groupKey].totalStudies += (outcome.study_count || 0)
-  })
-  
-  return Object.values(groups).sort((a, b) => b.totalStudies - a.totalStudies)
-}
 
 function getGradeClass(grade) {
   const g = (grade || '').trim().toUpperCase()

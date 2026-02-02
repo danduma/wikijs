@@ -23,7 +23,7 @@ module.exports = {
         .select('id', 'email', 'name', 'providerKey', 'createdAt')
     },
     async single(obj, args, context, info) {
-      let usr = await WIKI.models.users.query().findById(args.id)
+      let usr = await WIKI.models.users.query().findById(args.id).withGraphFetched('membershipTier')
       usr.password = ''
       usr.tfaSecret = ''
 

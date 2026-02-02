@@ -1,0 +1,23 @@
+query {
+  membership {
+    tiers {
+      id
+      key
+      name
+      description
+      sortOrder
+      isDefault
+      isActive
+      features
+      maxLongevidataRows
+      stripeProductId
+      stripePriceId
+      displayPrice
+      currency
+      billingPeriod
+      ctaText
+      badgeText
+      userCount
+    }
+  }
+}

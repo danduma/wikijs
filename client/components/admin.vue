@@ -41,6 +41,9 @@
             v-list-item(to='/conversion', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-chart-line-variant
               v-list-item-title {{ $t('conversion:title') }}
+            v-list-item(to='/membership', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-card-account-details
+              v-list-item-title Membership
           template(v-if='hasPermission([`manage:system`, `manage:groups`, `write:groups`, `manage:users`, `write:users`])')
             v-divider.my-2
             v-subheader.pl-4 {{ $t('admin:nav.users') }}
@@ -160,6 +163,7 @@ const router = new VueRouter({
     { path: '/tags', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-tags.vue') },
     { path: '/theme', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-theme.vue') },
     { path: '/conversion', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-conversion.vue') },
+    { path: '/membership', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-membership.vue') },
     { path: '/groups', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-groups.vue') },
     { path: '/groups/:id(\\d+)', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-groups-edit.vue') },
     { path: '/users', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-users.vue') },

@@ -1,0 +1,12 @@
+mutation ($id: Int!, $migrateTo: Int!) {
+  membership {
+    deleteTier(id: $id, migrateTo: $migrateTo) {
+      responseResult {
+        succeeded
+        errorCode
+        slug
+        message
+      }
+    }
+  }
+}

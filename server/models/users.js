@@ -32,6 +32,8 @@ module.exports = class User extends Model {
         jobTitle: {type: 'string'},
         location: {type: 'string'},
         pictureUrl: {type: 'string'},
+        membershipTierId: {type: ['integer', 'null']},
+        membershipExpiresAt: {type: ['string', 'null']},
         isSystem: {type: 'boolean'},
         isActive: {type: 'boolean'},
         isVerified: {type: 'boolean'},
@@ -77,6 +79,14 @@ module.exports = class User extends Model {
         join: {
           from: 'users.localeCode',
           to: 'locales.code'
+        }
+      },
+      membershipTier: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: require('./membershipTiers'),
+        join: {
+          from: 'users.membershipTierId',
+          to: 'membership_tiers.id'
         }
       }
     }
@@ -640,6 +650,11 @@ module.exports = class User extends Model {
         mustChangePwd: false
       }
 
+      const defaultTier = await WIKI.models.membershipTiers.getDefault()
+      if (defaultTier) {
+        newUsrData.membershipTierId = defaultTier.id
+      }
+
       if (providerKey === `local`) {
         newUsrData.password = passwordRaw
         newUsrData.mustChangePwd = (mustChangePassword === true)
@@ -815,7 +830,7 @@ module.exports = class User extends Model {
       const usr = await WIKI.models.users.query().findOne({ email, providerKey: 'local' })
       if (!usr) {
         // Create the account
-        const newUsr = await WIKI.models.users.query().insert({
+        const newUsrData = {
           provider: 'local',
           email,
           name,
@@ -826,7 +841,14 @@ module.exports = class User extends Model {
           isSystem: false,
           isActive: true,
           isVerified: false
-        })
+        }
+
+        const defaultTier = await WIKI.models.membershipTiers.getDefault()
+        if (defaultTier) {
+          newUsrData.membershipTierId = defaultTier.id
+        }
+
+        const newUsr = await WIKI.models.users.query().insert(newUsrData)
 
         // Assign to group(s)
         if (_.get(localStrg, 'autoEnrollGroups.v', []).length > 0) {

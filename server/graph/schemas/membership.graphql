@@ -1,0 +1,116 @@
+# ===============================================
+# MEMBERSHIP
+# ===============================================
+
+extend type Query {
+  membership: MembershipQuery
+}
+
+extend type Mutation {
+  membership: MembershipMutation
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+type MembershipQuery {
+  tiers: [MembershipTier] @auth(requires: ["manage:system"])
+  activeTiers: [MembershipTierPublic]
+  currentUserTier: MembershipTierPublic
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+type MembershipMutation {
+  createTier(
+    key: String!
+    name: String!
+    description: String
+    sortOrder: Int
+    isDefault: Boolean
+    isActive: Boolean
+    features: [String]
+    maxLongevidataRows: Int
+    stripeProductId: String
+    stripePriceId: String
+  ): MembershipTierResponse @auth(requires: ["manage:system"])
+
+  updateTier(
+    id: Int!
+    key: String
+    name: String
+    description: String
+    sortOrder: Int
+    isDefault: Boolean
+    isActive: Boolean
+    features: [String]
+    maxLongevidataRows: Int
+    stripeProductId: String
+    stripePriceId: String
+  ): MembershipTierResponse @auth(requires: ["manage:system"])
+
+  deleteTier(
+    id: Int!
+    migrateTo: Int!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  assignUserTier(
+    userId: Int!
+    tierId: Int!
+    expiresAt: Date
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  bulkMigrateUsers(
+    fromTierId: Int!
+    toTierId: Int!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+}
+
+# -----------------------------------------------
+# TYPES
+# -----------------------------------------------
+
+type MembershipTierResponse {
+  responseResult: ResponseStatus!
+  tier: MembershipTier
+}
+
+type MembershipTierPublic {
+  key: String!
+  name: String!
+  description: String
+  sortOrder: Int
+  isDefault: Boolean!
+  features: [String]!
+  maxLongevidataRows: Int
+  displayPrice: String
+  currency: String
+  billingPeriod: String
+  ctaText: String
+  badgeText: String
+}
+
+type MembershipTier {
+  id: Int!
+  key: String!
+  name: String!
+  description: String
+  sortOrder: Int
+  isDefault: Boolean!
+  isActive: Boolean!
+  features: [String]!
+  maxLongevidataRows: Int
+  stripeProductId: String
+  stripePriceId: String
+  displayPrice: String
+  currency: String
+  billingPeriod: String
+  ctaText: String
+  badgeText: String
+  userCount: Int
+  createdAt: Date
+  updatedAt: Date
+}

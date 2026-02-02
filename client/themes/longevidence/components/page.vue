@@ -1,6 +1,85 @@
 <template lang="pug">
-  v-app(v-scroll='upBtnScroll', :dark='$vuetify.theme.dark', :class='$vuetify.rtl ? `is-rtl` : `is-ltr`')
-    nav-header(v-if='!printView')
+  v-app(v-scroll='upBtnScroll', :dark='$vuetify.theme.dark', :class='[$vuetify.rtl ? `is-rtl` : `is-ltr`, { "custom-home-page": path === `home` }]')
+    nav-header(v-if='!printView', :hide-search='true')
+      template(v-slot:mid)
+        v-menu(
+          v-if='searchEnabled && $vuetify.breakpoint.mdAndUp'
+          v-model='searchMenuShown'
+          offset-y
+          :close-on-content-click='false'
+          :close-on-click='false'
+          :open-on-click='false'
+          open-on-focus
+          :nudge-bottom="8"
+          :min-width='searchMenuWidth || 400'
+          :max-width='searchMenuWidth || 400'
+          content-class='search-results-menu'
+          transition='slide-y-transition'
+        )
+          template(v-slot:activator='{ on, attrs }')
+            v-text-field.longevidence-header-search(
+              v-bind='attrs'
+              v-on='on'
+              ref='headerSearchInput'
+              v-model='searchQuery'
+              placeholder='Search Longevidence...'
+              solo
+              flat
+              dense
+              rounded
+              hide-details
+              prepend-inner-icon='mdi-magnify'
+              background-color='white'
+              light
+              @focus='searchMenuShown = true'
+            )
+          search-overlay(
+            :query='searchQuery'
+            @close='searchMenuShown = false'
+          )
+
+      template(v-slot:actions)
+        //- Mobile search trigger
+        v-menu(
+          v-if='searchEnabled && $vuetify.breakpoint.smAndDown'
+          v-model='searchMenuMobileShown'
+          fullscreen
+          transition='dialog-bottom-transition'
+          :close-on-content-click='false'
+        )
+          template(v-slot:activator='{ on, attrs }')
+            v-btn(icon, v-bind='attrs', v-on='on')
+              v-icon mdi-magnify
+          v-card(tile)
+            v-toolbar(flat, color='white')
+              v-btn(icon, @click='searchMenuMobileShown = false')
+                v-icon mdi-arrow-left
+              v-text-field(
+                v-model='searchQuery'
+                placeholder='Search...'
+                solo
+                flat
+                hide-details
+                autofocus
+                clearable
+              )
+            v-divider
+            search-overlay(
+              :query='searchQuery'
+              @close='searchMenuMobileShown = false'
+            )
+        
+        v-tooltip(bottom, v-if='commentsEnabled && commentsPerms.read')
+          template(v-slot:activator='{ on }')
+            v-btn(icon, v-on='on', @click='commentsShown = !commentsShown', :aria-label='`Comments`')
+              v-badge(
+                :content='commentsCount'
+                :value='commentsCount > 0'
+                overlap
+                color='pink darken-1'
+                )
+                v-icon(color='grey') mdi-comment-text-outline
+          span Comments
     v-navigation-drawer(
       v-if='navMode !== `NONE` && !printView'
       :class='$vuetify.theme.dark ? `grey darken-4-d4` : `primary`'
@@ -41,7 +120,7 @@
             divider='/'
             )
             template(slot='item', slot-scope='props')
-              v-icon(v-if='props.item.path === "/"', small, @click='goHome') mdi-home
+              v-icon(v-if='props.item.path === \"/\"', small, @click='goHome') mdi-home
               v-btn.ma-0(v-else, :href='props.item.path', small, text) {{props.item.name}}
           template(v-if='!isPublished')
             v-spacer
@@ -49,7 +128,15 @@
             status-indicator.ml-3(negative, pulse)
         v-divider
       v-container.grey.pa-0(fluid, :class='$vuetify.theme.dark ? `darken-4-l3` : `lighten-4`')
-        v-row.page-header-section(no-gutters, align-content='center', style='height: 90px;')
+        v-row.category-hero-section.py-10(v-if='heroImage', no-gutters, align='center', justify='center')
+          v-container
+            v-row(align='center', justify='space-between')
+              v-col(cols='12', md='7')
+                h1.display-2.font-weight-bold.mb-4.white--text {{ heroTitle }}
+                .headline.white--text.opacity-70(v-if='heroSubtitle') {{ heroSubtitle }}
+              v-col(cols='12', md='5')
+                v-img.mx-auto(:src='heroImage', max-height='250', contain)
+        v-row.page-header-section(v-else, no-gutters, align-content='center', style='height: 90px;')
           v-col.page-col-content.is-page-header(
             :offset-xl='tocEnabled && tocPosition === `left` ? 2 : 0'
             :offset-lg='tocEnabled && tocPosition === `left` ? 3 : 0'
@@ -83,7 +170,7 @@
                 v-icon.mr-2(small) {{ editShortcutsObj.editMenuExternalIcon }}
                 span.text-none {{$t(`common:page.editExternal`, { name: editShortcutsObj.editMenuExternalName })}}
       v-divider
-      v-container.pl-5.pt-4(fluid, grid-list-xl)
+      v-container(fluid, grid-list-xl, :class='path === `home` ? `pa-0` : `pl-5 pt-4`')
         v-layout(row)
           v-flex.page-col-sd(
             v-if='tocEnabled && tocPosition !== `off` && $vuetify.breakpoint.lgAndUp'
@@ -126,99 +213,16 @@
                   )
                   v-icon(:color='$vuetify.theme.dark ? `teal lighten-3` : `teal`', size='20') mdi-tag-multiple
 
-            v-card.page-comments-card.mb-5(v-if='commentsEnabled && commentsPerms.read')
+            v-card.page-author-card.mb-5(v-if='canReadHistory')
               .pa-5
-                .overline.pb-2.blue-grey--text.d-flex.align-center(:class='$vuetify.theme.dark ? `text--lighten-3` : `text--darken-2`')
-                  span {{$t('common:comments.sdTitle')}}
-                  //- v-spacer
-                  //- v-chip.text-center(
-                  //-   v-if='!commentsExternal'
-                  //-   label
-                  //-   x-small
-                  //-   :color='$vuetify.theme.dark ? `blue-grey darken-3` : `blue-grey darken-2`'
-                  //-   dark
-                  //-   style='min-width: 50px; justify-content: center;'
-                  //-   )
-                  //-   span {{commentsCount}}
-                .d-flex
-                  v-btn.text-none(
-                    @click='goToComments()'
-                    :color='$vuetify.theme.dark ? `blue-grey` : `blue-grey darken-2`'
-                    outlined
-                    style='flex: 1 1 100%;'
-                    small
-                    )
-                    span.blue-grey--text(:class='$vuetify.theme.dark ? `text--lighten-1` : `text--darken-2`') {{$t('common:comments.viewDiscussion')}}
-                  v-tooltip(right, v-if='commentsPerms.write')
-                    template(v-slot:activator='{ on }')
-                      v-btn.ml-2(
-                        @click='goToComments(true)'
-                        v-on='on'
-                        outlined
-                        small
-                        :color='$vuetify.theme.dark ? `blue-grey` : `blue-grey darken-2`'
-                        :aria-label='$t(`common:comments.newComment`)'
-                        )
-                        v-icon(:color='$vuetify.theme.dark ? `blue-grey lighten-1` : `blue-grey darken-2`', dense) mdi-comment-plus
-                    span {{$t('common:comments.newComment')}}
-
-            v-card.page-author-card.mb-5
-              .pa-5
-                .overline.indigo--text.d-flex(:class='$vuetify.theme.dark ? `text--lighten-3` : ``')
-                  span {{$t('common:page.lastEditedBy')}}
-                  v-spacer
-                  v-tooltip(right, v-if='isAuthenticated')
-                    template(v-slot:activator='{ on }')
-                      v-btn.btn-animate-edit(
-                        icon
-                        :href='"/h/" + locale + "/" + path'
-                        v-on='on'
-                        x-small
-                        v-if='canReadHistory'
-                        :aria-label='$t(`common:header.history`)'
-                        )
-                        v-icon(color='indigo', dense) mdi-history
-                    span {{$t('common:header.history')}}
-                .page-author-card-name.body-2.grey--text(:class='$vuetify.theme.dark ? `` : `text--darken-3`') {{ authorName }}
-                .page-author-card-date.caption.grey--text.text--darken-1 {{ updatedAt | moment('calendar') }}
-
-            //- v-card.mb-5
-            //-   .pa-5
-            //-     .overline.pb-2.yellow--text(:class='$vuetify.theme.dark ? `text--darken-3` : `text--darken-4`') Rating
-            //-     .text-center
-            //-       v-rating(
-            //-         v-model='rating'
-            //-         color='yellow darken-3'
-            //-         background-color='grey lighten-1'
-            //-         half-increments
-            //-         hover
-            //-       )
-            //-       .caption.grey--text 5 votes
-
-            v-card.page-shortcuts-card(flat)
-              v-toolbar(:color='$vuetify.theme.dark ? `grey darken-4-d3` : `grey lighten-3`', flat, dense)
-                v-spacer
-                //- v-tooltip(bottom)
-                //-   template(v-slot:activator='{ on }')
-                //-     v-btn(icon, tile, v-on='on', :aria-label='$t(`common:page.bookmark`)'): v-icon(color='grey') mdi-bookmark
-                //-   span {{$t('common:page.bookmark')}}
-                v-menu(offset-y, bottom, min-width='300')
-                  template(v-slot:activator='{ on: menu }')
-                    v-tooltip(bottom)
-                      template(v-slot:activator='{ on: tooltip }')
-                        v-btn(icon, tile, v-on='{ ...menu, ...tooltip }', :aria-label='$t(`common:page.share`)'): v-icon(color='grey') mdi-share-variant
-                      span {{$t('common:page.share')}}
-                  social-sharing(
-                    :url='pageUrl'
-                    :title='title'
-                    :description='description'
+                v-btn(
+                  block
+                  outlined
+                  color='indigo'
+                  :href='"/h/" + locale + "/" + path'
                   )
-                v-tooltip(bottom)
-                  template(v-slot:activator='{ on }')
-                    v-btn(icon, tile, v-on='on', @click='print', :aria-label='$t(`common:page.printFormat`)')
-                      v-icon(:color='printView ? `primary` : `grey`') mdi-printer
-                  span {{$t('common:page.printFormat')}}
-                v-spacer
+                  v-icon(left) mdi-history
+                  span Edit history
 
           v-flex.page-col-content(
             xs12
@@ -340,7 +344,7 @@
                 template(v-if='showSoftPrompt')
                   v-btn.ml-2(color='primary', small, @click='ctaSignIn') {{$t('common:conversion.signIn')}}
                   v-btn.ml-2(color='grey', small, text, @click='ctaRegister') {{$t('common:conversion.createAccount')}}
-            .contents(ref='container', :class='{ \"anon-view-limited\": limitReached }')
+            .contents(ref='container', :class='{ "anon-view-limited": limitReached }')
               slot(name='contents')
               .anon-view-fade(v-if='limitReached')
               .anon-view-cta(v-if='showLimitCta')
@@ -352,44 +356,78 @@
                   .mt-4
                     v-btn(color='primary', @click='ctaSignIn') {{$t('common:conversion.signIn')}}
                     v-btn.ml-2(color='grey', text, @click='ctaRegister') {{$t('common:conversion.createAccount')}}
-            .comments-container#discussion(v-if='commentsEnabled && commentsPerms.read && !printView')
-              .comments-header
-                v-icon.mr-2(dark) mdi-comment-text-outline
-                span {{$t('common:comments.title')}}
-              .comments-main
-                slot(name='comments')
-    nav-footer
-    notify
-    search-results
-    v-fab-transition
-      v-btn(
-        v-if='upBtnShown'
-        fab
-        fixed
-        bottom
-        :right='$vuetify.rtl'
-        :left='!$vuetify.rtl'
-        small
-        :depressed='this.$vuetify.breakpoint.mdAndUp'
-        @click='$vuetify.goTo(0, scrollOpts)'
-        color='primary'
-        dark
-        :style='upBtnPosition'
-        :aria-label='$t(`common:actions.returnToTop`)'
+      side-comments(
+        v-if='commentsEnabled && commentsPerms.read && !printView'
+        :all-comments='currentComments'
+      )
+      nav-footer
+      notify
+      template(v-if='commentsEnabled && commentsPerms.read && !printView')
+        .page-comments-scrim(v-show='commentsShown', @click='commentsShown = false', data-ui-id='LongevidenceCommentsSidebarScrim')
+        aside.page-comments-sidebar(:class='{ \"is-open\": commentsShown }', :aria-hidden='(!commentsShown).toString()', data-ui-id='LongevidenceCommentsSidebar')
+          header.page-comments-sidebar-header(:class='$vuetify.theme.dark ? `grey darken-4-d3` : `grey lighten-4`')
+            v-icon.mr-2 mdi-comment-text-outline
+            .subtitle-1.font-weight-medium Comments
+            v-spacer
+            v-btn(icon, @click='commentsShown = false', :aria-label='$t(`common:actions.close`)')
+              v-icon mdi-close
+          v-divider
+          .page-comments-sidebar-content
+            slot(name='comments')
+
+      v-dialog(v-model='medicalDisclaimerShown', max-width='800')
+        v-card
+          v-card-title.headline.white--text(style='background-color: #5e3c7d')
+            | {{ $t('common:medical.title') }}
+            v-spacer
+            v-btn(icon, dark, @click='medicalDisclaimerShown = false')
+              v-icon mdi-close
+          v-card-text.pt-5
+            .text-center.subtitle-1.mb-4(v-html="$t('common:medical.intro')")
+            div.text-justify
+              | {{ $t('common:medical.text') }}
+
+      v-fab-transition
+        v-btn(
+          v-if='upBtnShown && showReturnToTop'
+          fab
+          fixed
+          bottom
+          :right='$vuetify.rtl'
+          :left='!$vuetify.rtl'
+          small
+          :depressed='this.$vuetify.breakpoint.mdAndUp'
+          @click='$vuetify.goTo(0, scrollOpts)'
+          color='primary'
+          dark
+          :style='upBtnPosition'
+          :aria-label='$t(`common:actions.returnToTop`)'
         )
-        v-icon mdi-arrow-up
+          v-icon mdi-arrow-up
 </template>
 
 <script>
 import { StatusIndicator } from 'vue-status-indicator'
 import Tabset from './tabset.vue'
 import NavSidebar from './nav-sidebar.vue'
+import NavFooter from './nav-footer.vue'
+import SideComments from './side-comments.vue'
+import SearchOverlay from './search-overlay.vue'
 import Prism from 'prismjs'
 import mermaid from 'mermaid'
 import { get, sync } from 'vuex-pathify'
 import _ from 'lodash'
 import ClipboardJS from 'clipboard'
 import Vue from 'vue'
+import LongeviDataTable from './longevidata-widget.vue'
+import LongevidenceEffect from './longevidence-effect.vue'
+import LongevidenceScore from './longevidence-score.vue'
+import { injectTubular3DDna } from './tubular-3d-dna.js'
+import { injectWaveRibbonDna } from './wave-ribbon-dna.js'
+
+Vue.component('LongeviDataTable', LongeviDataTable)
+Vue.component('LongevidenceEffect', LongevidenceEffect)
+Vue.component('LongevidenceScore', LongevidenceScore)
 
 Vue.component('Tabset', Tabset)
 
@@ -431,7 +469,10 @@ Prism.plugins.toolbar.registerButton('copy-to-clipboard', (env) => {
 export default {
   components: {
     NavSidebar,
-    StatusIndicator
+    NavFooter,
+    StatusIndicator,
+    SideComments,
+    SearchOverlay
   },
   props: {
     pageId: {
@@ -514,6 +555,10 @@ export default {
       type: String,
       default: ''
     },
+    searchEnabled: {
+      type: Boolean,
+      default: true
+    },
     commentsExternal: {
       type: Boolean,
       default: false
@@ -581,6 +626,7 @@ export default {
       navExpanded: false,
       upBtnShown: false,
       pageEditFab: false,
+      commentsShown: false,
       scrollOpts: {
         duration: 1500,
         offset: 0,
@@ -605,7 +651,15 @@ export default {
         }
       },
       winWidth: 0,
-      ctaSoftPromptVisible: false
+      ctaSoftPromptVisible: false,
+      currentComments: [],
+      medicalDisclaimerShown: false,
+      searchMenuShown: false,
+      searchMenuMobileShown: false,
+      searchQuery: '',
+      searchMenuWidth: null,
+      dnaController: null,
+      customHero: null
     }
   },
   computed: {
@@ -637,6 +691,7 @@ export default {
       return JSON.parse(Buffer.from(this.toc, 'base64').toString())
     },
     tocPosition: get('site/tocPosition'),
+    showReturnToTop: get('site/showReturnToTop'),
     hasAdminPermission: get('page/effectivePermissions@system.manage'),
     hasWritePagesPermission: get('page/effectivePermissions@pages.write'),
     hasManagePagesPermission: get('page/effectivePermissions@pages.manage'),
@@ -651,6 +706,18 @@ export default {
         this.hasDeletePagesPermission || this.hasReadSourcePermission || this.canReadHistory
     },
     printView: sync('site/printView'),
+    heroImage () {
+      if (this.customHero && this.customHero.image) {
+        return this.customHero.image
+      }
+      return null
+    },
+    heroTitle () {
+      return (this.customHero && this.customHero.title) || this.title
+    },
+    heroSubtitle () {
+      return (this.customHero && this.customHero.subtitle) || this.description
+    },
     editMenuExternalUrl () {
       if (this.editShortcutsObj.editMenuBar && this.editShortcutsObj.editMenuExternalBtn) {
         return this.editShortcutsObj.editMenuExternalUrl.replace('{filename}', this.filename)
@@ -705,15 +772,36 @@ export default {
     }
 
     this.initCtaVisibility()
+    this.$nextTick(() => {
+      this.extractHeroFromContent()
+    })
+
+    if (this.path === 'home') {
+      document.documentElement.style.setProperty('--hero-legacy-image', "url('/images/home_hero_background4.jpeg')")
+      this.injectDnaHelix()
+    }
 
     // -> Check side navigation visibility
     this.handleSideNavVisibility()
     window.addEventListener('resize', _.debounce(() => {
       this.handleSideNavVisibility()
+      this.updateSearchMenuWidth()
     }, 500))
 
     // -> Highlight Code Blocks
     Prism.highlightAllUnder(this.$refs.container)
+
+    // -> Handle medical disclaimer pills
+    this.$nextTick(() => {
+      this.$refs.container.querySelectorAll('.medical-disclaimer-pill').forEach(el => {
+        el.textContent = this.$t('common:medical.pill')
+        el.onclick = ev => {
+          ev.preventDefault()
+          ev.stopPropagation()
+          this.medicalDisclaimerShown = true
+        }
+      })
+    })
 
     // -> Render Mermaid diagrams
     mermaid.mermaidAPI.initialize({
@@ -724,14 +812,23 @@ export default {
     // -> Handle anchor scrolling
     if (window.location.hash && window.location.hash.length > 1) {
       const decodedHash = decodeURIComponent(window.location.hash)
-      if (document.readyState === 'complete') {
+      if (decodedHash.indexOf('#discussion') === 0) {
+        this.commentsShown = true
         this.$nextTick(() => {
-          this.$vuetify.goTo(decodedHash, this.scrollOpts)
+          if (decodedHash === '#discussion-new') {
+            document.querySelector('#discussion-new')?.focus()
+          }
         })
       } else {
-        window.addEventListener('load', () => {
-          this.$vuetify.goTo(decodedHash, this.scrollOpts)
-        })
+        if (document.readyState === 'complete') {
+          this.$nextTick(() => {
+            this.$vuetify.goTo(decodedHash, this.scrollOpts)
+          })
+        } else {
+          window.addEventListener('load', () => {
+            this.$vuetify.goTo(decodedHash, this.scrollOpts)
+          })
+        }
       }
     }
 
@@ -741,12 +838,42 @@ export default {
         el.onclick = ev => {
           ev.preventDefault()
           ev.stopPropagation()
+          if (ev.currentTarget.hash && ev.currentTarget.hash.indexOf('#discussion') === 0) {
+            this.commentsShown = true
+            this.$nextTick(() => {
+              if (ev.currentTarget.hash === '#discussion-new') {
+                document.querySelector('#discussion-new')?.focus()
+              }
+            })
+            return
+          }
           this.$vuetify.goTo(decodeURIComponent(ev.currentTarget.hash), this.scrollOpts)
         }
       })
 
       window.boot.notify('page-ready')
     })
+
+    this.$root.$on('open-comment-sidebar', this.openCommentSidebar)
+    this.$root.$on('comments-updated', this.handleCommentsLoaded)
+
+    this.updateSearchMenuWidth()
+  },
+  watch: {
+    '$vuetify.theme.dark' (val) {
+      if (this.dnaController && this.dnaController.updateTheme) {
+        this.dnaController.updateTheme(val)
+      }
+    },
+    searchMenuShown (value) {
+      if (value) {
+        this.updateSearchMenuWidth()
+      }
+    }
+  },
+  beforeDestroy () {
+    this.$root.$off('open-comment-sidebar', this.openCommentSidebar)
+    this.$root.$off('comments-updated', this.handleCommentsLoaded)
   },
   methods: {
     initCtaVisibility () {
@@ -775,6 +902,14 @@ export default {
     },
     ctaRegister () {
       window.location.assign('/register')
+    },
+    updateSearchMenuWidth () {
+      this.$nextTick(() => {
+        const inputEl = this.$refs.headerSearchInput && this.$refs.headerSearchInput.$el
+        if (inputEl) {
+          this.searchMenuWidth = Math.round(inputEl.getBoundingClientRect().width)
+        }
+      })
     },
     goHome () {
       window.location.assign('/')
@@ -827,15 +962,70 @@ export default {
       }
     },
     goToComments (focusNewComment = false) {
-      this.$vuetify.goTo('#discussion', this.scrollOpts)
+      this.commentsShown = true
       if (!focusNewComment) return
-      document.querySelector('#discussion-new')?.focus()
+      this.$nextTick(() => {
+        document.querySelector('#discussion-new')?.focus()
+      })
+    },
+    openCommentSidebar (commentId) {
+      this.commentsShown = true
+      this.$nextTick(() => {
+        const target = `#comment-post-id-${commentId}`
+        const commentEl = document.querySelector(target)
+        if (commentEl) {
+          this.$vuetify.goTo(commentEl, this.scrollOpts)
+        }
+      })
+    },
+    handleCommentsLoaded (comments) {
+      this.currentComments = Array.isArray(comments) ? comments : []
+    },
+    extractHeroFromContent () {
+      const container = this.$refs.container
+      if (!container) return
+      const heroEl = container.querySelector('hero-header')
+      if (!heroEl) return
+      this.customHero = {
+        image: heroEl.getAttribute('image') || '',
+        title: heroEl.getAttribute('title') || '',
+        subtitle: heroEl.getAttribute('subtitle') || ''
+      }
+      heroEl.remove()
+    },
+    injectDnaHelix () {
+      const DNA_VERSION = 'tubular-3d' // Options: 'tubular-3d', 'wave-ribbon'
+
+      this.$nextTick(() => {
+        const heroSection = document.querySelector('.hero-section--dna')
+        if (!heroSection) return
+
+        if (DNA_VERSION === 'tubular-3d') {
+          this.dnaController = injectTubular3DDna(heroSection, this.$vuetify.theme.dark)
+        } else if (DNA_VERSION === 'wave-ribbon') {
+          injectWaveRibbonDna(heroSection)
+        }
+      })
     }
   }
 }
 </script>
 
 <style lang="scss">
+
+.category-hero-section {
+  background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
+  position: relative;
+  
+  h1 {
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .opacity-70 {
+    opacity: 0.9;
+  }
+}
 
 .breadcrumbs-nav {
   .v-btn {
@@ -864,6 +1054,74 @@ export default {
 
 .page-col-sd::-webkit-scrollbar {
   display: none;
+}
+
+.page-comments-scrim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 2004;
+}
+
+.page-comments-sidebar {
+  position: fixed;
+  top: 0;
+  // Keep fully off-screen when closed (including shadow), and don't intercept scroll events.
+  // Use transforms so the hidden sidebar cannot increase document scrollWidth (which can break scrolling).
+  right: 0;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  z-index: 2005;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 160ms ease;
+  will-change: transform;
+  box-shadow: none;
+  pointer-events: none;
+  visibility: hidden;
+
+  @at-root .theme--dark & {
+    background: #1e1e1e;
+  }
+
+  &.is-open {
+    transform: translateX(0);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    pointer-events: auto;
+    visibility: visible;
+  }
+}
+
+.page-comments-sidebar-header {
+  padding-top: calc(env(safe-area-inset-top) + 10px);
+  padding-left: 12px;
+  padding-right: 6px;
+  flex: 0 0 auto;
+}
+
+.page-comments-sidebar-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+@media (max-width: 600px) {
+  .page-comments-sidebar {
+    width: 100vw;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-comments-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
 }
 
 .page-header-section {
@@ -913,6 +1171,44 @@ export default {
         border-bottom-right-radius: 5px;
       }
     }
+  }
+}
+
+.longevidence-header-search {
+  max-width: 400px;
+
+  .v-input__slot {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+  }
+  
+  input {
+    color: #333 !important;
+  }
+  
+  .v-icon {
+    color: #666 !important;
+  }
+}
+
+.medical-disclaimer-pill {
+  background-color: #5e3c7d;
+  color: white;
+  font-size: 0.5em;
+  padding: 4px 8px;
+  border-radius: 12px;
+  vertical-align: middle;
+  margin-left: 10px;
+  cursor: pointer;
+  font-weight: normal;
+  letter-spacing: normal;
+  display: inline-block;
+  line-height: normal;
+  font-family: Roboto, sans-serif;
+
+  &:hover {
+    background-color: lighten(#5e3c7d, 10%);
   }
 }
 

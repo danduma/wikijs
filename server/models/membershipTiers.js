@@ -1,0 +1,100 @@
+const Model = require('objection').Model
+const moment = require('moment')
+
+/* global WIKI */
+
+/**
+ * Membership tiers model
+ */
+module.exports = class MembershipTier extends Model {
+  static get tableName() { return 'membership_tiers' }
+
+  static get jsonSchema () {
+    return {
+      type: 'object',
+      required: ['key', 'name'],
+
+      properties: {
+        id: {type: 'integer'},
+        key: {type: 'string'},
+        name: {type: 'string'},
+        description: {type: ['string', 'null']},
+        sortOrder: {type: ['integer', 'null']},
+        isDefault: {type: 'boolean'},
+        isActive: {type: 'boolean'},
+        features: {type: ['array', 'null']},
+        maxLongevidataRows: {type: ['integer', 'null']},
+        stripeProductId: {type: ['string', 'null']},
+        stripePriceId: {type: ['string', 'null']},
+        createdAt: {type: 'string'},
+        updatedAt: {type: 'string'}
+      }
+    }
+  }
+
+  static get jsonAttributes() {
+    return ['features']
+  }
+
+  static get relationMappings() {
+    return {
+      users: {
+        relation: Model.HasManyRelation,
+        modelClass: require('./users'),
+        join: {
+          from: 'membership_tiers.id',
+          to: 'users.membershipTierId'
+        }
+      }
+    }
+  }
+
+  $beforeUpdate() {
+    this.updatedAt = new Date().toISOString()
+  }
+
+  $beforeInsert() {
+    this.createdAt = new Date().toISOString()
+    this.updatedAt = new Date().toISOString()
+  }
+
+  static async getDefault() {
+    let tier = await this.query().where({ isDefault: true, isActive: true }).first()
+    if (!tier) {
+      tier = await this.query().where({ isActive: true }).orderBy('sortOrder', 'asc').first()
+    }
+    return tier
+  }
+
+  static async getEffectiveForUser(user) {
+    const defaultTier = await this.getDefault()
+    if (!user || !user.id || user.id === 2) {
+      return defaultTier
+    }
+
+    let userData = user
+    if (user.membershipTierId === undefined && user.membershipExpiresAt === undefined) {
+      userData = await WIKI.models.users.query()
+        .select('id', 'membershipTierId', 'membershipExpiresAt')
+        .findById(user.id)
+    }
+
+    if (!userData || !userData.membershipTierId) {
+      return defaultTier
+    }
+
+    const tier = await this.query().findById(userData.membershipTierId)
+    if (!tier || !tier.isActive) {
+      return defaultTier
+    }
+
+    if (userData.membershipExpiresAt) {
+      const expiresAt = moment(userData.membershipExpiresAt)
+      if (expiresAt.isValid() && expiresAt.isSameOrBefore(moment())) {
+        return defaultTier
+      }
+    }
+
+    return tier
+  }
+}

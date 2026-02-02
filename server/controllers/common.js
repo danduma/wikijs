@@ -606,6 +606,12 @@ router.get('/*', async (req, res, next) => {
           let pageFilename = WIKI.config.lang.namespacing ? `${pageArgs.locale}/${page.path}` : page.path
           pageFilename += page.contentType === 'markdown' ? '.md' : '.html'
 
+          const effectiveTier = await WIKI.models.membershipTiers.getEffectiveForUser(req.user)
+          const membershipInfo = {
+            maxRows: effectiveTier ? effectiveTier.maxLongevidataRows : 4,
+            tierKey: effectiveTier ? effectiveTier.key : 'free'
+          }
+
           // -> Render view
           res.render('page', {
             page,
@@ -615,7 +621,8 @@ router.get('/*', async (req, res, next) => {
             comments: commentTmpl,
             effectivePermissions,
             pageFilename,
-            anonViewLimit
+            anonViewLimit,
+            membershipInfo
           })
         }
       } else if (pageArgs.path === 'home') {

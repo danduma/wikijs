@@ -173,6 +173,7 @@ module.exports = async () => {
   app.use('/', ctrl.auth)
   app.use('/', ctrl.upload)
   app.use('/', ctrl.theming)
+  app.use('/', ctrl.longevidata)
   app.use('/', ctrl.common)
 
   // ----------------------------------------

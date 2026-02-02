@@ -139,6 +139,9 @@ type User {
   providerName: String
   providerId: String
   providerIs2FACapable: Boolean
+  membershipTierId: Int
+  membershipExpiresAt: Date
+  membershipTier: MembershipTier
   isSystem: Boolean!
   isActive: Boolean!
   isVerified: Boolean!

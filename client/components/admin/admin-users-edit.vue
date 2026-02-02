@@ -230,6 +230,26 @@
             v-spacer
             .caption {{$t('admin:users.groupAssignNotice')}}
 
+        v-card.mt-3.animated.fadeInUp.wait-p5s
+          v-toolbar(color='primary', dense, dark, flat)
+            v-icon.mr-2 mdi-card-account-details
+            span Membership
+          v-card-text
+            v-select(
+              v-model='membershipTierId'
+              :items='membershipTiers'
+              item-text='name'
+              item-value='id'
+              label='Membership Tier'
+              outlined
+            )
+            v-text-field(
+              v-model='membershipExpiresAt'
+              label='Membership Expires At (YYYY-MM-DD)'
+              outlined
+              placeholder='YYYY-MM-DD'
+            )
+
       v-flex(xs6)
         v-card.animated.fadeInUp.wait-p2s
           v-toolbar(color='primary', dense, dark, flat)
@@ -377,6 +397,8 @@ import { StatusIndicator } from 'vue-status-indicator'
 import UserSearch from '../common/user-search.vue'
 
 import groupsQuery from 'gql/admin/users/users-query-groups.gql'
+import membershipTiersQuery from 'gql/admin/membership/membership-query-tiers.gql'
+import assignUserTierMutation from 'gql/admin/membership/membership-mutation-assign-user-tier.gql'
 
 export default {
   i18nOptions: {
@@ -417,6 +439,11 @@ export default {
         isActive: false,
         isVerified: false
       },
+      membershipTiers: [],
+      membershipTierId: null,
+      membershipExpiresAt: '',
+      initialMembershipTierId: null,
+      initialMembershipExpiresAt: null,
       timezones: [
         { text: '(GMT-11:00) Niue', value: 'Pacific/Niue' },
         { text: '(GMT-11:00) Pago Pago', value: 'Pacific/Pago_Pago' },
@@ -855,6 +882,13 @@ export default {
       })
       this.newPassword = ''
       if (_.get(resp, 'data.users.update.responseResult.succeeded', false)) {
+        const membershipChanged = this.membershipTierId !== this.initialMembershipTierId ||
+          this.normalizedExpiry(this.membershipExpiresAt) !== this.normalizedExpiry(this.initialMembershipExpiresAt)
+
+        if (membershipChanged) {
+          await this.assignUserTier()
+        }
+
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:users.userUpdateSuccess'),
@@ -869,6 +903,32 @@ export default {
         })
       }
       this.$store.commit(`loadingStop`, 'admin-users-update')
+    },
+    normalizedExpiry(value) {
+      if (!value) return null
+      return value
+    },
+    async assignUserTier() {
+      if (!this.membershipTierId) return
+      const expiresAt = this.membershipExpiresAt ? this.membershipExpiresAt : null
+      const resp = await this.$apollo.mutate({
+        mutation: assignUserTierMutation,
+        variables: {
+          userId: this.user.id,
+          tierId: this.membershipTierId,
+          expiresAt
+        }
+      })
+      if (_.get(resp, 'data.membership.assignUserTier.responseResult.succeeded', false)) {
+        this.initialMembershipTierId = this.membershipTierId
+        this.initialMembershipExpiresAt = this.membershipExpiresAt
+      } else {
+        this.$store.commit('showNotification', {
+          style: 'red',
+          message: _.get(resp, 'data.membership.assignUserTier.responseResult.message', 'Failed to update membership.'),
+          icon: 'warning'
+        })
+      }
     },
     /**
      * Focus an input after delay
@@ -1041,6 +1101,12 @@ export default {
               updatedAt
               lastLoginAt
               tfaIsActive
+              membershipTierId
+              membershipExpiresAt
+              membershipTier {
+                id
+                name
+              }
               groups {
                 id
                 name
@@ -1056,6 +1122,15 @@ export default {
       },
       fetchPolicy: 'network-only',
       update: (data) => data.users.single,
+      result({ data }) {
+        const usr = _.get(data, 'users.single')
+        if (usr) {
+          this.membershipTierId = usr.membershipTierId || null
+          this.membershipExpiresAt = usr.membershipExpiresAt || ''
+          this.initialMembershipTierId = this.membershipTierId
+          this.initialMembershipExpiresAt = this.membershipExpiresAt
+        }
+      },
       watchLoading (isLoading) {
         this.$store.commit(`loading${isLoading ? 'Start' : 'Stop'}`, 'admin-users-refresh')
       }
@@ -1067,6 +1142,11 @@ export default {
       watchLoading (isLoading) {
         this.$store.commit(`loading${isLoading ? 'Start' : 'Stop'}`, 'admin-groups-refresh')
       }
+    },
+    membershipTiers: {
+      query: membershipTiersQuery,
+      fetchPolicy: 'network-only',
+      update: data => data.membership.tiers
     }
   }
 }

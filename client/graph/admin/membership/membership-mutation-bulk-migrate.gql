@@ -1,0 +1,12 @@
+mutation ($fromTierId: Int!, $toTierId: Int!) {
+  membership {
+    bulkMigrateUsers(fromTierId: $fromTierId, toTierId: $toTierId) {
+      responseResult {
+        succeeded
+        errorCode
+        slug
+        message
+      }
+    }
+  }
+}

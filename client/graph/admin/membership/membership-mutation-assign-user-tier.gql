@@ -1,0 +1,12 @@
+mutation ($userId: Int!, $tierId: Int!, $expiresAt: Date) {
+  membership {
+    assignUserTier(userId: $userId, tierId: $tierId, expiresAt: $expiresAt) {
+      responseResult {
+        succeeded
+        errorCode
+        slug
+        message
+      }
+    }
+  }
+}

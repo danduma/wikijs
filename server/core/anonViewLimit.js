@@ -2,7 +2,7 @@ const _ = require('lodash')
 const crypto = require('crypto')
 const cheerio = require('cheerio')
 const { nanoid } = require('nanoid')
-const RateLimiterKnex = require('../helpers/RateLimiterKnex')
+const RateLimiterKnex = require('../helpers/RateLimiterKnex');
 
 /* global WIKI */
 

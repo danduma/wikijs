@@ -21,14 +21,18 @@ module.exports = {
         'sentiment',
         'label',
         'value',
-        'data-initial'
+        'data-initial',
+        'image',
+        'title',
+        'subtitle'
       ]
       const allowedTags = [
         'tabset',
         'template',
         'longevidata-table',
         'longevidence-effect',
-        'longevidence-score'
+        'longevidence-score',
+        'hero-header'
       ]
 
       if (config.allowDrawIoUnsafe) {

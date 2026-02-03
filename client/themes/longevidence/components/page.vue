@@ -424,6 +424,7 @@ import LongevidenceEffect from './longevidence-effect.vue'
 import LongevidenceScore from './longevidence-score.vue'
 import { injectTubular3DDna } from './tubular-3d-dna.js'
 import { injectWaveRibbonDna } from './wave-ribbon-dna.js'
+import { injectHeroPathsOverlay } from './hero-paths-overlay.js'
 
 Vue.component('LongeviDataTable', LongeviDataTable)
 Vue.component('LongevidenceEffect', LongevidenceEffect)
@@ -1005,6 +1006,8 @@ export default {
         } else if (DNA_VERSION === 'wave-ribbon') {
           injectWaveRibbonDna(heroSection)
         }
+
+        injectHeroPathsOverlay(heroSection)
       })
     }
   }

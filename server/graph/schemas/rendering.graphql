@@ -29,6 +29,11 @@ type RenderingMutation {
   updateRenderers(
     renderers: [RendererInput]
   ): DefaultResponse @auth(requires: ["manage:system"])
+
+  executeAction(
+    rendererKey: String!
+    handler: String!
+  ): DefaultResponse @auth(requires: ["manage:system"])
 }
 
 # -----------------------------------------------
@@ -45,6 +50,13 @@ type Renderer {
   input: String
   output: String
   config: [KeyValuePair]
+  actions: [RendererAction]
+}
+
+type RendererAction {
+  handler: String!
+  label: String!
+  hint: String!
 }
 
 input RendererInput {

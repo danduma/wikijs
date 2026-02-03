@@ -1,0 +1,12 @@
+mutation($rendererKey: String!, $handler: String!) {
+  rendering {
+    executeAction(rendererKey: $rendererKey, handler: $handler) {
+      responseResult {
+        succeeded
+        errorCode
+        slug
+        message
+      }
+    }
+  }
+}

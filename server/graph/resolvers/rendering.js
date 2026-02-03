@@ -18,6 +18,7 @@ module.exports = {
         return {
           ...rendererInfo,
           ...rdr,
+          actions: rendererInfo.actions,
           config: _.sortBy(_.transform(rdr.config, (res, value, key) => {
             const configData = _.get(rendererInfo.props, key, false)
             if (configData) {
@@ -51,6 +52,16 @@ module.exports = {
         }
         return {
           responseResult: graphHelper.generateSuccess('Renderers updated successfully')
+        }
+      } catch (err) {
+        return graphHelper.generateError(err)
+      }
+    },
+    async executeAction(obj, args, context) {
+      try {
+        await WIKI.models.renderers.executeAction(args.rendererKey, args.handler)
+        return {
+          responseResult: graphHelper.generateSuccess('Action completed.')
         }
       } catch (err) {
         return graphHelper.generateError(err)

@@ -107,6 +107,29 @@ module.exports = class Renderer extends Model {
     }
   }
 
+  static async executeAction(rendererKey, handler) {
+    const rendererDef = _.find(WIKI.data.renderers, ['key', rendererKey])
+    if (!rendererDef) {
+      throw new WIKI.Error('Renderer module not found')
+    }
+
+    const action = _.find(rendererDef.actions, ['handler', handler])
+    if (!action) {
+      throw new WIKI.Error('Action handler not found')
+    }
+
+    const rendererModule = require(path.join(WIKI.SERVERPATH, 'modules/rendering', rendererDef.key, 'renderer'))
+
+    if (typeof rendererModule[handler] !== 'function') {
+      throw new WIKI.Error(`Handler function ${handler} is not implemented in module ${rendererDef.key}`)
+    }
+
+    const dbRenderer = await WIKI.models.renderers.query().where('key', rendererKey).first()
+    const config = dbRenderer ? dbRenderer.config : {}
+
+    return rendererModule[handler](config)
+  }
+
   static async getRenderingPipeline(contentType) {
     const renderersDb = await WIKI.models.renderers.query().where('isEnabled', true)
     if (renderersDb && renderersDb.length > 0) {

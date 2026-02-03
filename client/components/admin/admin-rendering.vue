@@ -90,6 +90,18 @@
               div {{currentRenderer.description}}
               span.caption: a(href='https://docs.requarks.io/en/rendering', target='_blank') Documentation
           v-card-text.pb-4.pl-4
+            template(v-if='currentRenderer.actions && currentRenderer.actions.length > 0')
+              .overline.mb-5Module Actions
+              v-layout.mb-5(row, wrap)
+                v-flex(xs12, lg6, xl4, v-for='act of currentRenderer.actions', :key='act.handler')
+                  v-card(outlined)
+                    v-card-title.body-2 {{act.label}}
+                    v-card-text.caption.grey--text {{act.hint}}
+                    v-divider
+                    v-card-actions
+                      v-spacer
+                      v-btn(text, color='primary', @click='executeAction(act.handler)', :loading='processingAction === act.handler') Run
+              v-divider.mb-5
             .overline.mb-5 Rendering Module Configuration
             .body-2.ml-3(v-if='!currentRenderer.config || currentRenderer.config.length < 1'): em This rendering module has no configuration options you can modify.
             template(v-else, v-for='(cfg, idx) in currentRenderer.config')
@@ -140,6 +152,7 @@ import { StatusIndicator } from 'vue-status-indicator'
 
 import renderersQuery from 'gql/admin/rendering/rendering-query-renderers.gql'
 import renderersSaveMutation from 'gql/admin/rendering/rendering-mutation-save-renderers.gql'
+import executeActionMutation from 'gql/admin/rendering/rendering-mutation-executeaction.gql'
 
 export default {
   components: {
@@ -149,7 +162,8 @@ export default {
     return {
       selectedCore: -1,
       renderers: [],
-      currentRenderer: {}
+      currentRenderer: {},
+      processingAction: ''
     }
   },
   watch: {
@@ -175,6 +189,35 @@ export default {
         style: 'success',
         icon: 'cached'
       })
+    },
+    async executeAction (handler) {
+      this.processingAction = handler
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: executeActionMutation,
+          variables: {
+            rendererKey: this.currentRenderer.key,
+            handler: handler
+          }
+        })
+        if (_.get(resp, 'data.rendering.executeAction.responseResult.succeeded', false)) {
+          this.$store.commit('showNotification', {
+            message: 'Action completed successfully.',
+            style: 'success',
+            icon: 'check'
+          })
+        } else {
+          throw new Error(_.get(resp, 'data.rendering.executeAction.responseResult.message', 'An error occurred.'))
+        }
+      } catch (err) {
+        this.$store.commit('showNotification', {
+          message: err.message,
+          style: 'error',
+          icon: 'warning'
+        })
+      } finally {
+        this.processingAction = ''
+      }
     },
     async save () {
       this.$store.commit(`loadingStart`, 'admin-rendering-saverenderers')

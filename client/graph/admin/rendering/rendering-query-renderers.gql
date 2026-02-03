@@ -13,6 +13,11 @@
         key
         value
       }
+      actions {
+        handler
+        label
+        hint
+      }
     }
   }
 }

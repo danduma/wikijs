@@ -20,3 +20,7 @@ props:
     title: API Bearer Token
     hint: Authentication token for the LongeviData API
     order: 2
+actions:
+  - handler: testConnection
+    label: Test Connection
+    hint: Verifies that the API Base URL and Token are correct by making a test request.

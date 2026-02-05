@@ -404,6 +404,11 @@ export default {
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       dragPosition: null,
+      isTouchDevice: false,
+      longPressTimer: null,
+      longPressStart: null,
+      longPressTarget: null,
+      longPressFired: false,
       scrollOpts: {
         duration: 1500,
         offset: 0,
@@ -416,6 +421,9 @@ export default {
     permissions: get('page/effectivePermissions@comments'),
     isAuthenticated: get('user/authenticated'),
     userDisplayName: get('user/name'),
+    isLongevidenceTheme () {
+      return (typeof siteConfig !== 'undefined' && siteConfig.theme === 'longevidence')
+    },
     isContextualProvider () {
       // Determine active provider in a way that works for non-admin users:
       // 1) prop from server-rendered `<comments provider-key="...">`
@@ -429,6 +437,9 @@ export default {
         )
       )
       return key === 'contextual'
+    },
+    shouldEnableMobileLongPress () {
+      return this.isTouchDevice && this.isLongevidenceTheme && this.isContextualProvider
     },
     bottomComments () {
       return this.comments.filter(c => !c.replyTo || c.replyTo === 0)
@@ -1073,13 +1084,27 @@ export default {
         })
       }
     },
+    detectTouchDevice () {
+      if (typeof window === 'undefined') return false
+      if (window.matchMedia) {
+        return window.matchMedia('(pointer: coarse)').matches
+      }
+      return ('ontouchstart' in window) || (navigator && navigator.maxTouchPoints > 0)
+    },
     setupTextSelection () {
       // Listen for text selection on the page content.
       // Avoid reacting during a mouse-drag selection: updating the UI mid-drag can
       // interrupt selection (e.g. by placing an element under the cursor).
-      document.addEventListener('mousedown', this.handleSelectionMouseDown)
-      document.addEventListener('mouseup', this.handleSelectionMouseUp)
-      document.addEventListener('keyup', this.handleTextSelection)
+      if (!this.shouldEnableMobileLongPress) {
+        document.addEventListener('mousedown', this.handleSelectionMouseDown)
+        document.addEventListener('mouseup', this.handleSelectionMouseUp)
+        document.addEventListener('keyup', this.handleTextSelection)
+      } else {
+        document.addEventListener('touchstart', this.handleTouchStart, { passive: true })
+        document.addEventListener('touchmove', this.handleTouchMove, { passive: true })
+        document.addEventListener('touchend', this.handleTouchEnd, { passive: true })
+        document.addEventListener('touchcancel', this.handleTouchEnd, { passive: true })
+      }
       document.addEventListener('keydown', this.handleGlobalKeyDown)
       document.addEventListener('click', this.handleGlobalClick)
     },
@@ -1087,8 +1112,88 @@ export default {
       document.removeEventListener('mousedown', this.handleSelectionMouseDown)
       document.removeEventListener('mouseup', this.handleSelectionMouseUp)
       document.removeEventListener('keyup', this.handleTextSelection)
+      document.removeEventListener('touchstart', this.handleTouchStart)
+      document.removeEventListener('touchmove', this.handleTouchMove)
+      document.removeEventListener('touchend', this.handleTouchEnd)
+      document.removeEventListener('touchcancel', this.handleTouchEnd)
       document.removeEventListener('keydown', this.handleGlobalKeyDown)
       document.removeEventListener('click', this.handleGlobalClick)
+    },
+    handleTouchStart (e) {
+      if (!this.shouldEnableMobileLongPress) return
+      if (this.showThreadDialog) return
+      const target = e && e.target
+      if (!target || !target.closest) return
+
+      const contentArea = target.closest('.contents') || target.closest('.page-content')
+      if (!contentArea) return
+      if (this.isInteractiveElement(target)) return
+
+      const touch = (e.touches && e.touches[0]) ? e.touches[0] : null
+      if (!touch) return
+
+      this.clearLongPress()
+      this.longPressStart = { x: touch.clientX, y: touch.clientY }
+      this.longPressTarget = target
+      this.longPressTimer = setTimeout(() => {
+        this.triggerLongPress(e)
+      }, 420)
+    },
+    handleTouchMove (e) {
+      if (!this.longPressStart) return
+      const touch = (e.touches && e.touches[0]) ? e.touches[0] : null
+      if (!touch) return
+      const dx = Math.abs(touch.clientX - this.longPressStart.x)
+      const dy = Math.abs(touch.clientY - this.longPressStart.y)
+      if (dx > 10 || dy > 10) {
+        this.clearLongPress()
+      }
+    },
+    handleTouchEnd () {
+      this.clearLongPress()
+    },
+    clearLongPress () {
+      if (this.longPressTimer) clearTimeout(this.longPressTimer)
+      this.longPressTimer = null
+      this.longPressStart = null
+      this.longPressTarget = null
+      this.longPressFired = false
+    },
+    isInteractiveElement (el) {
+      if (!el || !el.closest) return false
+      return Boolean(el.closest('a, button, input, textarea, select, label, .comment-bubble, .contextual-fab-wrapper, .contextual-thread-wrapper'))
+    },
+    getLongPressAnchorElement (target) {
+      if (!target || !target.closest) return null
+      return target.closest('p, li, blockquote, h1, h2, h3, h4, h5, h6, pre, table, figure') || target
+    },
+    triggerLongPress (e) {
+      if (!this.longPressTarget || this.longPressFired) return
+      this.longPressFired = true
+
+      const touch = (e.touches && e.touches[0]) ? e.touches[0] : null
+      if (!touch) return
+
+      const anchor = this.getLongPressAnchorElement(this.longPressTarget)
+      const selector = this.getCSSSelector(anchor)
+
+      this.selectedText = ''
+      this.selectedSelector = selector
+      this.pendingSelector = selector
+      this.pendingText = ''
+
+      this.floatingBtnStyle = {
+        position: 'fixed',
+        top: `${touch.clientY}px`,
+        left: `${touch.clientX}px`,
+        zIndex: 2200
+      }
+
+      const selection = window.getSelection()
+      if (selection && selection.removeAllRanges) selection.removeAllRanges()
+
+      this.openNewThread()
+      this.clearLongPress()
     },
     handleSelectionMouseDown (e) {
       const target = e && e.target
@@ -1206,6 +1311,7 @@ export default {
       })
     },
     handleTextSelection () {
+      if (this.shouldEnableMobileLongPress) return
       // Don't update selection while a thread window is already open
       if (this.showThreadDialog) return
       // Don't change UI mid selection-drag.
@@ -1681,6 +1787,7 @@ export default {
   },
   mounted () {
     this.fetch(true)
+    this.isTouchDevice = this.detectTouchDevice()
     if (this.isContextualProvider) {
       this.setupTextSelection()
     }
@@ -1690,6 +1797,7 @@ export default {
     if (this.isContextualProvider) {
       this.cleanupTextSelection()
     }
+    this.clearLongPress()
     window.removeEventListener('resize', this.processContextualComments)
   }
 }

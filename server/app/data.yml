@@ -149,6 +149,7 @@ localeNamespaces:
   - admin
   - auth
   - common
+  - conversion
 jobs:
   purgeUploads:
     onInit: true

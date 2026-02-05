@@ -136,6 +136,21 @@ module.exports = {
         ]
       },
       {
+        test: /\.html$/,
+        include: [
+          path.join(process.cwd(), 'client/themes')
+        ],
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'legal/'
+            }
+          }
+        ]
+      },
+      {
         test: /\.pug$/,
         exclude: [
           path.join(process.cwd(), 'dev')
@@ -208,6 +223,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'client/static' },
+        { from: 'client/themes/longevidence/legal', to: 'legal' },
         { from: './node_modules/prismjs/components', to: 'js/prism' }
       ]
     }),

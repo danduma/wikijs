@@ -75,21 +75,19 @@ module.exports = {
       throw new Error('No such locale in local store.')
     }
 
-    // -> Load dev locale files if present
-    if (WIKI.IS_DEBUG) {
-      try {
-        const devEntriesRaw = await fs.readFile(path.join(WIKI.SERVERPATH, `locales/${locale}.yml`), 'utf8')
-        if (devEntriesRaw) {
-          const devEntries = yaml.safeLoad(devEntriesRaw)
-          _.forOwn(devEntries, (data, ns) => {
-            this.namespaces.push(ns)
-            this.engine.addResourceBundle(locale, ns, data, true, true)
-          })
-          WIKI.logger.info(`Loaded dev locales from ${locale}.yml`)
-        }
-      } catch (err) {
-        // ignore
+    // -> Load local locale files if present (custom overrides)
+    try {
+      const localEntriesRaw = await fs.readFile(path.join(WIKI.SERVERPATH, `locales/${locale}.yml`), 'utf8')
+      if (localEntriesRaw) {
+        const localEntries = yaml.safeLoad(localEntriesRaw)
+        _.forOwn(localEntries, (data, ns) => {
+          this.namespaces.push(ns)
+          this.engine.addResourceBundle(locale, ns, data, true, true)
+        })
+        WIKI.logger.info(`Loaded local locales from ${locale}.yml`)
       }
+    } catch (err) {
+      // ignore missing local override files
     }
   },
   /**

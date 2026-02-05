@@ -12,7 +12,7 @@ COPY ./package.json ./package.json
 COPY ./yarn.lock ./yarn.lock
 COPY ./patches ./patches
 
-# Install dependencies (this layer will be cached if package.json/yarn.lock don't change)
+# Install ALL dependencies (dev + prod)
 RUN yarn --frozen-lockfile --non-interactive
 
 # Now copy source code (changes here won't invalidate dependency install)
@@ -22,11 +22,25 @@ COPY ./.babelrc ./.babelrc
 COPY ./.eslintignore ./.eslintignore
 COPY ./.eslintrc.yml ./.eslintrc.yml
 
-# Build and prepare production dependencies
+# Build assets
 RUN yarn build
-RUN rm -rf /wiki/node_modules
-RUN yarn --production --frozen-lockfile --non-interactive
-RUN yarn patch-package
+
+# ====================
+# --- Prod Deps ---
+# ====================
+FROM node:20-alpine AS deps
+
+RUN apk add yarn g++ make cmake python3 --no-cache
+
+WORKDIR /wiki
+
+COPY ./package.json ./package.json
+COPY ./yarn.lock ./yarn.lock
+COPY ./patches ./patches
+
+# Install ONLY production dependencies
+RUN yarn --production --frozen-lockfile --non-interactive && \
+    yarn patch-package
 
 # ===============
 # --- Release ---
@@ -43,7 +57,7 @@ RUN apk add bash curl git openssh gnupg sqlite --no-cache && \
 WORKDIR /wiki
 
 COPY --chown=node:node --from=assets /wiki/assets ./assets
-COPY --chown=node:node --from=assets /wiki/node_modules ./node_modules
+COPY --chown=node:node --from=deps /wiki/node_modules ./node_modules
 COPY --chown=node:node ./server ./server
 COPY --chown=node:node --from=assets /wiki/server/views ./server/views
 COPY --chown=node:node ./dev/build/config.yml ./config.yml

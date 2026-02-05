@@ -22,7 +22,7 @@
               v-on='on'
               ref='headerSearchInput'
               v-model='searchQuery'
-              placeholder='Search Longevidence...'
+              placeholder='Search Longevipedia...'
               solo
               flat
               dense
@@ -130,12 +130,13 @@
       v-container.grey.pa-0(fluid, :class='$vuetify.theme.dark ? `darken-4-l3` : `lighten-4`')
         v-row.category-hero-section.py-10(v-if='heroImage', no-gutters, align='center', justify='center')
           v-container
-            v-row(align='center', justify='space-between')
-              v-col(cols='12', md='7')
-                h1.display-2.font-weight-bold.mb-4.white--text {{ heroTitle }}
-                .headline.white--text.opacity-70(v-if='heroSubtitle') {{ heroSubtitle }}
-              v-col(cols='12', md='5')
-                v-img.mx-auto(:src='heroImage', max-height='250', contain)
+            v-row.category-hero-row(align='stretch', justify='space-between')
+              v-col.category-hero-title-col(cols='7', sm='7', md='7')
+                h1.category-hero-title {{ heroTitle }}
+                .category-hero-subtitle.opacity-70.category-hero-subtitle--desktop(v-if='heroSubtitle') {{ heroSubtitle }}
+              v-col.category-hero-image-col(cols='5', sm='5', md='5')
+                v-img.category-hero-image(:src='heroImage', max-height='250', contain)
+            .category-hero-subtitle.opacity-70.category-hero-subtitle--mobile(v-if='heroSubtitle') {{ heroSubtitle }}
         v-row.page-header-section(v-else, no-gutters, align-content='center', style='height: 90px;')
           v-col.page-col-content.is-page-header(
             :offset-xl='tocEnabled && tocPosition === `left` ? 2 : 0'
@@ -170,7 +171,7 @@
                 v-icon.mr-2(small) {{ editShortcutsObj.editMenuExternalIcon }}
                 span.text-none {{$t(`common:page.editExternal`, { name: editShortcutsObj.editMenuExternalName })}}
       v-divider
-      v-container(fluid, grid-list-xl, :class='path === `home` ? `pa-0` : `pl-5 pt-4`')
+      v-container(fluid, grid-list-xl, class='pa-0')
         v-layout(row)
           v-flex.page-col-sd(
             v-if='tocEnabled && tocPosition !== `off` && $vuetify.breakpoint.lgAndUp'
@@ -224,7 +225,7 @@
                   v-icon(left) mdi-history
                   span Edit history
 
-          v-flex.page-col-content(
+          v-flex.page-col-content.pa-0(
             xs12
             :lg9='tocEnabled && tocPosition !== `off`'
             :xl10='tocEnabled && tocPosition !== `off`'
@@ -1015,20 +1016,6 @@ export default {
 </script>
 
 <style lang="scss">
-
-.category-hero-section {
-  background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
-  position: relative;
-  
-  h1 {
-    line-height: 1.2;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .opacity-70 {
-    opacity: 0.9;
-  }
-}
 
 .breadcrumbs-nav {
   .v-btn {

@@ -13,6 +13,7 @@
         :max-width='menuWidth'
         content-class='search-results-menu'
         transition='slide-y-transition'
+        @click:outside='menuShown = false'
       )
         template(v-slot:activator='{ on, attrs }')
           v-text-field.longevidence-search-input(
@@ -20,7 +21,7 @@
             v-on='on'
             ref='searchInput'
             v-model='localQuery'
-            placeholder='Search Longevidence...'
+            placeholder='Search Longevipedia...'
             solo
             flat
             rounded
@@ -75,7 +76,8 @@ export default {
       menuShown: false,
       localQuery: '',
       menuWidth: null,
-      resizeHandler: null
+      resizeHandler: null,
+      outsideClickHandler: null
     }
   },
   computed: {
@@ -133,10 +135,33 @@ export default {
     this.updateMenuWidth()
     this.resizeHandler = () => this.updateMenuWidth()
     window.addEventListener('resize', this.resizeHandler)
+    if (this.useThemeOverlay) {
+      this.outsideClickHandler = (event) => {
+        if (!this.menuShown) {
+          return
+        }
+        const target = event.target
+        const inputEl = this.$refs.searchInput && this.$refs.searchInput.$el
+        const menuEls = document.querySelectorAll('.v-menu__content.search-results-menu')
+        if (inputEl && inputEl.contains(target)) {
+          return
+        }
+        for (let i = 0; i < menuEls.length; i += 1) {
+          if (menuEls[i].contains(target)) {
+            return
+          }
+        }
+        this.menuShown = false
+      }
+      document.addEventListener('mousedown', this.outsideClickHandler, true)
+    }
   },
   beforeDestroy () {
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler)
+    }
+    if (this.outsideClickHandler) {
+      document.removeEventListener('mousedown', this.outsideClickHandler, true)
     }
   }
 }
@@ -158,14 +183,14 @@ export default {
 .search-inline.is-theme-overlay {
   .v-input__slot {
     background-color: #ffffff !important;
-    border: 1px solid rgba(0,0,0,0.1);
+    border: 1.5px solid var(--le-search-border);
     box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
     transition: all 0.3s ease;
   }
 
   .v-input--is-focused .v-input__slot {
     box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
-    border-color: rgba(0,0,0,0.0);
+    border-color: var(--le-search-border-focus);
   }
 
   .v-label,
@@ -182,13 +207,16 @@ export default {
 .theme--light .search-inline.is-theme-overlay {
   .v-input__slot {
     background-color: #ffffff !important;
-    border: 1px solid rgba(0,0,0,0.1);
     box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
   }
 
   .v-input--is-focused .v-input__slot {
     box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
-    border-color: rgba(0,0,0,0.0);
+  }
+
+  .v-text-field.longevidence-search-input .v-input__slot,
+  .v-text-field .v-input__slot {
+    border: 1.5px solid var(--le-search-border) !important;
   }
 
   .v-label,
@@ -205,13 +233,11 @@ export default {
 .theme--dark .search-inline.is-theme-overlay {
   .v-input__slot {
     background-color: #1c1c1c !important;
-    border: 1.5px solid rgba(255,255,255,0.1);
     box-shadow: 0 8px 20px rgba(0,0,0,0.45) !important;
   }
 
   .v-input--is-focused .v-input__slot {
     box-shadow: 0 12px 26px rgba(0,0,0,0.6) !important;
-    border-color: rgba(255,255,255,0.12);
   }
 
   .v-label,

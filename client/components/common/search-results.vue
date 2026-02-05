@@ -1,6 +1,6 @@
 <template lang="pug">
-  .search-results(v-if='searchIsFocused || (search && search.length > 1)')
-    .search-results-container
+  .search-results(v-if='searchIsFocused || (search && search.length > 1)' @click='closeOverlay')
+    .search-results-container(@click.stop)
       .search-results-help(v-if='!search || (search && search.length < 2)')
         img(src='/_assets/svg/icon-search-alt.svg')
         .mt-4 {{$t('common:header.searchHint')}}
@@ -132,6 +132,10 @@ export default {
     })
   },
   methods: {
+    closeOverlay() {
+      this.search = ''
+      this.searchIsFocused = false
+    },
     setSearchTerm(term) {
       this.search = term
     },

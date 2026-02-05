@@ -5,7 +5,12 @@
       <slot />
     </template>
     <template v-else>
-      <div class="longevidata-header">
+      <research-snapshot
+        v-if="config.name"
+        :topic="config.name"
+      />
+      
+      <div class="longevidata-header" v-else>
         <h4>LongeviData: {{ config.name }}</h4>
       </div>
 
@@ -15,6 +20,7 @@
             v-model="searchQuery"
             @input="debouncedSearch"
             type="text"
+            class="longevidata-search-input"
             placeholder="Begin typing to filter database"
           >
           <button class="longevidata-search-btn">
@@ -24,28 +30,27 @@
       </div>
 
       <div class="longevidata-toolbar">
-        <v-switch
-          v-model="showConditions"
-          :label="config.type === 'intervention' ? 'Show Conditions' : 'Show Interventions'"
-          dense
-          hide-details
-          class="mt-0 pt-0"
-        />
+        <div class="longevidata-toggle-wrapper">
+          <label class="switch">
+            <input type="checkbox" v-model="showConditions">
+            <span class="slider round"></span>
+          </label>
+          <span class="toggle-label">{{ config.type === 'intervention' ? 'Show Conditions' : 'Show Interventions' }}</span>
+        </div>
+        
         <div class="spacer" />
-        <v-btn
-          text
-          small
+        <button
+          class="text-btn"
           @click="expandAll"
         >
           Expand All
-        </v-btn>
-        <v-btn
-          text
-          small
+        </button>
+        <button
+          class="text-btn"
           @click="collapseAll"
         >
           Collapse All
-        </v-btn>
+        </button>
       </div>
 
       <div class="table-responsive">
@@ -154,14 +159,17 @@
 import { Base64 } from 'js-base64'
 import _ from 'lodash'
 import MembershipPaywall from '../../../components/common/membership-paywall.vue'
+import ResearchSnapshot from './research-snapshot.vue'
 
 export default {
-  name: 'LongevidataTable',
+  name: 'LongeviDataTable',
   components: {
-    MembershipPaywall
+    MembershipPaywall,
+    ResearchSnapshot
   },
   inject: ['membershipInfo'],
   data() {
+
     return {
       hydrated: false,
       loading: false,
@@ -467,16 +475,20 @@ export default {
       display: flex;
       position: relative;
 
-      input {
+      input.longevidata-search-input {
         width: 100%;
         padding: 0.75rem 1rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 0.95rem;
+        background: white;
+        color: #333;
+        -webkit-appearance: none;
 
         &:focus {
           outline: none;
           border-color: #5c2b90;
+          box-shadow: 0 0 0 2px rgba(92, 43, 144, 0.1);
         }
       }
 
@@ -489,6 +501,7 @@ export default {
         background: none;
         color: #666;
         cursor: pointer;
+        padding: 4px;
       }
     }
   }
@@ -496,12 +509,98 @@ export default {
   .longevidata-toolbar {
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     background: #f9f9f9;
     border-bottom: 1px solid #eee;
 
+    .longevidata-toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      
+      .toggle-label {
+        font-size: 0.9rem;
+        color: #555;
+        font-weight: 500;
+      }
+
+      /* Custom Switch */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 36px;
+        height: 20px;
+        
+        input { 
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+          
+          &:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+          }
+          
+          &.round {
+            border-radius: 20px;
+            &:before { border-radius: 50%; }
+          }
+        }
+        
+        input:checked + .slider {
+          background-color: #5c2b90;
+        }
+        
+        input:focus + .slider {
+          box-shadow: 0 0 1px #5c2b90;
+        }
+        
+        input:checked + .slider:before {
+          -webkit-transform: translateX(16px);
+          -ms-transform: translateX(16px);
+          transform: translateX(16px);
+        }
+      }
+    }
+
     .spacer {
       flex: 1;
+    }
+    
+    .text-btn {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 4px;
+      
+      &:hover {
+        background-color: rgba(0,0,0,0.05);
+        color: #333;
+      }
     }
   }
 

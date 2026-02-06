@@ -105,6 +105,7 @@
             :key="'group-' + group.id"
           >
             <tr
+              v-if="showConditions"
               class="longevidata-group-row"
               @click="toggleGroup(group.id)"
             >
@@ -126,7 +127,7 @@
                 :key="'outcome-' + group.id + '-' + idx"
                 class="longevidata-outcome-row"
               >
-                <td />
+                <td v-if="showConditions" />
                 <td>{{ outcome.vocabulary_term || outcome.outcome_name }}</td>
                 <td>
                   <span :class="gradeClass(outcome.grade_rating)">{{ gradeLabel(outcome.grade_rating) }}</span>
@@ -197,29 +198,35 @@ export default {
   computed: {
     columns() {
       if (this.config.type === 'intervention') {
-        return [
+        const cols = [
           { key: 'group', label: 'Health Condition/Goal' },
           { key: 'outcome', label: 'Health Outcome' },
           { key: 'grade', label: 'Grade' },
           { key: 'evidence', label: 'Evidence' },
           { key: 'effect', label: 'Effect' }
         ]
+        if (!this.showConditions) cols.shift()
+        return cols
       } else if (this.config.type === 'condition') {
-        return [
+        const cols = [
           { key: 'group', label: 'Intervention' },
           { key: 'outcome', label: 'Health Outcome' },
           { key: 'grade', label: 'Grade' },
           { key: 'evidence', label: 'Evidence' },
           { key: 'effect', label: 'Effect' }
         ]
+        if (!this.showConditions) cols.shift()
+        return cols
       } else {
-        return [
+        const cols = [
           { key: 'group', label: 'Intervention' },
           { key: 'outcome', label: 'Health Condition/Goal' },
           { key: 'grade', label: 'Grade' },
           { key: 'evidence', label: 'Evidence' },
           { key: 'effect', label: 'Effect' }
         ]
+        if (!this.showConditions) cols.shift()
+        return cols
       }
     },
     groupedOutcomes() {

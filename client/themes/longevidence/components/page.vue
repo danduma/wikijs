@@ -1058,6 +1058,26 @@ export default {
         
         // Create mount point inside the element (clearing static content)
         el.innerHTML = ''
+
+        // Handle browser "hoisting" behavior where block-level static content (div)
+        // gets forced out of the custom element (if treated as inline) or parent <p>.
+        // This causes the static table to appear *below* the dynamic one.
+        const cleanupHoisted = (node) => {
+          if (node && node.nodeType === 1 && node.classList.contains('longevidata-widget-static')) {
+            node.remove()
+            return true
+          }
+          return false
+        }
+
+        // Check immediate sibling
+        if (!cleanupHoisted(el.nextElementSibling)) {
+          // Check parent's sibling (if wrapped in <p>)
+          if (el.parentElement.tagName === 'P') {
+            cleanupHoisted(el.parentElement.nextElementSibling)
+          }
+        }
+
         const mountPoint = document.createElement('div')
         el.appendChild(mountPoint)
         

@@ -92,7 +92,7 @@ module.exports = {
         json: true,
         timeout: 5000
       })
-      return true
+      return `Connection verified: LongeviData API is reachable at ${config.apiBaseUrl}.`
     } catch (err) {
       if (err.statusCode === 401) {
         throw new Error('Authentication failed (401). Check your API Token.')
@@ -110,7 +110,8 @@ module.exports = {
 // ----------------------------------------------------------------------------
 
 function renderStaticTable($, $elm, type, name, data, previewMaxRows) {
-  const orderedOutcomes = longevidata.orderOutcomes(data.outcomes || [], type)
+  const rawOutcomes = Array.isArray(data) ? data : (data.outcomes || [])
+  const orderedOutcomes = longevidata.orderOutcomes(rawOutcomes, type)
   const totalOutcomes = orderedOutcomes.length
   const previewOutcomes = longevidata.limitOutcomes(orderedOutcomes, previewMaxRows)
 
@@ -123,7 +124,7 @@ function renderStaticTable($, $elm, type, name, data, previewMaxRows) {
 
   // 2. Build HTML structure
   const $widget = $('<div class="longevidata-widget-static"></div>')
-  
+
   // Header
   $widget.append(`
     <div class="longevidata-header">
@@ -151,7 +152,7 @@ function renderStaticTable($, $elm, type, name, data, previewMaxRows) {
 
   // Table
   const $table = $('<table class="longevidata-table"></table>')
-  
+
   // Table Head
   let columns = []
   if (type === 'intervention') {
@@ -170,7 +171,7 @@ function renderStaticTable($, $elm, type, name, data, previewMaxRows) {
 
   // Table Body
   const $tbody = $('<tbody></tbody>')
-  
+
   // Group outcomes
   const groups = longevidata.groupOutcomes(previewOutcomes, type).sort((a, b) => b.totalStudies - a.totalStudies)
   let rowIndex = 0
@@ -186,17 +187,17 @@ function renderStaticTable($, $elm, type, name, data, previewMaxRows) {
         <td></td>
       </tr>
     `)
-    
-    // Outcome Rows (Hidden by default in static view or shown? Plan says "Expandable rows". 
+
+    // Outcome Rows (Hidden by default in static view or shown? Plan says "Expandable rows".
     // Usually static view shows collapsed or full. Let's show first few or collapsed?
-    // Plan example shows "Expandable rows showing entity name". 
+    // Plan example shows "Expandable rows showing entity name".
     // The Client Side flow says "The static table is visible BEFORE Vue loads".
     // If we want it to look good, maybe we render them but hide them with CSS or just render the group rows.
-    // The example HTML in plan shows outcome rows present. 
-    // Let's render them but maybe styling will hide them or they are visible. 
+    // The example HTML in plan shows outcome rows present.
+    // Let's render them but maybe styling will hide them or they are visible.
     // For SEO/static content, visible is better. But visually it might be cluttered.
     // I'll render them.
-    
+
     group.outcomes.forEach(outcome => {
       const dataIndex = rowIndex++
       $tbody.append(`

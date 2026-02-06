@@ -46,7 +46,8 @@ router.get('/api/longevidata/outcomes', async (req, res) => {
       timeout: 10000
     })
 
-    const orderedOutcomes = longevidata.orderOutcomes(data.outcomes || [], type)
+    const rawOutcomes = Array.isArray(data) ? data : (data.outcomes || [])
+    const orderedOutcomes = longevidata.orderOutcomes(rawOutcomes, type)
     const totalOutcomes = orderedOutcomes.length
 
     const tier = await WIKI.models.membershipTiers.getEffectiveForUser(req.user)

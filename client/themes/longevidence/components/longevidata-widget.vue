@@ -14,7 +14,7 @@
         <h4>LongeviData: {{ config.name }}</h4>
       </div>
 
-      <div class="longevidata-controls">
+      <div class="longevidata-toolbar-merged">
         <div class="longevidata-search-wrapper">
           <input
             v-model="searchQuery"
@@ -27,30 +27,31 @@
             <span class="mdi mdi-magnify" />
           </button>
         </div>
-      </div>
 
-      <div class="longevidata-toolbar">
-        <div class="longevidata-toggle-wrapper">
-          <label class="switch">
-            <input type="checkbox" v-model="showConditions">
-            <span class="slider round"></span>
-          </label>
-          <span class="toggle-label">{{ config.type === 'intervention' ? 'Show Conditions' : 'Show Interventions' }}</span>
+        <div class="longevidata-controls-right">
+          <div class="longevidata-toggle-wrapper">
+            <label class="switch">
+              <input type="checkbox" v-model="showConditions">
+              <span class="slider round"></span>
+            </label>
+            <span class="toggle-label">{{ config.type === 'intervention' ? 'Show Conditions' : 'Show Interventions' }}</span>
+          </div>
+          
+          <div class="longevidata-actions">
+            <button
+              class="text-btn"
+              @click="expandAll"
+            >
+              Expand
+            </button>
+            <button
+              class="text-btn"
+              @click="collapseAll"
+            >
+              Collapse
+            </button>
+          </div>
         </div>
-        
-        <div class="spacer" />
-        <button
-          class="text-btn"
-          @click="expandAll"
-        >
-          Expand All
-        </button>
-        <button
-          class="text-btn"
-          @click="collapseAll"
-        >
-          Collapse All
-        </button>
       </div>
 
       <div class="table-responsive">
@@ -68,7 +69,7 @@
                 v-for="col in columns"
                 :key="col.key"
                 @click="sortBy(col.key)"
-                :class="{ sortable: true }"
+                :class="['col-' + col.key, { sortable: true }]"
               >
                 {{ col.label }}
                 <span
@@ -118,7 +119,7 @@
               </td>
               <td>{{ group.outcomes.length }} outcomes</td>
               <td />
-              <td>{{ group.totalStudies }} Studies</td>
+              <td class="col-evidence">{{ group.totalStudies }} Studies</td>
               <td />
             </tr>
             <template v-if="expanded[group.id] || !showConditions">
@@ -128,15 +129,15 @@
                 class="longevidata-outcome-row"
               >
                 <td v-if="showConditions" />
-                <td>{{ outcome.vocabulary_term || outcome.outcome_name }}</td>
-                <td>
+                <td class="col-outcome">{{ outcome.vocabulary_term || outcome.outcome_name }}</td>
+                <td class="col-grade">
                   <span :class="gradeClass(outcome.grade_rating)">{{ gradeLabel(outcome.grade_rating) }}</span>
                 </td>
-                <td>
+                <td class="col-evidence">
                   {{ outcome.study_count }} Studies
                   <span v-if="outcome.total_participants">· {{ outcome.total_participants }} Participants</span>
                 </td>
-                <td>
+                <td class="col-effect">
                   <span :class="effectClass(outcome.effect_direction)">{{ effectLabel(outcome) }}</span>
                 </td>
               </tr>
@@ -480,13 +481,20 @@ export default {
     }
   }
 
-  .longevidata-controls {
+  .longevidata-toolbar-merged {
+    display: flex;
+    align-items: center;
     padding: 1rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    gap: 16px;
+    flex-wrap: nowrap;
 
     .longevidata-search-wrapper {
+      flex: 1;
       display: flex;
       position: relative;
+      min-width: 0; // Fix flex child overflow
 
       input.longevidata-search-input {
         width: 100%;
@@ -517,24 +525,24 @@ export default {
         padding: 4px;
       }
     }
-  }
 
-  .longevidata-toolbar {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    background: #f9f9f9;
-    border-bottom: 1px solid #eee;
+    .longevidata-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
 
     .longevidata-toggle-wrapper {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       
       .toggle-label {
         font-size: 0.9rem;
         color: #555;
         font-weight: 500;
+        white-space: nowrap;
       }
 
       /* Custom Switch */
@@ -543,6 +551,7 @@ export default {
         display: inline-block;
         width: 36px;
         height: 20px;
+        flex-shrink: 0;
         
         input { 
           opacity: 0;
@@ -595,24 +604,56 @@ export default {
       }
     }
 
-    .spacer {
-      flex: 1;
+    .longevidata-actions {
+      display: flex;
+      gap: 8px;
     }
     
     .text-btn {
       background: none;
-      border: none;
+      border: 1px solid transparent; // Consistent sizing
       color: #666;
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: 600;
       text-transform: uppercase;
       cursor: pointer;
       padding: 6px 12px;
       border-radius: 4px;
+      white-space: nowrap;
       
       &:hover {
         background-color: rgba(0,0,0,0.05);
         color: #333;
+      }
+    }
+  }
+
+  // Responsive Styles
+  @media (max-width: 600px) {
+    .longevidata-toolbar-merged {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      padding: 0.75rem;
+
+      .longevidata-controls-right {
+        justify-content: space-between;
+        width: 100%;
+      }
+    }
+
+    // Hide Evidence column on mobile
+    th.col-evidence, 
+    td.col-evidence {
+      display: none;
+    }
+    
+    // Adjust font sizes for mobile table
+    .longevidata-table {
+      font-size: 0.9rem;
+      
+      th, td {
+        padding: 0.5rem 0.5rem;
       }
     }
   }

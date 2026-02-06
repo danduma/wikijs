@@ -189,7 +189,7 @@ export default {
       sortField: 'totalStudies',
       sortAsc: false,
       expanded: {},
-      showConditions: true,
+      showConditions: false,
       maxRows: null,
       tierKey: 'free',
       paywallShown: false

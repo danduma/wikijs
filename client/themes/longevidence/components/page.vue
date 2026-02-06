@@ -428,6 +428,14 @@ import { injectTubular3DDna } from './tubular-3d-dna.js'
 import { injectWaveRibbonDna } from './wave-ribbon-dna.js'
 import { injectHeroPathsOverlay } from './hero-paths-overlay.js'
 
+// Suppress "Unknown custom element" warning for longevidata-table
+// as we hydrate it manually
+Vue.config.ignoredElements = [
+  'longevidata-table',
+  'hero-header',
+  ...Vue.config.ignoredElements || []
+]
+
 Vue.component('LongeviDataTable', LongeviDataTable)
 Vue.component('LongevidenceEffect', LongevidenceEffect)
 Vue.component('LongevidenceScore', LongevidenceScore)
@@ -1101,7 +1109,15 @@ export default {
         instance.$mount(mountPoint)
       })
     }
-  }
+  },
+  
+  // Ignore the custom element so Vue doesn't warn about it during compilation
+  // Note: This needs to be configured in the main Vue config or ignoredElements
+  // But inside a component we can't easily set ignoredElements for the ROOT.
+  // However, since we are in page.vue which is the root of the theme, maybe we can?
+  // Actually, ignoredElements is a global config.
+  // Since we can't change global config easily here without modifying entry point...
+  // We can try to register a dummy component for it?
 }
 </script>
 

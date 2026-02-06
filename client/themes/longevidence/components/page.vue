@@ -15,6 +15,7 @@
           :max-width='searchMenuWidth || 400'
           content-class='search-results-menu'
           transition='slide-y-transition'
+          @click:outside='searchMenuShown = false'
         )
           template(v-slot:activator='{ on, attrs }')
             v-text-field.longevidence-header-search(
@@ -68,7 +69,7 @@
               :query='searchQuery'
               @close='searchMenuMobileShown = false'
             )
-        
+
         v-tooltip(bottom, v-if='commentsEnabled && commentsPerms.read')
           template(v-slot:activator='{ on }')
             v-btn(icon, v-on='on', @click='commentsShown = !commentsShown', :aria-label='`Comments`')
@@ -660,6 +661,7 @@ export default {
       searchMenuMobileShown: false,
       searchQuery: '',
       searchMenuWidth: null,
+      searchOutsideClickHandler: null,
       dnaController: null,
       customHero: null
     }
@@ -793,6 +795,11 @@ export default {
     // -> Highlight Code Blocks
     Prism.highlightAllUnder(this.$refs.container)
 
+    // -> Hydrate LongeviData Widgets
+    this.$nextTick(() => {
+      this.hydrateLongeviDataWidgets()
+    })
+
     // -> Handle medical disclaimer pills
     this.$nextTick(() => {
       this.$refs.container.querySelectorAll('.medical-disclaimer-pill').forEach(el => {
@@ -860,6 +867,25 @@ export default {
     this.$root.$on('comments-updated', this.handleCommentsLoaded)
 
     this.updateSearchMenuWidth()
+
+    this.searchOutsideClickHandler = (event) => {
+      if (!this.searchMenuShown) {
+        return
+      }
+      const target = event.target
+      const inputEl = this.$refs.headerSearchInput && this.$refs.headerSearchInput.$el
+      const menuEls = document.querySelectorAll('.v-menu__content.search-results-menu')
+      if (inputEl && inputEl.contains(target)) {
+        return
+      }
+      for (let i = 0; i < menuEls.length; i += 1) {
+        if (menuEls[i].contains(target)) {
+          return
+        }
+      }
+      this.searchMenuShown = false
+    }
+    document.addEventListener('mousedown', this.searchOutsideClickHandler, true)
   },
   watch: {
     '$vuetify.theme.dark' (val) {
@@ -876,6 +902,9 @@ export default {
   beforeDestroy () {
     this.$root.$off('open-comment-sidebar', this.openCommentSidebar)
     this.$root.$off('comments-updated', this.handleCommentsLoaded)
+    if (this.searchOutsideClickHandler) {
+      document.removeEventListener('mousedown', this.searchOutsideClickHandler, true)
+    }
   },
   methods: {
     initCtaVisibility () {
@@ -1009,6 +1038,47 @@ export default {
         }
 
         injectHeroPathsOverlay(heroSection)
+      })
+    },
+    hydrateLongeviDataWidgets () {
+      if (!this.$refs.container) return
+      
+      const widgets = this.$refs.container.querySelectorAll('longevidata-table:not(.js-hydrated)')
+      if (widgets.length === 0) return
+
+      widgets.forEach(el => {
+        el.classList.add('js-hydrated')
+        
+        // Extract attributes
+        const intervention = el.getAttribute('intervention')
+        const condition = el.getAttribute('condition')
+        const biomarker = el.getAttribute('biomarker')
+        const name = el.getAttribute('name')
+        const initialData = el.getAttribute('data-initial')
+        
+        // Create mount point inside the element (clearing static content)
+        el.innerHTML = ''
+        const mountPoint = document.createElement('div')
+        el.appendChild(mountPoint)
+        
+        const ComponentClass = Vue.extend(LongeviDataTable)
+        const instance = new ComponentClass({
+          propsData: {
+            intervention,
+            condition,
+            biomarker,
+            name,
+            initialData
+          },
+          provide: {
+            membershipInfo: {
+              maxRows: this.membershipMaxRows,
+              tierKey: this.membershipTierKey
+            }
+          }
+        })
+        
+        instance.$mount(mountPoint)
       })
     }
   }
@@ -1172,12 +1242,28 @@ export default {
     border: 1px solid rgba(0,0,0,0.1) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
   }
-  
+
   input {
     color: #333 !important;
   }
-  
+
   .v-icon {
+    color: #666 !important;
+  }
+}
+
+.theme--light .longevidence-header-search {
+  .v-input__slot {
+    background-color: #ffffff !important;
+    border-color: rgba(0,0,0,0.1) !important;
+  }
+
+  input,
+  .v-label {
+    color: #333 !important;
+  }
+
+  .v-input__prepend-inner .v-icon {
     color: #666 !important;
   }
 }

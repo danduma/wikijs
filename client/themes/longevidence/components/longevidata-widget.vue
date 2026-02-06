@@ -163,15 +163,18 @@ import ResearchSnapshot from './research-snapshot.vue'
 
 export default {
   name: 'LongeviDataTable',
-  components: {
-    MembershipPaywall,
-    ResearchSnapshot
+  props: {
+    intervention: { type: String, default: null },
+    condition: { type: String, default: null },
+    biomarker: { type: String, default: null },
+    name: { type: String, default: 'Research Data' },
+    initialData: { type: String, default: null }
   },
   inject: ['membershipInfo'],
   data() {
-
     return {
       hydrated: false,
+
       loading: false,
       refreshing: false,
       config: {
@@ -287,13 +290,16 @@ export default {
     }
   },
   mounted() {
+    // Read config from props (preferred) or attributes (fallback)
     const $el = this.$el
-
-    // Read config from attributes
-    const interventionId = $el.getAttribute('intervention')
-    const conditionId = $el.getAttribute('condition')
-    const biomarkerId = $el.getAttribute('biomarker')
-    this.config.name = $el.getAttribute('name') || 'Research Data'
+    
+    // Check if we have props (hydrated via JS) or need to read DOM attributes (if mounted on existing element without props)
+    // Note: When using new Vue({ propsData: ... }), props will be populated.
+    
+    const interventionId = this.intervention || $el.getAttribute('intervention')
+    const conditionId = this.condition || $el.getAttribute('condition')
+    const biomarkerId = this.biomarker || $el.getAttribute('biomarker')
+    this.config.name = this.name || $el.getAttribute('name') || 'Research Data'
 
     if (conditionId) {
       this.config.type = 'condition'
@@ -307,10 +313,10 @@ export default {
     }
 
     // Load initial data
-    const initialData = $el.getAttribute('data-initial')
-    if (initialData) {
+    const initialDataStr = this.initialData || $el.getAttribute('data-initial')
+    if (initialDataStr) {
       try {
-        const jsonStr = Base64.decode(initialData)
+        const jsonStr = Base64.decode(initialDataStr)
         const data = JSON.parse(jsonStr)
         this.outcomes = data.outcomes || []
         this.totalOutcomes = data.totalOutcomes || this.outcomes.length

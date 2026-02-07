@@ -14,6 +14,7 @@ function buildPublicTier(tier, ctx) {
     isDefault: tier.isDefault,
     features: tier.features || [],
     maxLongevidataRows: tier.maxLongevidataRows,
+    lockedMessageKey: tier.lockedMessageKey,
     displayPrice: presentation.displayPrice,
     currency: presentation.currency,
     billingPeriod: presentation.billingPeriod,
@@ -80,6 +81,7 @@ module.exports = {
           isActive: _.get(args, 'isActive', true),
           features: _.get(args, 'features', []),
           maxLongevidataRows: _.get(args, 'maxLongevidataRows', null),
+          lockedMessageKey: _.get(args, 'lockedMessageKey', null),
           stripeProductId: _.get(args, 'stripeProductId', null),
           stripePriceId: _.get(args, 'stripePriceId', null)
         }
@@ -117,6 +119,7 @@ module.exports = {
           isActive: _.get(args, 'isActive'),
           features: _.get(args, 'features'),
           maxLongevidataRows: _.get(args, 'maxLongevidataRows'),
+          lockedMessageKey: _.get(args, 'lockedMessageKey'),
           stripeProductId: _.get(args, 'stripeProductId'),
           stripePriceId: _.get(args, 'stripePriceId')
         }, value => value !== undefined)

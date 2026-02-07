@@ -181,7 +181,7 @@ export default {
   width: 100%;
   height: calc(100% - 64px);
   background-color: rgba(0,0,0,.9);
-  z-index: 100;
+  z-index: 140;
   text-align: center;
   animation: searchResultsReveal .6s ease;
 

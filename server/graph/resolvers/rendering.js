@@ -59,9 +59,10 @@ module.exports = {
     },
     async executeAction(obj, args, context) {
       try {
-        await WIKI.models.renderers.executeAction(args.rendererKey, args.handler)
+        const actionResult = await WIKI.models.renderers.executeAction(args.rendererKey, args.handler)
+        const message = _.isString(actionResult) && !_.isEmpty(_.trim(actionResult)) ? actionResult : 'Action completed.'
         return {
-          responseResult: graphHelper.generateSuccess('Action completed.')
+          responseResult: graphHelper.generateSuccess(message)
         }
       } catch (err) {
         return graphHelper.generateError(err)

@@ -23,3 +23,8 @@ common:
     createAccount: 'Create account'
     learnMore: 'Learn more'
     limitedNotice: 'You''ve reached the free view limit for anonymous visitors.'
+
+membership:
+  locked:
+    guest: ' <a href="/register">Create a free account</a> to unlock more rows for free.'
+    default: 'Get the full database with a <a href="/pricing" target="_blank">paid subscription</a>.'

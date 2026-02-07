@@ -10,6 +10,7 @@ query {
       isActive
       features
       maxLongevidataRows
+      lockedMessageKey
       stripeProductId
       stripePriceId
       displayPrice

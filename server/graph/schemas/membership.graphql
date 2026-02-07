@@ -34,6 +34,7 @@ type MembershipMutation {
     isActive: Boolean
     features: [String]
     maxLongevidataRows: Int
+    lockedMessageKey: String
     stripeProductId: String
     stripePriceId: String
   ): MembershipTierResponse @auth(requires: ["manage:system"])
@@ -48,6 +49,7 @@ type MembershipMutation {
     isActive: Boolean
     features: [String]
     maxLongevidataRows: Int
+    lockedMessageKey: String
     stripeProductId: String
     stripePriceId: String
   ): MembershipTierResponse @auth(requires: ["manage:system"])
@@ -86,6 +88,7 @@ type MembershipTierPublic {
   isDefault: Boolean!
   features: [String]!
   maxLongevidataRows: Int
+  lockedMessageKey: String
   displayPrice: String
   currency: String
   billingPeriod: String
@@ -103,6 +106,7 @@ type MembershipTier {
   isActive: Boolean!
   features: [String]!
   maxLongevidataRows: Int
+  lockedMessageKey: String
   stripeProductId: String
   stripePriceId: String
   displayPrice: String

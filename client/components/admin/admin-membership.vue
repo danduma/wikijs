@@ -87,6 +87,14 @@
                   outlined
                 )
               v-flex(xs12 md6)
+                v-text-field(
+                  v-model='form.lockedMessageKey'
+                  label='Locked Message Key'
+                  hint='i18n key for the locked CTA (e.g. membership.locked.guest)'
+                  persistent-hint
+                  outlined
+                )
+              v-flex(xs12 md6)
                 v-switch(
                   v-model='form.isActive'
                   label='Active'
@@ -217,6 +225,7 @@ export default {
         isActive: true,
         features: [],
         maxLongevidataRows: '',
+        lockedMessageKey: '',
         stripeProductId: '',
         stripePriceId: ''
       }
@@ -232,6 +241,7 @@ export default {
         isActive: !!tier.isActive,
         features: tier.features || [],
         maxLongevidataRows: _.isNil(tier.maxLongevidataRows) ? '' : String(tier.maxLongevidataRows),
+        lockedMessageKey: tier.lockedMessageKey || '',
         stripeProductId: tier.stripeProductId || '',
         stripePriceId: tier.stripePriceId || ''
       }
@@ -270,6 +280,7 @@ export default {
         isActive: this.form.isActive,
         features: _.compact(this.form.features || []),
         maxLongevidataRows: this.normalizeMaxRows(),
+        lockedMessageKey: _.trim(this.form.lockedMessageKey) || null,
         stripeProductId: _.trim(this.form.stripeProductId) || null,
         stripePriceId: _.trim(this.form.stripePriceId) || null
       }

@@ -101,6 +101,12 @@
                     v-card-actions
                       v-spacer
                       v-btn(text, color='primary', @click='executeAction(act.handler)', :loading='processingAction === act.handler') Run
+                    v-alert.mx-4.mb-4.mt-0(
+                      v-if='actionFeedback[act.handler]'
+                      dense
+                      outlined
+                      :type='actionFeedback[act.handler].type'
+                      ) {{ actionFeedback[act.handler].message }}
               v-divider.mb-5
             .overline.mb-5 Rendering Module Configuration
             .body-2.ml-3(v-if='!currentRenderer.config || currentRenderer.config.length < 1'): em This rendering module has no configuration options you can modify.
@@ -163,7 +169,8 @@ export default {
       selectedCore: -1,
       renderers: [],
       currentRenderer: {},
-      processingAction: ''
+      processingAction: '',
+      actionFeedback: {}
     }
   },
   watch: {
@@ -176,6 +183,7 @@ export default {
   },
   methods: {
     selectRenderer (key) {
+      this.actionFeedback = {}
       this.renderers.map(rdr => {
         if (_.some(rdr.children, ['key', key])) {
           this.currentRenderer = _.find(rdr.children, ['key', key])
@@ -192,6 +200,7 @@ export default {
     },
     async executeAction (handler) {
       this.processingAction = handler
+      this.$set(this.actionFeedback, handler, null)
       try {
         const resp = await this.$apollo.mutate({
           mutation: executeActionMutation,
@@ -200,9 +209,14 @@ export default {
             handler: handler
           }
         })
+        const responseMessage = _.get(resp, 'data.rendering.executeAction.responseResult.message', '')
         if (_.get(resp, 'data.rendering.executeAction.responseResult.succeeded', false)) {
+          this.$set(this.actionFeedback, handler, {
+            type: 'success',
+            message: responseMessage || 'Action completed successfully.'
+          })
           this.$store.commit('showNotification', {
-            message: 'Action completed successfully.',
+            message: responseMessage || 'Action completed successfully.',
             style: 'success',
             icon: 'check'
           })
@@ -210,6 +224,10 @@ export default {
           throw new Error(_.get(resp, 'data.rendering.executeAction.responseResult.message', 'An error occurred.'))
         }
       } catch (err) {
+        this.$set(this.actionFeedback, handler, {
+          type: 'error',
+          message: err.message
+        })
         this.$store.commit('showNotification', {
           message: err.message,
           style: 'error',

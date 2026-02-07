@@ -118,7 +118,7 @@ module.exports = class Renderer extends Model {
       throw new WIKI.Error('Action handler not found')
     }
 
-    const rendererModule = require(path.join(WIKI.SERVERPATH, 'modules/rendering', rendererDef.key, 'renderer'))
+    const rendererModule = require(path.join(WIKI.SERVERPATH, 'modules/rendering', _.kebabCase(rendererDef.key), 'renderer'))
 
     if (typeof rendererModule[handler] !== 'function') {
       throw new WIKI.Error(`Handler function ${handler} is not implemented in module ${rendererDef.key}`)

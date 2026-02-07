@@ -24,6 +24,7 @@ module.exports = class MembershipTier extends Model {
         isActive: {type: 'boolean'},
         features: {type: ['array', 'null']},
         maxLongevidataRows: {type: ['integer', 'null']},
+        lockedMessageKey: {type: ['string', 'null']},
         stripeProductId: {type: ['string', 'null']},
         stripePriceId: {type: ['string', 'null']},
         createdAt: {type: 'string'},
@@ -67,9 +68,15 @@ module.exports = class MembershipTier extends Model {
   }
 
   static async getEffectiveForUser(user) {
-    const defaultTier = await this.getDefault()
+    // 1. Handle Guest / System User
     if (!user || !user.id || user.id === 2) {
-      return defaultTier
+      // Check for specific 'guest' tier first
+      const guestTier = await this.query().where({ key: 'guest', isActive: true }).first()
+      if (guestTier) {
+        return guestTier
+      }
+      // Fallback to default
+      return this.getDefault()
     }
 
     let userData = user

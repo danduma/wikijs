@@ -129,7 +129,7 @@
                   <td :colspan="showConditions ? 5 : 4">
                     <div class="locked-cta-content">
                       <div class="locked-text">
-                        Get the full database with a <a href="/pricing" target="_blank">paid subscription</a>.
+                        <span v-html="lockedMessageHtml"></span>
                       </div>
                     </div>
                   </td>
@@ -225,10 +225,17 @@ export default {
       showConditions: false,
       maxRows: null,
       tierKey: 'free',
+      lockedMessageKey: null,
       paywallShown: false
     }
   },
   computed: {
+    lockedMessageHtml() {
+      if (this.lockedMessageKey) {
+        return this.$t(this.lockedMessageKey)
+      }
+      return 'Get the full database with a <a href="/pricing" target="_blank">paid subscription</a>.'
+    },
     columns() {
       if (this.config.type === 'intervention') {
         const cols = [
@@ -427,6 +434,7 @@ export default {
         this.totalOutcomes = data.totalOutcomes || this.outcomes.length
         if (data.maxRows !== undefined) this.maxRows = data.maxRows
         if (data.tierKey) this.tierKey = data.tierKey
+        if (data.lockedMessageKey) this.lockedMessageKey = data.lockedMessageKey
         this.expandAll()
       } catch (err) {
         console.error('Failed to refresh longevidata outcomes', err)

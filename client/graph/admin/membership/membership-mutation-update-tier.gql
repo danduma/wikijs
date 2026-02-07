@@ -1,4 +1,4 @@
-mutation ($id: Int!, $key: String, $name: String, $description: String, $sortOrder: Int, $isDefault: Boolean, $isActive: Boolean, $features: [String], $maxLongevidataRows: Int, $stripeProductId: String, $stripePriceId: String) {
+mutation ($id: Int!, $key: String, $name: String, $description: String, $sortOrder: Int, $isDefault: Boolean, $isActive: Boolean, $features: [String], $maxLongevidataRows: Int, $lockedMessageKey: String, $stripeProductId: String, $stripePriceId: String) {
   membership {
     updateTier(
       id: $id
@@ -10,6 +10,7 @@ mutation ($id: Int!, $key: String, $name: String, $description: String, $sortOrd
       isActive: $isActive
       features: $features
       maxLongevidataRows: $maxLongevidataRows
+      lockedMessageKey: $lockedMessageKey
       stripeProductId: $stripeProductId
       stripePriceId: $stripePriceId
     ) {
@@ -29,6 +30,7 @@ mutation ($id: Int!, $key: String, $name: String, $description: String, $sortOrd
         isActive
         features
         maxLongevidataRows
+        lockedMessageKey
         stripeProductId
         stripePriceId
         displayPrice

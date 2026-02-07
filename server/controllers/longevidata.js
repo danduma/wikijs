@@ -58,7 +58,8 @@ router.get('/api/longevidata/outcomes', async (req, res) => {
       outcomes: limitedOutcomes,
       totalOutcomes,
       maxRows: maxRows === undefined ? null : maxRows,
-      tierKey: tier ? tier.key : 'free'
+      tierKey: tier ? tier.key : 'free',
+      lockedMessageKey: tier ? tier.lockedMessageKey : null
     })
   } catch (err) {
     WIKI.logger.warn(`Longevidata refresh failed: ${err.message}`)

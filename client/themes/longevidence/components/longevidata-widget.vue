@@ -123,24 +123,56 @@
               <td />
             </tr>
             <template v-if="expanded[group.id] || !showConditions">
-              <tr
-                v-for="(outcome, idx) in group.outcomes"
-                :key="'outcome-' + group.id + '-' + idx"
-                class="longevidata-outcome-row"
-              >
-                <td v-if="showConditions" />
-                <td class="col-outcome">{{ outcome.vocabulary_term || outcome.outcome_name }}</td>
-                <td class="col-grade">
-                  <span :class="gradeClass(outcome.grade_rating)">{{ gradeLabel(outcome.grade_rating) }}</span>
-                </td>
-                <td class="col-evidence">
-                  {{ outcome.study_count }} Studies
-                  <span v-if="outcome.total_participants">· {{ outcome.total_participants }} Participants</span>
-                </td>
-                <td class="col-effect">
-                  <span :class="effectClass(outcome.effect_direction)">{{ effectLabel(outcome) }}</span>
-                </td>
-              </tr>
+              <template v-for="(outcome, idx) in group.outcomes">
+                <!-- CTA before first locked item -->
+                <tr v-if="outcome.isLocked && isFirstLocked(group.outcomes, idx)" class="longevidata-locked-cta-row">
+                  <td :colspan="showConditions ? 5 : 4">
+                    <div class="locked-cta-content">
+                      <div class="locked-text">
+                        Get the full database with a <a href="/pricing" target="_blank">paid subscription</a>.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr
+                  :key="'outcome-' + group.id + '-' + idx"
+                  class="longevidata-outcome-row"
+                  :class="{ 'is-locked': outcome.isLocked }"
+                >
+                  <td v-if="showConditions" />
+                  <td class="col-outcome">{{ outcome.vocabulary_term || outcome.outcome_name }}</td>
+                  
+                  <!-- Grade Column -->
+                  <td class="col-grade">
+                    <div v-if="outcome.isLocked" class="locked-badge">
+                      <span class="mdi mdi-lock" />
+                    </div>
+                    <span v-else :class="gradeClass(outcome.grade_rating)">{{ gradeLabel(outcome.grade_rating) }}</span>
+                  </td>
+
+                  <!-- Evidence Column -->
+                  <td class="col-evidence">
+                    <template v-if="outcome.isLocked">
+                      <span class="locked-text-sm">
+                        <span class="mdi mdi-file-document-outline" /> Locked
+                      </span>
+                    </template>
+                    <template v-else>
+                      {{ outcome.study_count }} Studies
+                      <span v-if="outcome.total_participants">· {{ outcome.total_participants }} Participants</span>
+                    </template>
+                  </td>
+
+                  <!-- Effect Column -->
+                  <td class="col-effect">
+                    <div v-if="outcome.isLocked" class="locked-badge">
+                      <span class="mdi mdi-lock" />
+                    </div>
+                    <span v-else :class="effectClass(outcome.effect_direction)">{{ effectLabel(outcome) }}</span>
+                  </td>
+                </tr>
+              </template>
             </template>
           </tbody>
         </table>
@@ -454,6 +486,13 @@ export default {
       const dir = outcome.effect_direction || ''
       if (mag && dir) return `${mag} ${dir}`
       return dir || 'No Effect'
+    },
+
+    isFirstLocked(outcomes, idx) {
+      // It is first locked if this one is locked AND (it's the first element OR the previous one was NOT locked)
+      if (!outcomes[idx].isLocked) return false
+      if (idx === 0) return true
+      return !outcomes[idx - 1].isLocked
     }
   }
 }
@@ -660,19 +699,26 @@ export default {
 
   .longevidata-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate; // Important for border styling
+    border-spacing: 0;
+    
+    // RESET Global table styles
+    margin: 0 !important; // Remove global margins
+    border: none !important;
 
     th {
       text-align: left;
       padding: 0.75rem 1rem;
       font-weight: 600;
       color: #555;
-      border-bottom: 2px solid #eee;
+      // border-bottom: 2px solid #eee; // Removed to reduce visual noise / double border with toolbar
+      background: #f9f9f9; // Match toolbar background
       cursor: pointer;
       user-select: none;
+      border: none; // Reset global
 
       &:hover {
-        background: #f5f5f5;
+        background: #f0f0f0;
       }
     }
 
@@ -680,6 +726,9 @@ export default {
       padding: 0.75rem 1rem;
       border-bottom: 1px solid #eee;
       vertical-align: middle;
+      border-top: none; // Reset global
+      border-left: none;
+      border-right: none;
     }
 
     .longevidata-group-row {
@@ -693,16 +742,48 @@ export default {
 
       td {
         color: #333;
+        border-bottom: 1px solid #eee;
       }
     }
 
     .longevidata-outcome-row {
       background: white;
+      
+      &.is-locked {
+        background: #fafafa;
+        color: #888;
+        
+        td {
+          border-bottom: 1px solid #eee;
+        }
+      }
+    }
+    
+    .longevidata-locked-cta-row {
+      background: #f3e5f5; // Light purple background
+      
+      td {
+        padding: 1.5rem;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+      }
+      
+      .locked-text {
+        font-weight: 500;
+        color: #4a148c;
+        
+        a {
+          color: #4a148c;
+          text-decoration: underline;
+          font-weight: 700;
+        }
+      }
     }
   }
 
   .table-responsive {
     position: relative;
+    border-top: 1px solid #eee; // Add border between toolbar and table
   }
 
   .longevidata-loading {
@@ -752,6 +833,30 @@ export default {
     &-positive { color: #2e7d32; }
     &-negative { color: #c62828; }
     &-neutral { color: #666; }
+  }
+
+  // Locked State
+  .locked-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background-color: #d1c4e9; // Light purple
+    color: #512da8; // Dark purple
+    
+    .mdi {
+      font-size: 16px;
+    }
+  }
+  
+  .locked-text-sm {
+    color: #999;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   // Static rendering specific (for when !hydrated)

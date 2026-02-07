@@ -50,7 +50,24 @@ function limitOutcomes(outcomes, maxRows) {
   if (maxRows === null || maxRows === undefined) return outcomes
   const limit = Number(maxRows)
   if (!Number.isFinite(limit) || limit < 0) return outcomes
-  return outcomes.slice(0, limit)
+  
+  // Return all outcomes, but mark those beyond limit as locked
+  return outcomes.map((outcome, index) => {
+    if (index < limit) {
+      return outcome
+    }
+    // Redact locked outcomes
+    return {
+      ...outcome,
+      isLocked: true,
+      grade_rating: null,
+      effect_direction: null,
+      change_direction: null,
+      change_magnitude: null,
+      study_count: null,
+      total_participants: null
+    }
+  })
 }
 
 module.exports = {

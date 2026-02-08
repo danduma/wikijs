@@ -422,6 +422,7 @@ import _ from 'lodash'
 import ClipboardJS from 'clipboard'
 import Vue from 'vue'
 import LongeviDataTable from './longevidata-widget.vue'
+import ResearchSnapshot from './research-snapshot.vue'
 import LongevidenceEffect from './longevidence-effect.vue'
 import LongevidenceScore from './longevidence-score.vue'
 import { injectTubular3DDna } from './tubular-3d-dna.js'
@@ -432,11 +433,13 @@ import { injectHeroPathsOverlay } from './hero-paths-overlay.js'
 // as we hydrate it manually
 Vue.config.ignoredElements = [
   'longevidata-table',
+  'research-snapshot',
   'hero-header',
   ...Vue.config.ignoredElements || []
 ]
 
 Vue.component('LongeviDataTable', LongeviDataTable)
+Vue.component('ResearchSnapshot', ResearchSnapshot)
 Vue.component('LongevidenceEffect', LongevidenceEffect)
 Vue.component('LongevidenceScore', LongevidenceScore)
 
@@ -1051,6 +1054,30 @@ export default {
     hydrateLongeviDataWidgets () {
       if (!this.$refs.container) return
       
+      this.hydrateTableWidgets()
+      this.hydrateSnapshotWidgets()
+    },
+    hydrateSnapshotWidgets () {
+      const widgets = this.$refs.container.querySelectorAll('research-snapshot:not(.js-hydrated)')
+      if (widgets.length === 0) return
+
+      widgets.forEach(el => {
+        el.classList.add('js-hydrated')
+        const topic = el.getAttribute('topic')
+        
+        el.innerHTML = ''
+        const mountPoint = document.createElement('div')
+        el.appendChild(mountPoint)
+        
+        const ComponentClass = Vue.extend(ResearchSnapshot)
+        const instance = new ComponentClass({
+          propsData: { topic },
+          parent: this
+        })
+        instance.$mount(mountPoint)
+      })
+    },
+    hydrateTableWidgets () {
       const widgets = this.$refs.container.querySelectorAll('longevidata-table:not(.js-hydrated)')
       if (widgets.length === 0) return
 

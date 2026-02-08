@@ -5,12 +5,7 @@
       <slot />
     </template>
     <template v-else>
-      <research-snapshot
-        v-if="config.name"
-        :topic="config.name"
-      />
-      
-      <div class="longevidata-header" v-else>
+      <div class="longevidata-header">
         <h4>LongeviData: {{ config.name }}</h4>
       </div>
 
@@ -193,13 +188,11 @@
 import { Base64 } from 'js-base64'
 import _ from 'lodash'
 import MembershipPaywall from '../../../components/common/membership-paywall.vue'
-import ResearchSnapshot from './research-snapshot.vue'
 
 export default {
   name: 'LongeviDataTable',
   components: {
-    MembershipPaywall,
-    ResearchSnapshot
+    MembershipPaywall
   },
   props: {
     intervention: { type: String, default: null },

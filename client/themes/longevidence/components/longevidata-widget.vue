@@ -515,15 +515,19 @@ export default {
   background: white;
 
   .longevidata-header {
-    background: #2c0b49; // Dark purple from description
-    color: white;
-    padding: 1rem;
+    background: white;
+    color: #333;
+    padding: 1rem 1rem 0.5rem 1rem;
+    border-bottom: none;
 
     h4 {
       margin: 0;
-      color: white;
-      font-size: 1.1rem;
-      font-weight: 500;
+      color: #4a148c; // Deep purple text instead of background
+      font-size: 1.2rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
   }
 

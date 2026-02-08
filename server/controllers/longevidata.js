@@ -67,4 +67,41 @@ router.get('/api/longevidata/outcomes', async (req, res) => {
   }
 })
 
+router.get('/api/research/snapshot/:topic', async (req, res) => {
+  if (!WIKI.auth.checkAccess(req.user, ['read:pages'])) {
+    return res.sendStatus(403)
+  }
+
+  const topic = req.params.topic
+  if (!topic) {
+    return res.status(400).json({ error: 'Missing topic' })
+  }
+
+  try {
+    const renderer = await WIKI.models.renderers.query().where('key', 'htmlLongevidata').first()
+    const cfg = renderer ? renderer.config : {}
+    if (!cfg.apiBaseUrl) {
+      return res.status(503).json({ error: 'Longevidata API not configured' })
+    }
+
+    const data = await rp({
+      uri: `${cfg.apiBaseUrl}/api/research/snapshot/${encodeURIComponent(topic)}`,
+      headers: {
+        'Authorization': `Bearer ${cfg.apiToken}`
+      },
+      json: true,
+      timeout: 5000
+    })
+
+    return res.json(data)
+  } catch (err) {
+    // If backend returns 404, propagate it
+    if (err.statusCode === 404) {
+      return res.status(404).json({ error: 'Topic not found' })
+    }
+    WIKI.logger.warn(`Research snapshot failed: ${err.message}`)
+    return res.status(500).json({ error: 'Failed to load research snapshot' })
+  }
+})
+
 module.exports = router

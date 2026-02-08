@@ -717,15 +717,14 @@ export default {
       text-align: left;
       padding: 0.75rem 1rem;
       font-weight: 600;
-      color: #555;
-      // border-bottom: 2px solid #eee; // Removed to reduce visual noise / double border with toolbar
-      background: #f9f9f9; // Match toolbar background
+      color: #555 !important;
+      background: #f9f9f9 !important; // Force override of global table styles
       cursor: pointer;
       user-select: none;
-      border: none; // Reset global
+      border: none !important; // Reset global
 
       &:hover {
-        background: #f0f0f0;
+        background: #f0f0f0 !important;
       }
     }
 

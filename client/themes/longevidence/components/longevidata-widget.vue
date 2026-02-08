@@ -197,6 +197,10 @@ import ResearchSnapshot from './research-snapshot.vue'
 
 export default {
   name: 'LongeviDataTable',
+  components: {
+    MembershipPaywall,
+    ResearchSnapshot
+  },
   props: {
     intervention: { type: String, default: null },
     condition: { type: String, default: null },
@@ -204,7 +208,9 @@ export default {
     name: { type: String, default: 'Research Data' },
     initialData: { type: String, default: null }
   },
-  inject: ['membershipInfo'],
+  inject: {
+    membershipInfo: { default: null }
+  },
   data() {
     return {
       hydrated: false,

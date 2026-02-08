@@ -1098,12 +1098,7 @@ export default {
             name,
             initialData
           },
-          provide: {
-            membershipInfo: {
-              maxRows: this.membershipMaxRows,
-              tierKey: this.membershipTierKey
-            }
-          }
+          parent: this
         })
         
         instance.$mount(mountPoint)

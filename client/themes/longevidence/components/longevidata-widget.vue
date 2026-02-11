@@ -469,16 +469,21 @@ export default {
     },
 
     gradeClass(grade) {
-      const g = (grade || '').trim().toUpperCase()
-      if (g === 'A') return 'longevidata-grade longevidata-grade-a'
-      if (g === 'B') return 'longevidata-grade longevidata-grade-b'
-      if (g === 'C') return 'longevidata-grade longevidata-grade-c'
-      if (g === 'D') return 'longevidata-grade longevidata-grade-d'
+      const g = (grade || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+      if (g === 'high' || g === 'strong' || g === 'a') return 'longevidata-grade longevidata-grade-high'
+      if (g === 'moderate' || g === 'normal' || g === 'b') return 'longevidata-grade longevidata-grade-moderate'
+      if (g === 'low' || g === 'weak' || g === 'c') return 'longevidata-grade longevidata-grade-low'
+      if (g === 'very_low' || g === 'verylow' || g === 'very_weak' || g === 'd') return 'longevidata-grade longevidata-grade-very-low'
       return 'longevidata-grade'
     },
 
     gradeLabel(grade) {
-      return (grade || '?').toUpperCase()
+      const g = (grade || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+      if (g === 'high' || g === 'strong' || g === 'a') return 'High'
+      if (g === 'moderate' || g === 'normal' || g === 'b') return 'Moderate'
+      if (g === 'low' || g === 'weak' || g === 'c') return 'Low'
+      if (g === 'very_low' || g === 'verylow' || g === 'very_weak' || g === 'd') return 'Very Low'
+      return '?'
     },
 
     effectClass(direction) {
@@ -824,17 +829,18 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
+    min-width: 64px;
     height: 28px;
-    border-radius: 50%;
+    padding: 0 8px;
+    border-radius: 999px;
     color: white;
     font-weight: bold;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 
-    &-a { background-color: #2e7d32; } // Green
-    &-b { background-color: #827717; } // Olive
-    &-c { background-color: #ef6c00; } // Orange
-    &-d { background-color: #c62828; } // Red
+    &-high { background-color: #2e7d32; } // Green
+    &-moderate { background-color: #827717; } // Olive
+    &-low { background-color: #ef6c00; } // Orange
+    &-very-low { background-color: #c62828; } // Red
   }
 
   .longevidata-effect {

@@ -241,16 +241,21 @@ function renderErrorState($, $elm, name, errorDetail) {
 // ----------------------------------------------------------------------------
 
 function getGradeClass(grade) {
-  const g = (grade || '').trim().toUpperCase()
-  if (g === 'A') return 'longevidata-grade longevidata-grade-a'
-  if (g === 'B') return 'longevidata-grade longevidata-grade-b'
-  if (g === 'C') return 'longevidata-grade longevidata-grade-c'
-  if (g === 'D') return 'longevidata-grade longevidata-grade-d'
+  const g = (grade || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+  if (g === 'high' || g === 'strong' || g === 'a') return 'longevidata-grade longevidata-grade-high'
+  if (g === 'moderate' || g === 'normal' || g === 'b') return 'longevidata-grade longevidata-grade-moderate'
+  if (g === 'low' || g === 'weak' || g === 'c') return 'longevidata-grade longevidata-grade-low'
+  if (g === 'very_low' || g === 'verylow' || g === 'very_weak' || g === 'd') return 'longevidata-grade longevidata-grade-very-low'
   return 'longevidata-grade'
 }
 
 function getGradeLabel(grade) {
-  return (grade || '?').toUpperCase()
+  const g = (grade || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+  if (g === 'high' || g === 'strong' || g === 'a') return 'High'
+  if (g === 'moderate' || g === 'normal' || g === 'b') return 'Moderate'
+  if (g === 'low' || g === 'weak' || g === 'c') return 'Low'
+  if (g === 'very_low' || g === 'verylow' || g === 'very_weak' || g === 'd') return 'Very Low'
+  return '?'
 }
 
 function getEffectClass(direction) {

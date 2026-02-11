@@ -41,18 +41,18 @@
 
       <div class="snapshot-grades-header">
         <span class="mdi mdi-view-grid-outline icon" />
-        Examine Evidence Grades
+        GRADE Evidence Certainty
       </div>
 
       <div class="snapshot-grades-list">
         <div 
-          v-for="grade in ['A', 'B', 'C', 'D']" 
+          v-for="grade in ['high', 'moderate', 'low', 'very_low']" 
           :key="grade"
           v-if="snapshot.grade_distribution[grade]"
           class="grade-bar-container"
         >
-          <div :class="['grade-bar', `grade-${grade.toLowerCase()}`]">
-            <div class="grade-badge">{{ grade }}</div>
+          <div :class="['grade-bar', gradeClass(grade)]">
+            <div class="grade-badge">{{ gradeBadgeLabel(grade) }}</div>
             <div class="grade-content">
               <span class="grade-outcomes">
                 {{ formatOutcomesList(snapshot.top_outcomes_by_grade[grade], snapshot.grade_distribution[grade]) }}
@@ -119,6 +119,22 @@ export default {
         return `${first} + ${remaining} more`
       }
       return first
+    },
+    gradeClass(grade) {
+      const g = String(grade || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+      if (g === 'high') return 'grade-high'
+      if (g === 'moderate') return 'grade-moderate'
+      if (g === 'low') return 'grade-low'
+      if (g === 'very_low') return 'grade-very-low'
+      return 'grade-low'
+    },
+    gradeBadgeLabel(grade) {
+      const g = String(grade || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+      if (g === 'high') return 'High'
+      if (g === 'moderate') return 'Moderate'
+      if (g === 'low') return 'Low'
+      if (g === 'very_low') return 'Very Low'
+      return '?'
     }
   }
 }
@@ -203,20 +219,21 @@ export default {
       color: black;
       font-weight: 500;
       
-      &.grade-a { background: #a5d6a7; .grade-badge { background: #2e7d32; color: white; } }
-      &.grade-b { background: #e6ee9c; .grade-badge { background: #dce775; color: black; font-weight: 700; } } 
-      &.grade-c { background: #ffcc80; .grade-badge { background: #ffb74d; color: black; font-weight: 700; } } 
-      &.grade-d { background: #ef9a9a; .grade-badge { background: #e57373; color: black; font-weight: 700; } } 
+      &.grade-high { background: #a5d6a7; .grade-badge { background: #2e7d32; color: white; } }
+      &.grade-moderate { background: #e6ee9c; .grade-badge { background: #dce775; color: black; font-weight: 700; } } 
+      &.grade-low { background: #ffcc80; .grade-badge { background: #ffb74d; color: black; font-weight: 700; } } 
+      &.grade-very-low { background: #ef9a9a; .grade-badge { background: #e57373; color: black; font-weight: 700; } } 
     }
 
     .grade-badge {
-      width: 36px;
+      min-width: 84px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
-      font-weight: 800;
+      font-size: 0.8rem;
+      font-weight: 700;
       flex-shrink: 0;
+      padding: 0 8px;
     }
 
     .grade-content {

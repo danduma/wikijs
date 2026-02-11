@@ -1,5 +1,5 @@
 <template lang="pug">
-  v-app(v-scroll='upBtnScroll', :dark='$vuetify.theme.dark', :class='[$vuetify.rtl ? `is-rtl` : `is-ltr`, { "custom-home-page": path === `home` }]')
+  v-app(v-scroll='upBtnScroll', :dark='$vuetify.theme.dark', :class='appClasses')
     nav-header(v-if='!printView', :hide-search='true')
       template(v-slot:mid)
         v-menu(
@@ -129,7 +129,7 @@
             status-indicator.ml-3(negative, pulse)
         v-divider
       v-container.grey.pa-0(fluid, :class='$vuetify.theme.dark ? `darken-4-l3` : `lighten-4`')
-        v-row.category-hero-section.py-10(v-if='heroImage', no-gutters, align='center', justify='center')
+        v-row.category-hero-section(v-if='heroImage', :class='heroClasses', no-gutters, align='center', justify='center')
           v-container
             v-row.category-hero-row(align='stretch', justify='space-between')
               v-col.category-hero-title-col(cols='7', sm='7', md='7')
@@ -721,6 +721,77 @@ export default {
         this.hasDeletePagesPermission || this.hasReadSourcePermission || this.canReadHistory
     },
     printView: sync('site/printView'),
+    appClasses () {
+      const classes = [
+        this.$vuetify.rtl ? 'is-rtl' : 'is-ltr'
+      ]
+
+      if (this.path === 'home') {
+        classes.push('custom-home-page')
+      }
+
+      if (this.pageLayoutClass) {
+        classes.push(`le-page--${this.pageLayoutClass}`)
+      }
+
+      return classes
+    },
+    heroClasses () {
+      const classes = ['le-hero']
+
+      if (this.heroLayoutClass) {
+        classes.push(`le-hero--${this.heroLayoutClass}`)
+      }
+
+      return classes
+    },
+    pageTagTokens () {
+      if (!Array.isArray(this.tags)) {
+        return []
+      }
+
+      return this.tags
+        .map(tag => {
+          if (_.isString(tag)) {
+            return tag
+          }
+          if (tag && _.isString(tag.tag)) {
+            return tag.tag
+          }
+          return ''
+        })
+        .map(this.normalizeLayoutTagToken)
+        .filter(Boolean)
+    },
+    pageTagLayout () {
+      const explicitLayout = this.pageTagTokens.find(token => token.indexOf('layout:') === 0 || token.indexOf('layout-') === 0)
+      if (explicitLayout) {
+        return this.normalizeLayoutTag(explicitLayout)
+      }
+
+      const legacyLayout = this.pageTagTokens.find(token => ['topic', 'topic-page', 'category', 'category-page', 'taxonomy', 'taxonomy-page'].includes(token))
+      return this.normalizeLayoutTag(legacyLayout)
+    },
+    pageLayoutClass () {
+      const explicitPageLayout = this.normalizeLayoutTag(this.customHero && this.customHero.pageLayout)
+      if (explicitPageLayout) {
+        return explicitPageLayout
+      }
+
+      if (this.pageTagLayout) {
+        return this.pageTagLayout
+      }
+
+      return ''
+    },
+    heroLayoutClass () {
+      const explicitHeroLayout = this.normalizeLayoutTag(this.customHero && this.customHero.heroLayout)
+      if (explicitHeroLayout) {
+        return explicitHeroLayout
+      }
+
+      return this.pageLayoutClass
+    },
     heroImage () {
       if (this.customHero && this.customHero.image) {
         return this.customHero.image
@@ -918,6 +989,29 @@ export default {
     }
   },
   methods: {
+    normalizeLayoutTagToken (value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9:-]/g, '')
+    },
+    normalizeLayoutTag (value) {
+      const token = this.normalizeLayoutTagToken(value)
+      if (!token) {
+        return ''
+      }
+
+      if (token.indexOf('layout:') === 0 || token.indexOf('layout-') === 0) {
+        return token.slice(7)
+      }
+
+      if (token === 'topic-page' || token === 'category-page' || token === 'taxonomy-page') {
+        return token.replace('-page', '')
+      }
+
+      return token
+    },
     initCtaVisibility () {
       if (this.limitReached && this.ctaEnabled) {
         this.recordCtaShown()
@@ -1031,7 +1125,9 @@ export default {
       this.customHero = {
         image: heroEl.getAttribute('image') || '',
         title: heroEl.getAttribute('title') || '',
-        subtitle: heroEl.getAttribute('subtitle') || ''
+        subtitle: heroEl.getAttribute('subtitle') || '',
+        heroLayout: heroEl.getAttribute('layout') || heroEl.getAttribute('hero-layout') || heroEl.getAttribute('tag') || '',
+        pageLayout: heroEl.getAttribute('page-layout') || ''
       }
       heroEl.remove()
     },

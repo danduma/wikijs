@@ -21,7 +21,7 @@ describe('LongeviData Renderer', () => {
       outcomes: [
         {
           vocabulary_term: 'Outcome A',
-          grade_rating: 'A',
+          grade_rating: 'high',
           study_count: 5,
           total_participants: 100,
           effect_direction: 'positive',
@@ -56,7 +56,7 @@ describe('LongeviData Renderer', () => {
       outcomes: [
         {
           vocabulary_term: 'Outcome B',
-          grade_rating: 'B',
+          grade_rating: 'moderate',
           study_count: 3,
           total_participants: 50,
           effect_direction: 'negative',

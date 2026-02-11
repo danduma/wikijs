@@ -92,7 +92,7 @@
             )
             v-icon(color='grey') mdi-magnify
 
-          //- APPEARANCE MODE (Auto / Day / Night)
+          //- APPEARANCE MODE (Day / Night)
 
           v-tooltip(bottom)
             template(v-slot:activator='{ on }')
@@ -322,6 +322,7 @@ export default {
     locale: get('page/locale'),
     mode: get('page/mode'),
     appearanceMode: get('site/appearanceMode'),
+    darkMode: get('site/dark'),
     name: get('user/name'),
     email: get('user/email'),
     pictureUrl: get('user/pictureUrl'),
@@ -362,17 +363,18 @@ export default {
         this.hasDeletePagesPermission || this.hasReadSourcePermission || this.hasReadHistoryPermission
     },
     appearanceModeNormalized () {
-      return ['auto', 'light', 'dark'].includes(this.appearanceMode) ? this.appearanceMode : 'auto'
+      if (['light', 'dark'].includes(this.appearanceMode)) {
+        return this.appearanceMode
+      }
+      return this.darkMode ? 'dark' : 'light'
     },
     appearanceIcon () {
       switch (this.appearanceModeNormalized) {
         case 'light':
           return 'mdi-white-balance-sunny'
         case 'dark':
-          return 'mdi-weather-night'
-        case 'auto':
         default:
-          return 'mdi-theme-light-dark'
+          return 'mdi-weather-night'
       }
     },
     appearanceTooltip () {
@@ -380,10 +382,8 @@ export default {
         case 'light':
           return 'Appearance: Day'
         case 'dark':
-          return 'Appearance: Night'
-        case 'auto':
         default:
-          return 'Appearance: Auto (system)'
+          return 'Appearance: Night'
       }
     },
     appearanceAriaLabel () {
@@ -391,10 +391,8 @@ export default {
         case 'light':
           return 'Appearance mode: Day'
         case 'dark':
-          return 'Appearance mode: Night'
-        case 'auto':
         default:
-          return 'Appearance mode: Auto'
+          return 'Appearance mode: Night'
       }
     }
   },
@@ -577,7 +575,7 @@ export default {
     },
     cycleAppearanceMode () {
       const cur = this.appearanceModeNormalized
-      const next = (cur === 'auto') ? 'light' : (cur === 'light') ? 'dark' : 'auto'
+      const next = (cur === 'light') ? 'dark' : 'light'
       setAppearanceMode(next, this.$store)
     }
   }

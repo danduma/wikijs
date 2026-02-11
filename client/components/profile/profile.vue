@@ -658,8 +658,7 @@ export default {
       return [
         { text: this.$t('profile:appearanceDefault'), value: '' },
         { text: this.$t('profile:appearanceLight'), value: 'light' },
-        { text: this.$t('profile:appearanceDark'), value: 'dark' },
-        { text: 'Auto (system)', value: 'auto' }
+        { text: this.$t('profile:appearanceDark'), value: 'dark' }
       ]
     },
     currentAppearance () {
@@ -691,7 +690,6 @@ export default {
       setAppearanceMode(normalized, this.$store)
 
       // Keep server preference in sync for light/dark/default only.
-      // Auto mode is stored locally only.
       if (newValue === '' || newValue === 'light' || newValue === 'dark') {
         this.user.appearance = newValue
       }

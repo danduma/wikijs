@@ -30,6 +30,7 @@ module.exports = {
         'tabset',
         'template',
         'longevidata-table',
+        'longevidata-safety',
         'longevidence-effect',
         'longevidence-score',
         'hero-header'

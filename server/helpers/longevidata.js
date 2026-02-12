@@ -70,8 +70,62 @@ function limitOutcomes(outcomes, maxRows) {
   })
 }
 
+function orderSafetySignals(signals) {
+  const severityRank = {
+    avoid: 5,
+    severe: 4,
+    moderate: 3,
+    mild: 2,
+    unknown: 1
+  }
+  const evidenceRank = {
+    high: 6,
+    moderate: 5,
+    low: 4,
+    very_low: 3,
+    case_report: 2,
+    theoretical: 1,
+    unknown: 0
+  }
+
+  return _.orderBy(
+    signals || [],
+    [
+      (signal) => severityRank[(signal && signal.severity) || 'unknown'] || 0,
+      (signal) => evidenceRank[(signal && signal.evidence_level) || 'unknown'] || 0,
+      'reviewed_at',
+      'title'
+    ],
+    ['desc', 'desc', 'desc', 'asc']
+  )
+}
+
+function limitSafetySignals(signals, maxRows) {
+  if (maxRows === null || maxRows === undefined) return signals
+  const limit = Number(maxRows)
+  if (!Number.isFinite(limit) || limit < 0) return signals
+
+  return (signals || []).map((signal, index) => {
+    if (index < limit) {
+      return signal
+    }
+    return {
+      ...signal,
+      isLocked: true,
+      summary: null,
+      severity: null,
+      evidence_level: null,
+      reference_url: null,
+      reference_title: null,
+      reviewed_at: null
+    }
+  })
+}
+
 module.exports = {
   groupOutcomes,
   orderOutcomes,
-  limitOutcomes
+  limitOutcomes,
+  orderSafetySignals,
+  limitSafetySignals
 }

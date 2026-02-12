@@ -422,6 +422,7 @@ import _ from 'lodash'
 import ClipboardJS from 'clipboard'
 import Vue from 'vue'
 import LongeviDataTable from './longevidata-widget.vue'
+import LongeviDataSafety from './longevidata-safety-widget.vue'
 import ResearchSnapshot from './research-snapshot.vue'
 import LongevidenceEffect from './longevidence-effect.vue'
 import LongevidenceScore from './longevidence-score.vue'
@@ -433,12 +434,14 @@ import { injectHeroPathsOverlay } from './hero-paths-overlay.js'
 // as we hydrate it manually
 Vue.config.ignoredElements = [
   'longevidata-table',
+  'longevidata-safety',
   'research-snapshot',
   'hero-header',
   ...Vue.config.ignoredElements || []
 ]
 
 Vue.component('LongeviDataTable', LongeviDataTable)
+Vue.component('LongeviDataSafety', LongeviDataSafety)
 Vue.component('ResearchSnapshot', ResearchSnapshot)
 Vue.component('LongevidenceEffect', LongevidenceEffect)
 Vue.component('LongevidenceScore', LongevidenceScore)
@@ -1151,6 +1154,7 @@ export default {
       if (!this.$refs.container) return
       
       this.hydrateTableWidgets()
+      this.hydrateSafetyWidgets()
       this.hydrateSnapshotWidgets()
     },
     hydrateSnapshotWidgets () {
@@ -1224,6 +1228,51 @@ export default {
           parent: this
         })
         
+        instance.$mount(mountPoint)
+      })
+    },
+    hydrateSafetyWidgets () {
+      const widgets = this.$refs.container.querySelectorAll('longevidata-safety:not(.js-hydrated)')
+      if (widgets.length === 0) return
+
+      widgets.forEach(el => {
+        el.classList.add('js-hydrated')
+
+        const intervention = el.getAttribute('intervention')
+        const condition = el.getAttribute('condition')
+        const name = el.getAttribute('name')
+        const initialData = el.getAttribute('data-initial')
+
+        el.innerHTML = ''
+
+        const cleanupHoisted = (node) => {
+          if (node && node.nodeType === 1 && node.classList.contains('longevidata-safety-widget-static')) {
+            node.remove()
+            return true
+          }
+          return false
+        }
+
+        if (!cleanupHoisted(el.nextElementSibling)) {
+          if (el.parentElement.tagName === 'P') {
+            cleanupHoisted(el.parentElement.nextElementSibling)
+          }
+        }
+
+        const mountPoint = document.createElement('div')
+        el.appendChild(mountPoint)
+
+        const ComponentClass = Vue.extend(LongeviDataSafety)
+        const instance = new ComponentClass({
+          propsData: {
+            intervention,
+            condition,
+            name,
+            initialData
+          },
+          parent: this
+        })
+
         instance.$mount(mountPoint)
       })
     }

@@ -8,9 +8,10 @@ const longevidata = require('../../../helpers/longevidata')
 module.exports = {
   init: async function (input, config) {
     const $ = cheerio.load(input)
-    const widgets = $('longevidata-table')
+    const outcomeWidgets = $('longevidata-table')
+    const safetyWidgets = $('longevidata-safety')
 
-    if (widgets.length === 0) {
+    if (outcomeWidgets.length === 0 && safetyWidgets.length === 0) {
       return input
     }
 
@@ -28,7 +29,7 @@ module.exports = {
       previewMaxRows = 4
     }
 
-    widgets.each((i, elm) => {
+    outcomeWidgets.each((i, elm) => {
       const $elm = $(elm)
       const interventionId = $elm.attr('intervention')
       const conditionId = $elm.attr('condition')
@@ -68,6 +69,43 @@ module.exports = {
             // Failure: Render error/empty state
             console.error(`LongeviData API Error for ${type} ${entityId}:`, err.message)
             renderErrorState($, $elm, name, err.message)
+          })
+      )
+    })
+
+    safetyWidgets.each((i, elm) => {
+      const $elm = $(elm)
+      const interventionId = $elm.attr('intervention')
+      const conditionId = $elm.attr('condition')
+      const name = $elm.attr('name') || 'Safety Information'
+
+      if (!interventionId && !conditionId) {
+        renderSafetyErrorState($, $elm, name, 'Missing intervention or condition id')
+        return
+      }
+
+      const params = []
+      if (interventionId) params.push(`intervention_id=${interventionId}`)
+      if (conditionId) params.push(`condition_id=${conditionId}`)
+      const queryString = params.join('&')
+
+      const options = {
+        uri: `${config.apiBaseUrl}/api/research/safety?${queryString}`,
+        headers: {
+          'Authorization': `Bearer ${config.apiToken}`
+        },
+        json: true,
+        timeout: 5000
+      }
+
+      promises.push(
+        rp(options)
+          .then(data => {
+            renderStaticSafetyTable($, $elm, name, data, previewMaxRows)
+          })
+          .catch(err => {
+            console.error(`LongeviData Safety API Error for ${interventionId || conditionId}:`, err.message)
+            renderSafetyErrorState($, $elm, name, err.message)
           })
       )
     })
@@ -236,6 +274,96 @@ function renderErrorState($, $elm, name, errorDetail) {
   `)
 }
 
+function renderStaticSafetyTable($, $elm, name, data, previewMaxRows) {
+  const rawSignals = Array.isArray(data) ? data : (data.signals || [])
+  const orderedSignals = longevidata.orderSafetySignals(rawSignals)
+  const totalSignals = orderedSignals.length
+  const previewSignals = longevidata.limitSafetySignals(orderedSignals, previewMaxRows)
+
+  const jsonStr = JSON.stringify({
+    signals: previewSignals,
+    totalSignals
+  })
+  $elm.attr('data-initial', Base64.encode(jsonStr))
+
+  const $widget = $('<div class="longevidata-safety-widget-static"></div>')
+  $widget.append(`
+    <div class="longevidata-header">
+      <h4>LongeviData Safety: ${name}</h4>
+    </div>
+  `)
+
+  $widget.append(`
+    <div class="longevidata-controls">
+      <input type="text" placeholder="Filter safety data" disabled />
+      <button class="longevidata-search-btn" disabled>
+        <span class="mdi mdi-magnify"></span>
+      </button>
+    </div>
+  `)
+
+  const $table = $('<table class="longevidata-table"></table>')
+  $table.append(`
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Safety Signal</th>
+        <th>Severity</th>
+        <th>Evidence</th>
+        <th>Reference</th>
+      </tr>
+    </thead>
+  `)
+
+  const $tbody = $('<tbody></tbody>')
+  previewSignals.forEach(signal => {
+    if (signal.isLocked) {
+      $tbody.append(`
+        <tr class="longevidata-outcome-row is-locked">
+          <td><span class="mdi mdi-lock"></span></td>
+          <td>Locked</td>
+          <td><span class="mdi mdi-lock"></span></td>
+          <td><span class="mdi mdi-lock"></span></td>
+          <td><span class="mdi mdi-lock"></span></td>
+        </tr>
+      `)
+      return
+    }
+
+    $tbody.append(`
+      <tr class="longevidata-outcome-row">
+        <td>${getSafetyTypeLabel(signal.signal_type)}</td>
+        <td>${signal.title || '-'}</td>
+        <td><span class="${getSafetySeverityClass(signal.severity)}">${getSafetySeverityLabel(signal.severity)}</span></td>
+        <td>${getSafetyEvidenceLabel(signal.evidence_level)}</td>
+        <td>${signal.reference_title || signal.reference_url || '-'}</td>
+      </tr>
+    `)
+  })
+
+  if (previewSignals.length === 0) {
+    $tbody.append('<tr><td colspan="5" style="text-align:center; padding: 20px;">No safety signals found.</td></tr>')
+  }
+
+  $table.append($tbody)
+  $widget.append($table)
+  $elm.empty().append($widget)
+}
+
+function renderSafetyErrorState($, $elm, name, errorDetail) {
+  $elm.html(`
+    <div class="longevidata-widget-error">
+      <div class="longevidata-header">
+        <h4>LongeviData Safety: ${name}</h4>
+      </div>
+      <div style="padding: 20px; text-align: center; color: #666;">
+        Unable to load safety data. Please try again later.
+        ${errorDetail ? `<br><small style="color:red; margin-top: 10px; display:block;">${errorDetail}</small>` : ''}
+      </div>
+    </div>
+  `)
+}
+
 // ----------------------------------------------------------------------------
 // Data Helpers
 // ----------------------------------------------------------------------------
@@ -272,4 +400,54 @@ function getEffectLabel(outcome) {
   const dir = outcome.effect_direction || ''
   if (mag && dir) return `${mag} ${dir}`
   return dir || 'No Effect'
+}
+
+function getSafetyTypeLabel(signalType) {
+  const normalized = String(signalType || '').toLowerCase()
+  const labels = {
+    side_effect: 'Side effect',
+    interaction: 'Interaction',
+    contraindication: 'Contraindication',
+    pregnancy: 'Pregnancy',
+    lactation: 'Lactation',
+    precaution: 'Precaution',
+    wada: 'WADA',
+    quality: 'Quality',
+    other: 'Other'
+  }
+  return labels[normalized] || 'Other'
+}
+
+function getSafetySeverityLabel(severity) {
+  const normalized = String(severity || '').toLowerCase()
+  const labels = {
+    mild: 'Mild',
+    moderate: 'Moderate',
+    severe: 'Severe',
+    avoid: 'Avoid',
+    unknown: 'Unknown'
+  }
+  return labels[normalized] || 'Unknown'
+}
+
+function getSafetySeverityClass(severity) {
+  const normalized = String(severity || '').toLowerCase()
+  if (normalized === 'avoid' || normalized === 'severe') return 'longevidata-grade longevidata-grade-low'
+  if (normalized === 'moderate') return 'longevidata-grade longevidata-grade-moderate'
+  if (normalized === 'mild') return 'longevidata-grade longevidata-grade-high'
+  return 'longevidata-grade'
+}
+
+function getSafetyEvidenceLabel(level) {
+  const normalized = String(level || '').toLowerCase()
+  const labels = {
+    high: 'High',
+    moderate: 'Moderate',
+    low: 'Low',
+    very_low: 'Very low',
+    case_report: 'Case report',
+    theoretical: 'Theoretical',
+    unknown: 'Unknown'
+  }
+  return labels[normalized] || 'Unknown'
 }

@@ -79,6 +79,32 @@ describe('LongeviData Renderer', () => {
     }))
   })
 
+  test('should render static safety table', async () => {
+    const input = '<longevidata-safety intervention="123" name="Berberine Safety"></longevidata-safety>'
+
+    const mockData = [
+      {
+        signal_type: 'interaction',
+        title: 'CYP3A4 substrate interactions',
+        summary: 'May increase exposure for sensitive substrates.',
+        severity: 'moderate',
+        evidence_level: 'moderate',
+        reference_url: 'https://pubmed.ncbi.nlm.nih.gov/12345/'
+      }
+    ]
+
+    rp.mockResolvedValue(mockData)
+
+    const output = await renderer.init(input, config)
+
+    expect(output).toContain('class="longevidata-safety-widget-static"')
+    expect(output).toContain('Berberine Safety')
+    expect(output).toContain('CYP3A4 substrate interactions')
+    expect(rp).toHaveBeenCalledWith(expect.objectContaining({
+      uri: 'https://api.example.com/api/research/safety?intervention_id=123'
+    }))
+  })
+
   test('should handle API errors gracefully', async () => {
     const input = '<longevidata-table intervention="999" name="Fail Intervention"></longevidata-table>'
     

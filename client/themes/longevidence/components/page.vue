@@ -172,42 +172,58 @@
                 v-icon.mr-2(small) {{ editShortcutsObj.editMenuExternalIcon }}
                 span.text-none {{$t(`common:page.editExternal`, { name: editShortcutsObj.editMenuExternalName })}}
       v-divider
-      v-container(fluid, grid-list-xl, class='pa-0')
+      v-container.page-layout-shell(fluid, grid-list-xl, class='pa-0')
         v-layout(row)
           v-flex.page-col-sd(
-            v-if='tocEnabled && tocPosition !== `off` && $vuetify.breakpoint.lgAndUp'
+            v-if='tocEnabled && tocPosition !== `off` && tocDecoded.length > 0 && $vuetify.breakpoint.lgAndUp'
             :order-xs1='tocPosition !== `right`'
             :order-xs2='tocPosition === `right`'
             lg3
             xl2
             )
-            v-card.page-toc-card.mb-5(v-if='tocDecoded.length')
-              .overline.pa-5.pb-0(:class='$vuetify.theme.dark ? `blue--text text--lighten-2` : `primary--text`') {{$t('common:page.toc')}}
-              v-list.pb-3(dense, nav, :class='$vuetify.theme.dark ? `darken-3-d3` : ``')
+            .page-toc-sidebar
+              .overline.page-toc-sidebar-title(:class='$vuetify.theme.dark ? `blue--text text--lighten-2` : `primary--text`') {{$t('common:page.toc')}}
+              v-list.page-toc-sidebar-list.pb-3(nav, :class='$vuetify.theme.dark ? `darken-3-d3` : ``')
                 template(v-for='(tocItem, tocIdx) in tocDecoded')
-                  v-list-item(@click='$vuetify.goTo(tocItem.anchor, scrollOpts)')
-                    v-icon(color='grey', small) {{ $vuetify.rtl ? `mdi-chevron-left` : `mdi-chevron-right` }}
-                    v-list-item-title.px-3 {{tocItem.title}}
-                  //- v-divider(v-if='tocIdx < toc.length - 1 || tocItem.children.length')
-                  template(v-for='tocSubItem in tocItem.children')
-                    v-list-item(@click='$vuetify.goTo(tocSubItem.anchor, scrollOpts)')
-                      v-icon.px-3(color='grey lighten-1', small) {{ $vuetify.rtl ? `mdi-chevron-left` : `mdi-chevron-right` }}
-                      v-list-item-title.px-3.caption.grey--text(:class='$vuetify.theme.dark ? `text--lighten-1` : `text--darken-1`') {{tocSubItem.title}}
-                    //- v-divider(inset, v-if='tocIdx < toc.length - 1')
-
-            v-card.page-tags-card.mb-5(v-if='tagsEnabled && tags.length > 0')
-              .pa-5
-                .overline.teal--text.pb-2(:class='$vuetify.theme.dark ? `text--lighten-3` : ``') {{$t('common:page.tags')}}
-                v-chip.mr-1.mb-1(
+                  .page-toc-group(:key='`toc-group-${tocItemKey(tocItem, tocIdx)}`')
+                    v-list-item.page-toc-item.page-toc-item--root(
+                      :class='{ "is-primary": tocIdx === 0 }'
+                      @click='goToTocAnchor(tocItem.anchor)'
+                      )
+                      v-icon.page-toc-item__icon(size='18') mdi-text-box-outline
+                      v-list-item-content.page-toc-item__content
+                        v-list-item-title.page-toc-item__title {{tocItem.title}}
+                      button.page-toc-toggle-btn(
+                        v-if='isTocItemExpandable(tocItem)'
+                        type='button'
+                        :aria-label='isTocItemExpanded(tocItem, tocIdx) ? `Collapse section` : `Expand section`'
+                        @click.stop='toggleTocItem(tocItem, tocIdx)'
+                        )
+                        v-icon.page-toc-item__toggle(
+                          :class='{ "is-open": isTocItemExpanded(tocItem, tocIdx), "is-rtl": $vuetify.rtl }'
+                          size='18'
+                          ) {{ $vuetify.rtl ? `mdi-chevron-left` : `mdi-chevron-right` }}
+                    v-expand-transition
+                      .page-toc-children(v-if='isTocItemExpandable(tocItem) && isTocItemExpanded(tocItem, tocIdx)')
+                        template(v-for='(tocSubItem, tocSubIdx) in tocItem.children')
+                          v-list-item.page-toc-item.page-toc-item--child(
+                            :key='`toc-sub-item-${tocIdx}-${tocSubIdx}-${tocSubItem.anchor || tocSubItem.title}`'
+                            @click='goToTocAnchor(tocSubItem.anchor)'
+                            )
+                            v-list-item-content.page-toc-item__content
+                              v-list-item-title.page-toc-item__title {{tocSubItem.title}}
+              .page-toc-tags(v-if='tagsEnabled && tags.length > 0')
+                .overline.page-toc-sidebar-title(:class='$vuetify.theme.dark ? `teal--text text--lighten-3` : `teal--text text--darken-1`') {{$t('common:page.tags')}}
+                v-chip.page-toc-tag-chip.mr-1.mb-1(
                   label
                   :color='$vuetify.theme.dark ? `teal darken-1` : `teal lighten-5`'
-                  v-for='(tag, idx) in tags'
+                  v-for='tag in tags'
                   :href='`/t/` + tag.tag'
                   :key='`tag-` + tag.tag'
                   )
                   v-icon(:color='$vuetify.theme.dark ? `teal lighten-3` : `teal`', left, small) mdi-tag
                   span(:class='$vuetify.theme.dark ? `teal--text text--lighten-5` : `teal--text text--darken-2`') {{tag.title}}
-                v-chip.mr-1.mb-1(
+                v-chip.page-toc-tag-chip.mr-1.mb-1(
                   label
                   :color='$vuetify.theme.dark ? `teal darken-1` : `teal lighten-5`'
                   :href='`/t/` + tags.map(t => t.tag).join(`/`)'
@@ -215,21 +231,10 @@
                   )
                   v-icon(:color='$vuetify.theme.dark ? `teal lighten-3` : `teal`', size='20') mdi-tag-multiple
 
-            v-card.page-author-card.mb-5(v-if='canReadHistory')
-              .pa-5
-                v-btn(
-                  block
-                  outlined
-                  color='indigo'
-                  :href='"/h/" + locale + "/" + path'
-                  )
-                  v-icon(left) mdi-history
-                  span Edit history
-
           v-flex.page-col-content.pa-0(
             xs12
-            :lg9='tocEnabled && tocPosition !== `off`'
-            :xl10='tocEnabled && tocPosition !== `off`'
+            :lg9='tocEnabled && tocPosition !== `off` && tocDecoded.length > 0'
+            :xl10='tocEnabled && tocPosition !== `off` && tocDecoded.length > 0'
             :order-xs1='tocPosition === `right`'
             :order-xs2='tocPosition !== `right`'
             )
@@ -641,6 +646,7 @@ export default {
     return {
       navShown: false,
       navExpanded: false,
+      tocExpanded: {},
       upBtnShown: false,
       pageEditFab: false,
       commentsShown: false,
@@ -706,7 +712,8 @@ export default {
       return JSON.parse(Buffer.from(this.sidebar, 'base64').toString())
     },
     tocDecoded () {
-      return JSON.parse(Buffer.from(this.toc, 'base64').toString())
+      const tocTree = JSON.parse(Buffer.from(this.toc, 'base64').toString())
+      return this.normalizeTocTree(tocTree)
     },
     tocPosition: get('site/tocPosition'),
     showReturnToTop: get('site/showReturnToTop'),
@@ -973,6 +980,12 @@ export default {
     document.addEventListener('mousedown', this.searchOutsideClickHandler, true)
   },
   watch: {
+    tocDecoded: {
+      handler () {
+        this.syncTocExpandedState()
+      },
+      immediate: true
+    },
     '$vuetify.theme.dark' (val) {
       if (this.dnaController && this.dnaController.updateTheme) {
         this.dnaController.updateTheme(val)
@@ -992,6 +1005,107 @@ export default {
     }
   },
   methods: {
+    tocItemKey (tocItem, tocIdx) {
+      const anchorKey = _.isString(tocItem.anchor) ? tocItem.anchor.replace(/^#/, '') : ''
+      if (anchorKey) {
+        return anchorKey
+      }
+
+      return `${tocIdx}-${this.normalizeTocLabel(tocItem.title)}`
+    },
+    isTocItemExpandable (tocItem) {
+      return Array.isArray(tocItem.children) && tocItem.children.length > 0
+    },
+    isTocItemExpanded (tocItem, tocIdx) {
+      if (!this.isTocItemExpandable(tocItem)) {
+        return false
+      }
+
+      const itemKey = this.tocItemKey(tocItem, tocIdx)
+      return !!this.tocExpanded[itemKey]
+    },
+    toggleTocItem (tocItem, tocIdx) {
+      if (!this.isTocItemExpandable(tocItem)) {
+        return
+      }
+
+      const itemKey = this.tocItemKey(tocItem, tocIdx)
+      this.$set(this.tocExpanded, itemKey, !this.tocExpanded[itemKey])
+    },
+    syncTocExpandedState () {
+      const nextState = {}
+      let hasOpenByDefault = false
+
+      this.tocDecoded.forEach((tocItem, tocIdx) => {
+        if (!this.isTocItemExpandable(tocItem)) {
+          return
+        }
+
+        const itemKey = this.tocItemKey(tocItem, tocIdx)
+        if (_.isBoolean(this.tocExpanded[itemKey])) {
+          nextState[itemKey] = this.tocExpanded[itemKey]
+          if (this.tocExpanded[itemKey]) {
+            hasOpenByDefault = true
+          }
+          return
+        }
+
+        const shouldOpen = !hasOpenByDefault
+        nextState[itemKey] = shouldOpen
+        if (shouldOpen) {
+          hasOpenByDefault = true
+        }
+      })
+
+      this.tocExpanded = nextState
+    },
+    goToTocAnchor (anchor) {
+      if (!anchor) {
+        return
+      }
+
+      this.$vuetify.goTo(anchor, this.scrollOpts)
+    },
+    normalizeTocTree (tocTree) {
+      if (!Array.isArray(tocTree)) {
+        return []
+      }
+
+      const sanitizedTree = tocTree
+        .map(this.normalizeTocNode)
+        .filter(Boolean)
+
+      if (this.shouldPromoteTocChildren(sanitizedTree)) {
+        return sanitizedTree[0].children
+      }
+
+      return sanitizedTree
+    },
+    normalizeTocNode (node) {
+      if (!node || !_.isString(node.title)) {
+        return null
+      }
+
+      return {
+        title: node.title,
+        anchor: _.isString(node.anchor) ? node.anchor : '',
+        children: Array.isArray(node.children) ? node.children.map(this.normalizeTocNode).filter(Boolean) : []
+      }
+    },
+    shouldPromoteTocChildren (tocTree) {
+      if (tocTree.length !== 1 || !tocTree[0].children.length) {
+        return false
+      }
+
+      return this.normalizeTocLabel(tocTree[0].title) === this.normalizeTocLabel(this.title)
+    },
+    normalizeTocLabel (value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/&amp;/g, '&')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+    },
     normalizeLayoutTagToken (value) {
       return String(value || '')
         .trim()
@@ -1305,18 +1419,209 @@ export default {
   }
 }
 
+@media (min-width: 960px) {
+  .nav-header .nav-header-inner .v-divider--vertical {
+    display: none !important;
+  }
+}
+
+.page-layout-shell.container.grid-list-xl {
+  margin: 0 !important;
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+.page-layout-shell > .layout {
+  margin: 0 !important;
+}
+
 .page-col-sd {
-  margin-top: -90px;
   align-self: flex-start;
   position: sticky;
   top: 64px;
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-  -ms-overflow-style: none;
 }
 
-.page-col-sd::-webkit-scrollbar {
-  display: none;
+.page-toc-sidebar {
+  background: #f6f7f9;
+  min-height: 100%;
+  padding: 18px 14px 20px;
+
+  @at-root .theme--dark & {
+    background: #1f1f1f;
+  }
+}
+
+.page-toc-sidebar-title {
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  padding: 0 10px 8px;
+}
+
+.page-toc-sidebar-list {
+  background: transparent !important;
+  padding-top: 2px !important;
+
+  .page-toc-group {
+    margin-bottom: 2px;
+  }
+
+  .page-toc-item {
+    border-radius: 10px;
+    min-height: 36px;
+    margin: 2px 0;
+    padding: 0 10px !important;
+    transition: background-color 120ms ease;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    @at-root .theme--dark & {
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
+
+  .page-toc-item--root {
+    min-height: 46px;
+
+    &.is-primary {
+      background: rgba(0, 0, 0, 0.035);
+    }
+
+    @at-root .theme--dark &.is-primary {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .page-toc-item__title {
+      font-size: 1.02rem !important;
+      font-weight: 600 !important;
+      line-height: 1.25;
+    }
+  }
+
+  .page-toc-item--child {
+    min-height: 34px;
+    padding-left: 38px !important;
+    margin-bottom: 1px;
+
+    .page-toc-item__title {
+      font-size: 0.95rem !important;
+      font-weight: 500 !important;
+      opacity: 0.88;
+    }
+  }
+
+  .page-toc-item__icon {
+    margin-right: 10px;
+    opacity: 0.7;
+    flex: 0 0 auto;
+  }
+
+  .page-toc-item__content {
+    padding: 0 !important;
+  }
+
+  .page-toc-item__title {
+    white-space: normal;
+    letter-spacing: 0;
+  }
+
+  .page-toc-children {
+    padding-top: 2px;
+    overflow: hidden;
+  }
+
+  .page-toc-toggle-btn {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: background-color 150ms ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    @at-root .theme--dark & {
+      &:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+    }
+  }
+
+  .page-toc-item__toggle {
+    opacity: 0.72;
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease;
+    transform: rotate(0deg);
+
+    &.is-open {
+      transform: rotate(90deg);
+      opacity: 1;
+    }
+
+    &.is-open.is-rtl {
+      transform: rotate(-90deg);
+    }
+  }
+}
+
+.page-toc-tags {
+  padding: 8px 8px 0;
+}
+
+.page-toc-tag-chip {
+  max-width: 100%;
+}
+
+@media (min-width: 1264px) {
+  .page-layout-shell > .layout > .flex {
+    padding: 0 !important;
+  }
+
+  .page-col-sd {
+    top: 112px;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 8px 0 18px rgba(0, 0, 0, 0.04);
+
+    @at-root .theme--dark & {
+      border-right-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 8px 0 18px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .page-col-sd.order-xs2 {
+    border-right: 0;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: -8px 0 18px rgba(0, 0, 0, 0.04);
+
+    @at-root .theme--dark & {
+      border-left-color: rgba(255, 255, 255, 0.08);
+      box-shadow: -8px 0 18px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .page-col-content {
+    padding-top: 0 !important;
+  }
+
+  .page-col-content .contents {
+    margin-top: 0 !important;
+    padding-top: var(--le-desktop-content-top-padding, 16px) !important;
+  }
 }
 
 .page-comments-scrim {

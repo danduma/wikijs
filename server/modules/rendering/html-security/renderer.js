@@ -19,6 +19,7 @@ module.exports = {
         'direction',
         'magnitude',
         'sentiment',
+        'e',
         'label',
         'value',
         'data-initial',
@@ -32,6 +33,7 @@ module.exports = {
         'longevidata-table',
         'longevidata-safety',
         'longevidence-effect',
+        'effect',
         'longevidence-score',
         'hero-header'
       ]

@@ -63,6 +63,22 @@ module.exports = {
    * @param {*} opts Additional options
    */
   async loadLocale(locale, opts = { silent: false }) {
+    let localEntries = null
+    let hasLocalEntries = false
+
+    // -> Parse local locale files first, then apply after DB entries so local wins.
+    try {
+      const localEntriesRaw = await fs.readFile(path.join(WIKI.SERVERPATH, `locales/${locale}.yml`), 'utf8')
+      if (localEntriesRaw) {
+        localEntries = yaml.safeLoad(localEntriesRaw)
+        hasLocalEntries = _.isPlainObject(localEntries)
+      }
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        WIKI.logger.warn(`Failed to load local locale file for ${locale}: ${err.message}`)
+      }
+    }
+
     const res = await WIKI.models.locales.query().findOne('code', locale)
     if (res) {
       if (_.isPlainObject(res.strings)) {
@@ -71,23 +87,17 @@ module.exports = {
           this.engine.addResourceBundle(locale, ns, data, true, true)
         })
       }
-    } else if (!opts.silent) {
+    } else if (!opts.silent && !hasLocalEntries) {
       throw new Error('No such locale in local store.')
     }
 
     // -> Load local locale files if present (custom overrides)
-    try {
-      const localEntriesRaw = await fs.readFile(path.join(WIKI.SERVERPATH, `locales/${locale}.yml`), 'utf8')
-      if (localEntriesRaw) {
-        const localEntries = yaml.safeLoad(localEntriesRaw)
-        _.forOwn(localEntries, (data, ns) => {
-          this.namespaces.push(ns)
-          this.engine.addResourceBundle(locale, ns, data, true, true)
-        })
-        WIKI.logger.info(`Loaded local locales from ${locale}.yml`)
-      }
-    } catch (err) {
-      // ignore missing local override files
+    if (hasLocalEntries) {
+      _.forOwn(localEntries, (data, ns) => {
+        this.namespaces.push(ns)
+        this.engine.addResourceBundle(locale, ns, data, true, true)
+      })
+      WIKI.logger.info(`Loaded local locales from ${locale}.yml`)
     }
   },
   /**

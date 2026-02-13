@@ -1,5 +1,7 @@
 const _ = require('lodash')
 const { createApolloFetch } = require('apollo-fetch')
+const fs = require('fs-extra')
+const path = require('path')
 
 /* global WIKI */
 
@@ -36,6 +38,12 @@ module.exports = async () => {
     if (WIKI.config.lang.autoUpdate) {
       const activeLocales = WIKI.config.lang.namespacing ? WIKI.config.lang.namespaces : [WIKI.config.lang.code]
       for (const currentLocale of activeLocales) {
+        const localLocalePath = path.join(WIKI.SERVERPATH, `locales/${currentLocale}.yml`)
+        if (await fs.pathExists(localLocalePath)) {
+          WIKI.logger.info(`Skipping remote locale sync for ${currentLocale} because a local override file exists.`)
+          continue
+        }
+
         const localeInfo = _.find(locales, ['code', currentLocale])
 
         const respStrings = await apollo({

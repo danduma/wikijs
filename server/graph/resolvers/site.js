@@ -21,6 +21,7 @@ module.exports = {
         logoUrl: WIKI.config.logoUrl,
         pageExtensions: WIKI.config.pageExtensions.join(', '),
         ...WIKI.config.seo,
+        rootOgImageUrl: _.get(WIKI.config, 'seo.rootOgImageUrl', ''),
         ...WIKI.config.editShortcuts,
         ...WIKI.config.features,
         ...WIKI.config.security,
@@ -95,7 +96,8 @@ module.exports = {
           description: _.get(args, 'description', WIKI.config.seo.description),
           robots: _.get(args, 'robots', WIKI.config.seo.robots),
           analyticsService: _.get(args, 'analyticsService', WIKI.config.seo.analyticsService),
-          analyticsId: _.get(args, 'analyticsId', WIKI.config.seo.analyticsId)
+          analyticsId: _.get(args, 'analyticsId', WIKI.config.seo.analyticsId),
+          rootOgImageUrl: _.trim(_.get(args, 'rootOgImageUrl', _.get(WIKI.config, 'seo.rootOgImageUrl', '')))
         }
 
         WIKI.config.auth = {

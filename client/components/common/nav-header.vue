@@ -1,5 +1,5 @@
 <template lang='pug'>
-  v-app-bar.nav-header(color='black', dark, app, :clipped-left='!$vuetify.rtl', :clipped-right='$vuetify.rtl', fixed, flat, :extended='searchIsShown && $vuetify.breakpoint.smAndDown')
+  v-app-bar.nav-header(color='black', :dark='headerUsesDarkVariant', :light='!headerUsesDarkVariant', app, :clipped-left='!$vuetify.rtl', :clipped-right='$vuetify.rtl', fixed, flat, :extended='searchIsShown && $vuetify.breakpoint.smAndDown')
     v-toolbar(color='deep-purple', flat, slot='extension', v-if='searchIsShown && $vuetify.breakpoint.smAndDown')
       v-text-field(
         ref='searchFieldMobile'
@@ -17,10 +17,80 @@
         @keyup.enter='searchEnter'
         autocomplete='none'
       )
-    v-layout(row)
-      v-flex(xs5, md4)
-        v-toolbar.nav-header-inner(color='black', dark, flat, :class='$vuetify.rtl ? `pr-3` : `pl-3`')
-          v-avatar(tile, size='34', @click='goHome')
+    v-layout(row, class='no-gutters')
+      v-flex(xs12, md4)
+        v-toolbar.nav-header-inner(color='black', :dark='headerUsesDarkVariant', :light='!headerUsesDarkVariant', flat, :class='$vuetify.rtl ? `pr-3` : `pl-3`')
+          v-menu(v-if='$vuetify.breakpoint.smAndDown', offset-y, transition='slide-y-transition', :left='!$vuetify.rtl', :right='$vuetify.rtl', max-height='80vh', :close-on-content-click='false')
+            template(v-slot:activator='{ on, attrs }')
+              v-btn.mr-1(icon, v-bind='attrs', v-on='on', aria-label='Open menu')
+                v-icon(color='grey') mdi-menu
+            v-list(nav, dense, :light='!$vuetify.theme.dark', :dark='$vuetify.theme.dark', :class='$vuetify.theme.dark ? `grey darken-4` : ``')
+              v-list-item(@click='goHome')
+                v-list-item-icon: v-icon(color='grey') mdi-home
+                v-list-item-title {{$t('common:header.home')}}
+
+              v-list-item(v-if='!hideSearch', @click='searchToggle')
+                v-list-item-icon: v-icon(color='grey') mdi-magnify
+                v-list-item-title {{$t('common:header.search')}}
+
+              v-list-item(@click='cycleAppearanceMode')
+                v-list-item-icon: v-icon(color='grey') {{ appearanceIcon }}
+                v-list-item-title {{ appearanceTooltip }}
+
+              template(v-if='mode === `view` && locales.length > 0')
+                v-divider
+                v-list-group(no-action, prepend-icon='mdi-web')
+                  template(v-slot:activator)
+                    v-list-item-title {{$t('common:header.language')}}
+                  v-list-item(v-for='(lc, idx) of locales', :key='`mobile-locale-${idx}`', @click='changeLocale(lc)')
+                    v-list-item-action(style='min-width:auto;'): v-chip(:color='lc.code === locale ? `blue` : `grey`', small, label, dark) {{lc.code.toUpperCase()}}
+                    v-list-item-title {{lc.name}}
+
+              template(v-if='hasAnyPagePermissions && path && mode !== `edit`')
+                v-divider
+                .overline.px-4.pt-3.pb-1.grey--text {{$t('common:header.pageActions')}}
+                v-list-item(@click='pageView', v-if='mode !== `view`')
+                  v-list-item-icon: v-icon(color='indigo') mdi-file-document-outline
+                  v-list-item-title {{$t('common:header.view')}}
+                v-list-item(@click='pageEdit', v-if='mode !== `edit` && hasWritePagesPermission')
+                  v-list-item-icon: v-icon(color='indigo') mdi-file-document-edit-outline
+                  v-list-item-title {{$t('common:header.edit')}}
+                v-list-item(@click='pageHistory', v-if='mode !== `history` && hasReadHistoryPermission')
+                  v-list-item-icon: v-icon(color='indigo') mdi-history
+                  v-list-item-title {{$t('common:header.history')}}
+                v-list-item(@click='pageSource', v-if='mode !== `source` && hasReadSourcePermission')
+                  v-list-item-icon: v-icon(color='indigo') mdi-code-tags
+                  v-list-item-title {{$t('common:header.viewSource')}}
+                v-list-item(@click='pageRerender', v-if='hasWritePagesPermission', :disabled='rerenderLoading')
+                  v-list-item-icon: v-icon(:color='rerenderLoading ? `grey` : `indigo`') mdi-cube-scan
+                  v-list-item-title Re-Render
+                v-list-item(@click='pageConvert', v-if='hasWritePagesPermission')
+                  v-list-item-icon: v-icon(color='indigo') mdi-lightning-bolt
+                  v-list-item-title {{$t('common:header.convert')}}
+                v-list-item(@click='pageDuplicate', v-if='hasWritePagesPermission')
+                  v-list-item-icon: v-icon(color='indigo') mdi-content-duplicate
+                  v-list-item-title {{$t('common:header.duplicate')}}
+                v-list-item(@click='pageMove', v-if='hasManagePagesPermission')
+                  v-list-item-icon: v-icon(color='indigo') mdi-content-save-move-outline
+                  v-list-item-title {{$t('common:header.move')}}
+                v-list-item(@click='pageDelete', v-if='hasDeletePagesPermission')
+                  v-list-item-icon: v-icon(color='red darken-2') mdi-trash-can-outline
+                  v-list-item-title {{$t('common:header.delete')}}
+
+              v-list-item(v-if='hasNewPagePermission && path && mode !== `edit`', @click='pageNew')
+                v-list-item-icon: v-icon(color='grey') mdi-text-box-plus-outline
+                v-list-item-title {{$t('common:header.newPage')}}
+
+              template(v-if='isAuthenticated && isAdmin')
+                v-divider
+                v-list-item(v-if='mode !== `admin`', href='/a')
+                  v-list-item-icon: v-icon(color='grey') mdi-cog
+                  v-list-item-title {{$t('common:header.admin')}}
+                v-list-item(v-else, href='/')
+                  v-list-item-icon: v-icon(color='grey') mdi-exit-to-app
+                  v-list-item-title {{$t('common:actions.exit')}}
+
+          v-avatar.nav-header-logo-avatar(tile, size='34', @click='goHome')
             v-img.org-logo(:src='logoUrl')
           //- v-menu(open-on-hover, offset-y, bottom, left, min-width='250', transition='slide-y-transition')
           //-   template(v-slot:activator='{ on }')
@@ -45,8 +115,45 @@
           //-         v-list-item-subtitle.overline.grey--text.text--lighten-2 Coming soon
           v-toolbar-title(:class='{ "mx-3": $vuetify.breakpoint.mdAndUp, "mx-1": $vuetify.breakpoint.smAndDown }')
             span.subheading {{title}}
+          v-spacer(v-if='$vuetify.breakpoint.smAndDown')
+          template(v-if='$vuetify.breakpoint.smAndDown')
+            v-menu(v-if='isAuthenticated', offset-y, bottom, min-width='260', transition='slide-y-transition', :left='!$vuetify.rtl', :right='$vuetify.rtl')
+              template(v-slot:activator='{ on: menu, attrs }')
+                v-btn.ml-2(
+                  icon
+                  v-bind='attrs'
+                  v-on='menu'
+                  :aria-label='$t(`common:header.account`)'
+                )
+                  v-icon(v-if='picture.kind === `initials`', color='grey') mdi-account-circle
+                  v-avatar(v-else-if='picture.kind === `image`', :size='34')
+                    v-img(:src='picture.url')
+              v-list(nav)
+                v-list-item.py-3.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
+                  v-list-item-avatar
+                    v-avatar.blue(v-if='picture.kind === `initials`', :size='40')
+                      span.white--text.subheading {{picture.initials}}
+                    v-avatar(v-else-if='picture.kind === `image`', :size='40')
+                      v-img(:src='picture.url')
+                  v-list-item-content
+                    v-list-item-title {{name}}
+                    v-list-item-subtitle {{email}}
+                v-list-item(href='/p')
+                  v-list-item-action: v-icon(color='blue-grey') mdi-face-profile
+                  v-list-item-content
+                    v-list-item-title(:class='$vuetify.theme.dark ? `blue-grey--text text--lighten-3` : `blue-grey--text`') {{$t('common:header.profile')}}
+                v-list-item(@click='logout')
+                  v-list-item-action: v-icon(color='red') mdi-logout
+                  v-list-item-title.red--text {{$t('common:header.logout')}}
+            v-btn.header-login-btn.header-login-btn--mobile.ml-2(
+              v-else
+              depressed
+              rounded
+              href='/login'
+              :aria-label='$t(`common:header.login`)'
+            ) Sign up for free
       v-flex(md4, v-if='$vuetify.breakpoint.mdAndUp')
-        v-toolbar.nav-header-inner(color='black', dark, flat)
+        v-toolbar.nav-header-inner(color='black', :dark='headerUsesDarkVariant', :light='!headerUsesDarkVariant', flat)
           slot(name='mid')
             transition(name='navHeaderSearch', v-if='searchIsShown')
               v-text-field(
@@ -75,22 +182,13 @@
                 v-btn.ml-2.mr-0(icon, v-on='on', href='/t', :aria-label='$t(`common:header.browseTags`)')
                   v-icon(color='grey') mdi-tag-multiple
               span {{$t('common:header.browseTags')}}
-      v-flex(xs7, md4)
-        v-toolbar.nav-header-inner.pr-4(color='black', dark, flat)
+      v-flex(md4, v-if='$vuetify.breakpoint.mdAndUp')
+        v-toolbar.nav-header-inner.pr-4(color='black', :dark='headerUsesDarkVariant', :light='!headerUsesDarkVariant', flat)
           v-spacer
           .navHeaderLoading.mr-3
             v-progress-circular(indeterminate, color='blue', :size='22', :width='2' v-show='isLoading')
 
           slot(name='actions')
-
-          //- (mobile) SEARCH TOGGLE
-
-          v-btn(
-            v-if='!hideSearch && $vuetify.breakpoint.smAndDown'
-            @click='searchToggle'
-            icon
-            )
-            v-icon(color='grey') mdi-magnify
 
           //- APPEARANCE MODE (Day / Night)
 
@@ -249,11 +347,13 @@
                 v-list-item-action: v-icon(color='red') mdi-logout
                 v-list-item-title.red--text {{$t('common:header.logout')}}
 
-          v-tooltip(v-else, left)
-            template(v-slot:activator='{ on }')
-              v-btn(icon, v-on='on', color='grey darken-3', href='/login', :aria-label='$t(`common:header.login`)')
-                v-icon(color='grey') mdi-account-circle
-            span {{$t('common:header.login')}}
+          v-btn.header-login-btn(
+            v-else
+            depressed
+            rounded
+            href='/login'
+            :aria-label='$t(`common:header.login`)'
+          ) Sign up for free
 
     page-selector(mode='create', v-model='newPageModal', :open-handler='pageNewCreate', :locale='locale')
     page-selector(mode='move', v-model='movePageModal', :open-handler='pageMoveRename', :path='path', :locale='locale')
@@ -367,6 +467,12 @@ export default {
         return this.appearanceMode
       }
       return this.darkMode ? 'dark' : 'light'
+    },
+    isLongevidenceTheme () {
+      return typeof siteConfig !== 'undefined' && siteConfig.theme === 'longevidence'
+    },
+    headerUsesDarkVariant () {
+      return !(this.isLongevidenceTheme && this.appearanceModeNormalized === 'light')
     },
     appearanceIcon () {
       switch (this.appearanceModeNormalized) {
@@ -667,6 +773,34 @@ export default {
 }
 .navHeaderLoading { // To avoid search bar jumping
   width: 22px;
+}
+
+.header-login-btn {
+  border-radius: 999px !important;
+  min-width: 88px !important;
+  padding: 0 16px !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  background-color: #f36614 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+
+  .v-btn__content {
+    color: #ffffff !important;
+  }
+
+  &:hover {
+    background-color: #ff7a2e !important;
+  }
+}
+
+.header-login-btn--mobile {
+  min-width: 74px !important;
+  height: 34px !important;
+  padding: 0 12px !important;
+  font-size: 0.85rem !important;
+  margin-right: 16px !important;
 }
 
 </style>

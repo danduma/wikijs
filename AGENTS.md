@@ -353,3 +353,5 @@ Server files are watched and auto-restart on changes, but:
 - **Issue Tracker**: https://github.com/Requarks/wiki/issues
 - **Feature Requests**: https://js.wiki/feedback/
 - **Discord Chat**: https://discord.gg/rcxt9QS2jd
+
+IMPORTANT: If the longevidence theme is present in /client/themes, this is the main theme for the website you should edit

@@ -154,6 +154,7 @@ module.exports = async () => {
     res.locals.siteConfig = {
       title: WIKI.config.title,
       theme,
+      path: WIKI.config.path || '/',
       darkMode: WIKI.config.theming.darkMode,
       tocPosition: WIKI.config.theming.tocPosition || 'left',
       showTags: WIKI.config.theming.showTags !== false,
@@ -163,7 +164,8 @@ module.exports = async () => {
       company: WIKI.config.company,
       contentLicense: WIKI.config.contentLicense,
       footerOverride: WIKI.config.footerOverride,
-      logoUrl: WIKI.config.logoUrl
+      logoUrl: WIKI.config.logoUrl,
+      publicAppBase: process.env.PUBLIC_APP_BASE_URL || ''
     }
     res.locals.langs = await WIKI.models.locales.getNavLocales({ cache: true })
     res.locals.analyticsCode = await WIKI.models.analytics.getCode({ cache: true })
@@ -174,6 +176,7 @@ module.exports = async () => {
   app.use('/', ctrl.upload)
   app.use('/', ctrl.theming)
   app.use('/', ctrl.longevidata)
+  app.use('/', ctrl.pagerequest)
   app.use('/', ctrl.common)
 
   // ----------------------------------------

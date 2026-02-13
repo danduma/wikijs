@@ -34,6 +34,7 @@ type SiteMutation {
     contentLicense: String
     footerOverride: String
     logoUrl: String
+    rootOgImageUrl: String
     pageExtensions: String
     authAutoLogin: Boolean
     authEnforce2FA: Boolean
@@ -102,6 +103,7 @@ type SiteConfig {
   contentLicense: String
   footerOverride: String
   logoUrl: String
+  rootOgImageUrl: String
   pageExtensions: String
   authAutoLogin: Boolean
   authEnforce2FA: Boolean

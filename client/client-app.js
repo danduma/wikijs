@@ -156,6 +156,12 @@ const importThemeComponent = (componentPath) => {
     throw err
   })
 }
+const importThemeComponentOrCore = (componentPath, coreComponentPath) => {
+  const themeKey = getThemeKey()
+  return import(/* webpackChunkName: "theme" */ './themes/' + themeKey + '/components/' + componentPath).catch(() => {
+    return import(/* webpackChunkName: "ui-extra" */ './components/' + coreComponentPath)
+  })
+}
 const importSearchInlineComponent = () => {
   const themeKey = getThemeKey()
   return import(/* webpackChunkName: "theme" */ './themes/' + themeKey + '/components/search-inline.vue').catch(() => {
@@ -172,15 +178,16 @@ Vue.component('comments', () => import(/* webpackChunkName: "comments" */ './com
 Vue.component('editor', () => import(/* webpackPrefetch: -100, webpackChunkName: "editor" */ './components/editor.vue'))
 Vue.component('history', () => import(/* webpackChunkName: "history" */ './components/history.vue'))
 Vue.component('loader', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/loader.vue'))
-Vue.component('login', () => import(/* webpackPrefetch: true, webpackChunkName: "login" */ './components/login.vue'))
+Vue.component('login', () => importThemeComponentOrCore('login.vue', 'login.vue'))
 Vue.component('nav-header', () => import(/* webpackMode: "eager" */ './components/common/nav-header.vue'))
 Vue.component('new-page', () => import(/* webpackChunkName: "new-page" */ './components/new-page.vue'))
 Vue.component('notify', () => import(/* webpackMode: "eager" */ './components/common/notify.vue'))
 Vue.component('not-found', () => import(/* webpackChunkName: "not-found" */ './components/not-found.vue'))
+Vue.component('page-request', () => import(/* webpackChunkName: "page-request" */ './themes/longevidence/components/page-request.vue'))
 Vue.component('page-selector', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/page-selector.vue'))
 Vue.component('page-source', () => import(/* webpackChunkName: "source" */ './components/source.vue'))
 Vue.component('profile', () => import(/* webpackChunkName: "profile" */ './components/profile.vue'))
-Vue.component('register', () => import(/* webpackChunkName: "register" */ './components/register.vue'))
+Vue.component('register', () => importThemeComponentOrCore('register.vue', 'register.vue'))
 Vue.component('search-results', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/search-results.vue'))
 Vue.component('search-inline', () => importSearchInlineComponent())
 Vue.component('social-sharing', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/social-sharing.vue'))

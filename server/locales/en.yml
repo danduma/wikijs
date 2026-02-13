@@ -23,6 +23,25 @@ common:
     createAccount: 'Create account'
     learnMore: 'Learn more'
     limitedNotice: 'You''ve reached the free view limit for anonymous visitors.'
+  search:
+    cantFindPrompt: 'Can''t find what you''re looking for?'
+    requestNewPage: 'Request a new page'
+  pageRequest:
+    title: 'Request a New Page'
+    subtitle: 'Tell us what page you''d like to see.'
+    placeholder: 'Describe the page you''d like to see...'
+    submit: 'Request'
+    searching: 'Looking for relevant pages...'
+    suggestionsTitle: 'We found some pages that might help'
+    foundIt: 'I found what I''m looking for'
+    continueRequest: 'None of these - submit my request'
+    submitting: 'Submitting your request...'
+    successTitle: 'Request Submitted'
+    successMessage: 'Your request has been received. You can track progress in Public App.'
+    viewInDashboard: 'View Ticket'
+    errorTitle: 'Something went wrong'
+    errorMessage: 'Please try again later.'
+    tryAgain: 'Try Again'
 
 membership:
   locked:

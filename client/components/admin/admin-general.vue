@@ -115,6 +115,16 @@
                       :hint='$t(`admin:general.metaRobotsHint`)'
                       persistent-hint
                       )
+                    v-text-field.mt-3(
+                      outlined
+                      label='Root OG Image URL'
+                      v-model='config.rootOgImageUrl'
+                      prepend-icon='mdi-image-area'
+                      append-icon='mdi-folder-image'
+                      hint='Used for Open Graph preview on the landing page (/). Accepts absolute URLs or /_assets paths.'
+                      persistent-hint
+                      @click:append='browseRootOgImage'
+                      )
 
             v-flex(lg6 xs12)
               v-card.animated.fadeInUp.wait-p4s
@@ -291,6 +301,7 @@ export default {
         contentLicense: '',
         footerOverride: '',
         logoUrl: '',
+        rootOgImageUrl: '',
         featureAnalytics: false,
         featurePageRatings: false,
         featurePageComments: false,
@@ -305,6 +316,7 @@ export default {
         editMenuExternalIcon: '',
         editMenuExternalUrl: ''
       },
+      assetInsertTarget: 'logo',
       metaRobots: [
         { text: 'Index', value: 'index' },
         { text: 'Follow', value: 'follow' },
@@ -359,6 +371,7 @@ export default {
               $contentLicense: String
               $footerOverride: String
               $logoUrl: String
+              $rootOgImageUrl: String
               $pageExtensions: String
               $featurePageRatings: Boolean
               $featurePageComments: Boolean
@@ -383,6 +396,7 @@ export default {
                   contentLicense: $contentLicense
                   footerOverride: $footerOverride
                   logoUrl: $logoUrl
+                  rootOgImageUrl: $rootOgImageUrl
                   pageExtensions: $pageExtensions
                   featurePageRatings: $featurePageRatings
                   featurePageComments: $featurePageComments
@@ -416,6 +430,7 @@ export default {
             contentLicense: _.get(this.config, 'contentLicense', ''),
             footerOverride: _.get(this.config, 'footerOverride', ''),
             logoUrl: _.get(this.config, 'logoUrl', ''),
+            rootOgImageUrl: _.get(this.config, 'rootOgImageUrl', ''),
             pageExtensions: _.get(this.config, 'pageExtensions', ''),
             featurePageRatings: _.get(this.config, 'featurePageRatings', false),
             featurePageComments: _.get(this.config, 'featurePageComments', false),
@@ -447,6 +462,12 @@ export default {
       }
     },
     browseLogo () {
+      this.assetInsertTarget = 'logo'
+      this.$store.set('editor/editorKey', 'common')
+      this.activeModal = 'editorModalMedia'
+    },
+    browseRootOgImage () {
+      this.assetInsertTarget = 'rootOgImageUrl'
       this.$store.set('editor/editorKey', 'common')
       this.activeModal = 'editorModalMedia'
     },
@@ -456,7 +477,11 @@ export default {
   },
   mounted () {
     this.$root.$on('editorInsert', opts => {
-      this.config.logoUrl = opts.path
+      if (this.assetInsertTarget === 'rootOgImageUrl') {
+        this.config.rootOgImageUrl = opts.path
+      } else {
+        this.config.logoUrl = opts.path
+      }
     })
   },
   beforeDestroy() {
@@ -478,6 +503,7 @@ export default {
               contentLicense
               footerOverride
               logoUrl
+              rootOgImageUrl
               pageExtensions
               featurePageRatings
               featurePageComments

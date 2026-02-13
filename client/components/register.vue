@@ -78,7 +78,7 @@
                     max-width='250px'
                     large
                     dark
-                    color='indigo'
+                    color='#f36614'
                     @click='register'
                     rounded
                     :loading='isLoading'
@@ -260,47 +260,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss">
-  .register {
-    background-color: mc('indigo', '900');
-    background-image: url('../static/svg/motif-blocks.svg');
-    background-repeat: repeat;
-    background-size: 200px;
-    width: 100%;
-    height: 100%;
-    animation: loginBgReveal 20s linear infinite;
-
-    @include keyframes(loginBgReveal) {
-      0% {
-        background-position-x: 0;
-      }
-      100% {
-        background-position-x: 800px;
-      }
-    }
-
-    &::before {
-      content: '';
-      position: absolute;
-      background-image: url('../static/svg/motif-overlay.svg');
-      background-attachment: fixed;
-      background-size: cover;
-      opacity: .5;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    > .container {
-      height: 100%;
-      align-items: center;
-      display: flex;
-    }
-
-    .v-text-field.centered input {
-      text-align: center;
-    }
-  }
-</style>

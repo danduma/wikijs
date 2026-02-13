@@ -201,7 +201,7 @@
                         )
                         v-icon.page-toc-item__toggle(
                           :class='{ "is-open": isTocItemExpanded(tocItem, tocIdx), "is-rtl": $vuetify.rtl }'
-                          size='18'
+                          size='22'
                           ) {{ $vuetify.rtl ? `mdi-chevron-left` : `mdi-chevron-right` }}
                     v-expand-transition
                       .page-toc-children(v-if='isTocItemExpandable(tocItem) && isTocItemExpanded(tocItem, tocIdx)')
@@ -1537,8 +1537,9 @@ export default {
   }
 
   .page-toc-toggle-btn {
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     border: 0;
     border-radius: 999px;
     padding: 0;

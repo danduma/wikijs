@@ -141,6 +141,19 @@ router.get('/register', async (req, res, next) => {
 })
 
 /**
+ * Signup form alias
+ */
+router.get('/signup', async (req, res, next) => {
+  _.set(res.locals, 'pageMeta.title', 'Sign Up')
+  const localStrg = await WIKI.models.authentication.getStrategy('local')
+  if (localStrg.selfRegistration) {
+    res.render('register')
+  } else {
+    next(new WIKI.Error.AuthRegistrationDisabled())
+  }
+})
+
+/**
  * Verify
  */
 router.get('/verify/:token', bruteforce.prevent, async (req, res, next) => {

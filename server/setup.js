@@ -117,7 +117,8 @@ module.exports = () => {
         description: '',
         robots: ['index', 'follow'],
         analyticsService: '',
-        analyticsId: ''
+        analyticsId: '',
+        rootOgImageUrl: ''
       })
       _.set(WIKI.config, 'sessionSecret', (await crypto.randomBytesAsync(32)).toString('hex'))
       _.set(WIKI.config, 'telemetry', {

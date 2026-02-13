@@ -470,7 +470,12 @@ router.get('/*', async (req, res, next) => {
       if (page) {
         _.set(res.locals, 'pageMeta.title', page.title)
         _.set(res.locals, 'pageMeta.description', page.description)
-        _.set(res.locals, 'pageMeta.image', WIKI.models.ogImage.getImageUrl(page))
+        const rootOgImageUrl = _.trim(_.get(WIKI, 'config.seo.rootOgImageUrl', ''))
+        _.set(
+          res.locals,
+          'pageMeta.image',
+          (page.path === 'home' && rootOgImageUrl) ? rootOgImageUrl : WIKI.models.ogImage.getImageUrl(page)
+        )
 
         // -> Check Publishing State
         let pageIsPublished = page.isPublished
@@ -627,6 +632,11 @@ router.get('/*', async (req, res, next) => {
         }
       } else if (pageArgs.path === 'home') {
         _.set(res.locals, 'pageMeta.title', 'Welcome')
+        const rootOgImageUrl = _.trim(_.get(WIKI, 'config.seo.rootOgImageUrl', ''))
+        _.set(res.locals, 'pageMeta.image', rootOgImageUrl || WIKI.models.ogImage.getImageUrl({
+          localeCode: pageArgs.locale,
+          path: 'home'
+        }))
         res.render('welcome', { locale: pageArgs.locale })
       } else {
         _.set(res.locals, 'pageMeta.title', 'Page Not Found')

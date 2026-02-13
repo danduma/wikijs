@@ -230,6 +230,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'client/static' },
+        { from: 'client/themes/longevidence/static', to: 'theme/longevidence', noErrorOnMissing: true },
         { from: 'client/themes/longevidence/legal', to: 'legal' },
         { from: './node_modules/prismjs/components', to: 'js/prism' }
       ]

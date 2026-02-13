@@ -191,7 +191,7 @@ const router = new VueRouter({
 })
 
 export default {
-  i18nOptions: { namespaces: 'admin' },
+  i18nOptions: { namespaces: ['admin', 'conversion'] },
   data() {
     return {
       adminDrawerShown: true,

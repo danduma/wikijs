@@ -73,26 +73,33 @@
               v-divider.my-3
 
             //- Reply/New Comment Box
-            v-textarea.thread-window-textarea(
-              outlined
-              flat
-              dense
-              rows='3'
-              hide-details
-              v-model='newThreadContent'
-              :placeholder='isNewThread ? "Write your comment..." : "Write a reply..."'
-              ref='threadTextarea'
-              @keydown.enter='handleThreadEnter'
-            )
-            .d-flex.pt-2
-              v-spacer
-              v-btn(
-                color='primary'
-                small
-                depressed
-                @click='submitThreadComment'
-                :loading='isBusy'
-              ) {{ isNewThread ? "Post" : "Reply" }}
+            template(v-if='isNewThread && !isAuthenticated')
+              .body-2
+                span You need to be logged in to comment -
+                a.ml-1(href='/register') [Create a free account]
+                span.ml-1 or
+                a.ml-1(href='/login') [Login]
+            template(v-else)
+              v-textarea.thread-window-textarea(
+                outlined
+                flat
+                dense
+                rows='3'
+                hide-details
+                v-model='newThreadContent'
+                :placeholder='isNewThread ? "Write your comment..." : "Write a reply..."'
+                ref='threadTextarea'
+                @keydown.enter='handleThreadEnter'
+              )
+              .d-flex.pt-2
+                v-spacer
+                v-btn(
+                  color='primary'
+                  small
+                  depressed
+                  @click='submitThreadComment'
+                  :loading='isBusy'
+                ) {{ isNewThread ? "Post" : "Reply" }}
 
     v-textarea#discussion-new(
       outlined
@@ -1615,6 +1622,14 @@ export default {
       })
     },
     async submitThreadComment () {
+      if (!this.isAuthenticated && this.isNewThread) {
+        this.$store.commit('showNotification', {
+          style: 'blue-grey',
+          message: 'You need to be logged in to comment - [Create a free account] or [Login]',
+          icon: 'information'
+        })
+        return
+      }
       if (this.newThreadContent.trim().length < 2) return
 
       // Replies should not carry context anchors; only root contextual comments do.

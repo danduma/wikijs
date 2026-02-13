@@ -46,4 +46,4 @@ common:
 membership:
   locked:
     guest: ' <a href="/register">Create a free account</a> to unlock more rows for free.'
-    default: 'Get the full database with a <a href="/pricing" target="_blank">paid subscription</a>.'
+    default: 'Get full access with a <a href="/pricing" target="_blank">paid subscription</a>.'

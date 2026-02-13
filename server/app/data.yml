@@ -161,6 +161,7 @@ localeNamespaces:
   - auth
   - common
   - conversion
+  - membership
 jobs:
   purgeUploads:
     onInit: true

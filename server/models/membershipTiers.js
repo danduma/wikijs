@@ -68,40 +68,61 @@ module.exports = class MembershipTier extends Model {
   }
 
   static async getEffectiveForUser(user) {
-    // 1. Handle Guest / System User
-    if (!user || !user.id || user.id === 2) {
-      // Check for specific 'guest' tier first
-      const guestTier = await this.query().where({ key: 'guest', isActive: true }).first()
-      if (guestTier) {
-        return guestTier
-      }
-      // Fallback to default
-      return this.getDefault()
-    }
-
-    let userData = user
-    if (user.membershipTierId === undefined && user.membershipExpiresAt === undefined) {
-      userData = await WIKI.models.users.query()
-        .select('id', 'membershipTierId', 'membershipExpiresAt')
-        .findById(user.id)
-    }
-
-    if (!userData || !userData.membershipTierId) {
-      return defaultTier
-    }
-
-    const tier = await this.query().findById(userData.membershipTierId)
-    if (!tier || !tier.isActive) {
-      return defaultTier
-    }
-
-    if (userData.membershipExpiresAt) {
-      const expiresAt = moment(userData.membershipExpiresAt)
-      if (expiresAt.isValid() && expiresAt.isSameOrBefore(moment())) {
+    try {
+      let defaultTier = null
+      let hasResolvedDefaultTier = false
+      const getDefaultTierSafe = async () => {
+        if (hasResolvedDefaultTier) {
+          return defaultTier
+        }
+        hasResolvedDefaultTier = true
+        try {
+          defaultTier = await this.getDefault()
+        } catch (err) {
+          WIKI.logger.warn(`Failed to resolve default membership tier: ${err.message}`)
+          defaultTier = null
+        }
         return defaultTier
       }
-    }
 
-    return tier
+      // 1. Handle Guest / System User
+      if (!user || !user.id || user.id === 2) {
+        // Check for specific 'guest' tier first
+        const guestTier = await this.query().where({ key: 'guest', isActive: true }).first()
+        if (guestTier) {
+          return guestTier
+        }
+        // Fallback to default
+        return getDefaultTierSafe()
+      }
+
+      let userData = user
+      if (user.membershipTierId === undefined && user.membershipExpiresAt === undefined) {
+        userData = await WIKI.models.users.query()
+          .select('id', 'membershipTierId', 'membershipExpiresAt')
+          .findById(user.id)
+      }
+
+      if (!userData || !userData.membershipTierId) {
+        return getDefaultTierSafe()
+      }
+
+      const tier = await this.query().findById(userData.membershipTierId)
+      if (!tier || !tier.isActive) {
+        return getDefaultTierSafe()
+      }
+
+      if (userData.membershipExpiresAt) {
+        const expiresAt = moment(userData.membershipExpiresAt)
+        if (expiresAt.isValid() && expiresAt.isSameOrBefore(moment())) {
+          return getDefaultTierSafe()
+        }
+      }
+
+      return tier
+    } catch (err) {
+      WIKI.logger.warn(`Failed to resolve effective membership tier: ${err.message}`)
+      return null
+    }
   }
 }

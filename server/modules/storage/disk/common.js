@@ -89,7 +89,20 @@ module.exports = {
       path: contentPath.path,
       locale: contentPath.locale
     })
-    const newTags = !_.isNil(pageData.tags) ? _.get(pageData, 'tags', '').split(', ') : false
+    let newTags = false
+    if (!_.isNil(pageData.tags)) {
+      const tagsValue = _.get(pageData, 'tags')
+      if (_.isArray(tagsValue)) {
+        newTags = tagsValue
+          .map(tag => _.toString(tag).trim())
+          .filter(tag => !_.isEmpty(tag))
+      } else {
+        newTags = _.toString(tagsValue)
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => !_.isEmpty(tag))
+      }
+    }
     if (currentPage) {
       // Already in the DB, can mark as modified
       WIKI.logger.info(`(STORAGE/${moduleName}) Page marked as modified: ${normalizedRelPath}`)

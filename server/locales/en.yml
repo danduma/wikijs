@@ -26,6 +26,8 @@ common:
   search:
     cantFindPrompt: 'Can''t find what you''re looking for?'
     requestNewPage: 'Request a new page'
+  infobox:
+    quickFacts: 'Quick Facts'
   pageRequest:
     title: 'Request a New Page'
     subtitle: 'Tell us what page you''d like to see.'

@@ -53,7 +53,9 @@ module.exports = {
         uploadMaxFileSize: WIKI.config.uploads.maxFileSize,
         uploadMaxFiles: WIKI.config.uploads.maxFiles,
         uploadScanSVG: WIKI.config.uploads.scanSVG,
-        uploadForceDownload: WIKI.config.uploads.forceDownload
+        uploadForceDownload: WIKI.config.uploads.forceDownload,
+        pageRequestEvergreenApiUrl: WIKI.config.pageRequest.evergreenApiUrl,
+        pageRequestEvergreenApiKey: WIKI.config.pageRequest.evergreenApiKey
       }
     }
   },
@@ -172,7 +174,12 @@ module.exports = {
           timeoutMs: _.get(args, 'externalUserPortalTimeoutMs', WIKI.config.externalUserPortal.timeoutMs)
         }
 
-        await WIKI.configSvc.saveToDb(['host', 'title', 'company', 'contentLicense', 'footerOverride', 'seo', 'logoUrl', 'pageExtensions', 'auth', 'editShortcuts', 'features', 'security', 'uploads', 'anonViewLimit', 'conversionCta', 'externalUserPortal'])
+        WIKI.config.pageRequest = {
+          evergreenApiUrl: _.get(args, 'pageRequestEvergreenApiUrl', WIKI.config.pageRequest.evergreenApiUrl),
+          evergreenApiKey: _.get(args, 'pageRequestEvergreenApiKey', WIKI.config.pageRequest.evergreenApiKey)
+        }
+
+        await WIKI.configSvc.saveToDb(['host', 'title', 'company', 'contentLicense', 'footerOverride', 'seo', 'logoUrl', 'pageExtensions', 'auth', 'editShortcuts', 'features', 'security', 'uploads', 'anonViewLimit', 'conversionCta', 'externalUserPortal', 'pageRequest'])
 
         if (WIKI.anonViewLimit) {
           WIKI.anonViewLimit.refresh()

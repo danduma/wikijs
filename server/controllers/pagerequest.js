@@ -27,8 +27,8 @@ function normalizeBaseUrl(raw) {
 }
 
 function getProxyConfig() {
-  const evergreenApiUrl = normalizeBaseUrl(process.env.EVERGREEN_API_URL)
-  const evergreenApiKey = String(process.env.EVERGREEN_API_KEY || '').trim()
+  const evergreenApiUrl = normalizeBaseUrl(WIKI.config.pageRequest?.evergreenApiUrl || process.env.EVERGREEN_API_URL)
+  const evergreenApiKey = String(WIKI.config.pageRequest?.evergreenApiKey || process.env.EVERGREEN_API_KEY || '').trim()
   if (!evergreenApiUrl) {
     throw new Error('EVERGREEN_API_URL is not configured')
   }

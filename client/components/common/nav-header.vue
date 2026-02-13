@@ -39,7 +39,7 @@
 
               template(v-if='mode === `view` && locales.length > 0')
                 v-divider
-                v-list-group(no-action, prepend-icon='mdi-web')
+                v-list-group.mobile-language-group(no-action, prepend-icon='mdi-web')
                   template(v-slot:activator)
                     v-list-item-title {{$t('common:header.language')}}
                   v-list-item(v-for='(lc, idx) of locales', :key='`mobile-locale-${idx}`', @click='changeLocale(lc)')
@@ -113,13 +113,13 @@
           //-       v-list-item-content
           //-         v-list-item-title.body-2.grey--text.text--ligten-2 {{$t('common:header.imagesFiles')}}
           //-         v-list-item-subtitle.overline.grey--text.text--lighten-2 Coming soon
-          v-toolbar-title(:class='{ "mx-3": $vuetify.breakpoint.mdAndUp, "mx-1": $vuetify.breakpoint.smAndDown }')
+          v-toolbar-title.nav-header-title(:class='{ "mx-3": $vuetify.breakpoint.mdAndUp, "ml-2": $vuetify.breakpoint.smAndDown }')
             span.subheading {{title}}
           v-spacer(v-if='$vuetify.breakpoint.smAndDown')
           template(v-if='$vuetify.breakpoint.smAndDown')
             v-menu(v-if='isAuthenticated', offset-y, bottom, min-width='260', transition='slide-y-transition', :left='!$vuetify.rtl', :right='$vuetify.rtl')
               template(v-slot:activator='{ on: menu, attrs }')
-                v-btn.ml-2(
+                v-btn.nav-header-account-btn(
                   icon
                   v-bind='attrs'
                   v-on='menu'
@@ -127,14 +127,14 @@
                 )
                   v-icon(v-if='picture.kind === `initials`', color='grey') mdi-account-circle
                   v-avatar(v-else-if='picture.kind === `image`', :size='34')
-                    v-img(:src='picture.url')
+                    v-img(:src='picture.url', @error='markAvatarImageFailed')
               v-list(nav)
                 v-list-item.py-3.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
                   v-list-item-avatar
                     v-avatar.blue(v-if='picture.kind === `initials`', :size='40')
                       span.white--text.subheading {{picture.initials}}
                     v-avatar(v-else-if='picture.kind === `image`', :size='40')
-                      v-img(:src='picture.url')
+                      v-img(:src='picture.url', @error='markAvatarImageFailed')
                   v-list-item-content
                     v-list-item-title {{name}}
                     v-list-item-subtitle {{email}}
@@ -322,7 +322,7 @@
                     )
                     v-icon(v-if='picture.kind === `initials`', color='grey') mdi-account-circle
                     v-avatar(v-else-if='picture.kind === `image`', :size='34')
-                      v-img(:src='picture.url')
+                      v-img(:src='picture.url', @error='markAvatarImageFailed')
                 span {{$t('common:header.account')}}
             v-list(nav)
               v-list-item.py-3.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
@@ -330,7 +330,7 @@
                   v-avatar.blue(v-if='picture.kind === `initials`', :size='40')
                     span.white--text.subheading {{picture.initials}}
                   v-avatar(v-else-if='picture.kind === `image`', :size='40')
-                    v-img(:src='picture.url')
+                    v-img(:src='picture.url', @error='markAvatarImageFailed')
                 v-list-item-content
                   v-list-item-title {{name}}
                   v-list-item-subtitle {{email}}
@@ -393,6 +393,7 @@ export default {
     return {
       menuIsShown: true,
       searchIsShown: true,
+      avatarImageFailed: false,
       searchAdvMenuShown: false,
       newPageModal: false,
       rerenderLoading: false,
@@ -429,21 +430,36 @@ export default {
     isAuthenticated: get('user/authenticated'),
     permissions: get('user/permissions'),
     picture () {
-      if (this.pictureUrl && this.pictureUrl.length > 1) {
-        return {
-          kind: 'image',
-          url: (this.pictureUrl === 'internal') ? `/_userav/${this.$store.get('user/id')}` : this.pictureUrl
-        }
-      } else {
-        const nameParts = this.name.toUpperCase().split(' ')
-        let initials = _.head(nameParts).charAt(0)
-        if (nameParts.length > 1) {
-          initials += _.last(nameParts).charAt(0)
-        }
+      const nameParts = this.name.toUpperCase().split(' ')
+      let initials = _.head(nameParts).charAt(0)
+      if (nameParts.length > 1) {
+        initials += _.last(nameParts).charAt(0)
+      }
+
+      if (this.avatarImageFailed) {
         return {
           kind: 'initials',
           initials
         }
+      }
+
+      if (this.pictureUrl && this.pictureUrl.length > 1) {
+        if (this.pictureUrl !== 'internal' && !this.pictureUrl.startsWith('http://') && !this.pictureUrl.startsWith('https://') && !this.pictureUrl.startsWith('/')) {
+          return {
+            kind: 'initials',
+            initials
+          }
+        }
+
+        return {
+          kind: 'image',
+          url: (this.pictureUrl === 'internal') ? `/_userav/${this.$store.get('user/id')}` : this.pictureUrl
+        }
+      }
+
+      return {
+        kind: 'initials',
+        initials
       }
     },
     isAdmin () {
@@ -507,6 +523,11 @@ export default {
       this.searchIsShown = false
     }
   },
+  watch: {
+    pictureUrl () {
+      this.avatarImageFailed = false
+    }
+  },
   mounted () {
     this.$root.$on('pageEdit', () => {
       this.pageEdit()
@@ -532,6 +553,9 @@ export default {
     this.isDevMode = siteConfig.devMode === true
   },
   methods: {
+    markAvatarImageFailed () {
+      this.avatarImageFailed = true
+    },
     searchFocus () {
       this.searchIsFocused = true
     },
@@ -755,6 +779,18 @@ export default {
     .overline:nth-child(2) {
       text-transform: none;
     }
+  }
+
+  .mobile-language-group {
+    .v-list-group__items .v-list-item {
+      // Vuetify defaults to a deep nested offset for grouped items; halve it on mobile language submenu.
+      padding-left: 36px !important;
+    }
+  }
+
+  @at-root .v-application--is-rtl & .mobile-language-group .v-list-group__items .v-list-item {
+    padding-left: 0 !important;
+    padding-right: 36px !important;
   }
 }
 

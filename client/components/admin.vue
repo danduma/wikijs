@@ -44,6 +44,12 @@
             v-list-item(to='/membership', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-card-account-details
               v-list-item-title Membership
+          template(v-if='hasPermission(`manage:system`)')
+            v-divider.my-2
+            v-subheader.pl-4 Services
+            v-list-item(to='/page-request', color='primary')
+              v-list-item-avatar(size='24', tile): v-icon mdi-ticket-account
+              v-list-item-title Page Request
           template(v-if='hasPermission([`manage:system`, `manage:groups`, `write:groups`, `manage:users`, `write:users`])')
             v-divider.my-2
             v-subheader.pl-4 {{ $t('admin:nav.users') }}
@@ -155,6 +161,7 @@ const router = new VueRouter({
     { path: '/', redirect: '/dashboard' },
     { path: '/dashboard', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-dashboard.vue') },
     { path: '/general', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-general.vue') },
+    { path: '/page-request', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-pagerequest.vue') },
     { path: '/locale', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-locale.vue') },
     { path: '/navigation', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-navigation.vue') },
     { path: '/pages', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-pages.vue') },

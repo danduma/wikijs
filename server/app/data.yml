@@ -123,6 +123,9 @@ defaults:
       baseUrl: ''
       apiKey: ''
       timeoutMs: 5000
+    pageRequest:
+      evergreenApiUrl: ''
+      evergreenApiKey: ''
     server:
       sslRedir: false
     uploads:

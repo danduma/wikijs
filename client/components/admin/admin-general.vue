@@ -172,17 +172,6 @@
                     hint='Allow users to leave comments on pages.'
                     )
 
-                  //- v-divider.mt-3
-                  //- v-switch(
-                  //-   inset
-                  //-   label='Personal Wikis'
-                  //-   color='indigo'
-                  //-   v-model='config.featurePersonalWikis'
-                  //-   persistent-hint
-                  //-   hint='Allow users to have their own personal wiki.'
-                  //-   disabled
-                  //-   )
-
               v-card.mt-5.animated.fadeInUp.wait-p6s
                 v-toolbar(color='primary', dark, dense, flat)
                   v-toolbar-title.subtitle-1 URL Handling

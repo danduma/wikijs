@@ -261,7 +261,7 @@ module.exports = {
 
     for (let child of _.sortBy(_.filter(this.children, ['step', 'post']), ['order'])) {
       const renderer = require(`../${_.kebabCase(child.key)}/renderer.js`)
-      output = await renderer.init(output, child.config)
+      output = await renderer.init(output, child.config, { page: this.page })
     }
 
     // --------------------------------

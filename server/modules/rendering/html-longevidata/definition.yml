@@ -20,6 +20,12 @@ props:
     title: API Bearer Token
     hint: Authentication token for the LongeviData API
     order: 2
+  visiblePagePaths:
+    type: String
+    default: 'longevidata-test,es/longevidata-test'
+    title: Visible Page Paths
+    hint: Comma-separated wiki page paths where LongeviData widgets are allowed to render
+    order: 3
 actions:
   - handler: testConnection
     label: Test Connection

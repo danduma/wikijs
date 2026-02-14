@@ -6,13 +6,20 @@ const longevidata = require('../../../helpers/longevidata')
 /* global WIKI */
 
 module.exports = {
-  init: async function (input, config) {
+  init: async function (input, config, context = {}) {
     const $ = cheerio.load(input)
     const outcomeWidgets = $('longevidata-table')
     const safetyWidgets = $('longevidata-safety')
 
     if (outcomeWidgets.length === 0 && safetyWidgets.length === 0) {
       return input
+    }
+
+    const pagePath = getNormalizedPagePath(context)
+    if (!isWidgetPageAllowed(pagePath, config)) {
+      outcomeWidgets.remove()
+      safetyWidgets.remove()
+      return $.html()
     }
 
     const promises = []
@@ -141,6 +148,26 @@ module.exports = {
       }
     }
   }
+}
+
+function getNormalizedPagePath(context) {
+  const rawPath = context && context.page && context.page.path
+  if (!rawPath) return null
+  return String(rawPath).trim().replace(/^\/+/, '').toLowerCase()
+}
+
+function getVisiblePaths(config) {
+  const raw = (config && config.visiblePagePaths) || process.env.LONGEVIDATA_WIDGET_VISIBLE_PAGES || 'longevidata-test,es/longevidata-test'
+  return String(raw)
+    .split(',')
+    .map(path => path.trim().replace(/^\/+/, '').toLowerCase())
+    .filter(Boolean)
+}
+
+function isWidgetPageAllowed(pagePath, config) {
+  if (!pagePath) return true
+  const allowedPaths = getVisiblePaths(config)
+  return allowedPaths.includes(pagePath)
 }
 
 // ----------------------------------------------------------------------------

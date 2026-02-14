@@ -1488,11 +1488,33 @@ export default {
         injectHeroPathsOverlay(heroSection)
       })
     },
+    isLongeviDataWidgetVisiblePage () {
+      const normalizedPath = (this.path || '').trim().replace(/^\/+/, '').toLowerCase()
+      if (!normalizedPath) return false
+      return normalizedPath === 'longevidata-test' || normalizedPath.endsWith('/longevidata-test')
+    },
+    removeLongeviDataMarkup () {
+      if (!this.$refs.container) return
+      const selectors = [
+        'longevidata-table',
+        'longevidata-safety',
+        '.longevidata-widget-static',
+        '.longevidata-safety-widget-static',
+        '.longevidata-widget',
+        '.longevidata-safety-widget',
+        '.longevidata-widget-error'
+      ]
+      this.$refs.container.querySelectorAll(selectors.join(',')).forEach(node => node.remove())
+    },
     hydrateLongeviDataWidgets () {
       if (!this.$refs.container) return
 
-      this.hydrateTableWidgets()
-      this.hydrateSafetyWidgets()
+      if (this.isLongeviDataWidgetVisiblePage()) {
+        this.hydrateTableWidgets()
+        this.hydrateSafetyWidgets()
+      } else {
+        this.removeLongeviDataMarkup()
+      }
       this.hydrateSnapshotWidgets()
       this.hydrateMetricWidgets()
     },

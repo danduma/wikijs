@@ -115,6 +115,22 @@ describe('LongeviData Renderer', () => {
     expect(output).toContain('longevidata-widget-error')
     expect(output).toContain('Unable to load research data')
   })
+
+  test('should hide widgets on non-allowlisted page paths', async () => {
+    const input = '<longevidata-table intervention="123" name="Hidden"></longevidata-table>'
+    const output = await renderer.init(input, config, { page: { path: 'supplements/berberine' } })
+    expect(output).not.toContain('longevidata-widget-static')
+    expect(output).not.toContain('longevidata-table')
+    expect(rp).not.toHaveBeenCalled()
+  })
+
+  test('should allow widgets on allowlisted page paths', async () => {
+    const input = '<longevidata-table intervention="123" name="Visible"></longevidata-table>'
+    rp.mockResolvedValue({ outcomes: [] })
+    const output = await renderer.init(input, config, { page: { path: 'longevidata-test' } })
+    expect(output).toContain('longevidata-widget-static')
+    expect(rp).toHaveBeenCalled()
+  })
   
   test('should ignore input without tags', async () => {
     const input = '<p>Just normal text</p>'

@@ -1,0 +1,107 @@
+// ---------------------------------
+// CATEGORY HERO
+// ---------------------------------
+
+.category-hero-section {
+  background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
+  position: relative;
+  min-height: 20em;
+  overflow: hidden;
+  padding: 5px;
+
+  .opacity-70 {
+    opacity: 0.9;
+  }
+}
+
+.category-hero-row {
+  min-height: inherit;
+}
+
+.category-hero-title-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.category-hero-title {
+  font-family: 'Lora', 'Times New Roman', serif !important;
+  font-weight: 700;
+  font-size: var(--le-h1-size, 3rem) !important;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: #fff;
+  margin: 0 0 1rem 0;
+  padding-left: 1rem;
+}
+
+.category-hero-subtitle {
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.category-hero-image-col {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.category-hero-subtitle--mobile {
+  display: none;
+}
+
+.category-hero-image {
+  width: 320px;
+  max-width: 100%;
+  height: 10em;
+  overflow: hidden;
+  margin-left: auto;
+}
+
+@media (min-width: 1024px) {
+  /* Taxonomy desktop system:
+     page => .le-page--topic|category|taxonomy
+     hero => .le-hero.le-hero--topic|category|taxonomy */
+  .v-application.le-page--topic,
+  .v-application.le-page--category,
+  .v-application.le-page--taxonomy {
+    .v-main > .container.grid-list-xl {
+      margin-top: var(--le-taxonomy-hero-overlap);
+      position: relative;
+      z-index: 3;
+    }
+
+    .v-main .contents {
+      max-width: var(--le-taxonomy-content-max-width) !important;
+    }
+
+    .protocol-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+  }
+
+  .v-application.le-page--topic .le-hero.le-hero--topic,
+  .v-application.le-page--category .le-hero.le-hero--category,
+  .v-application.le-page--taxonomy .le-hero.le-hero--taxonomy {
+    min-height: var(--le-taxonomy-hero-min-height);
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+
+    .category-hero-title {
+      font-size: clamp(1.9rem, 2.2vw, 2.25rem) !important;
+      margin-bottom: 0.5rem;
+    }
+
+    .category-hero-subtitle {
+      font-size: 1.05rem;
+    }
+
+    .category-hero-image {
+      width: 280px;
+      height: 8.5em;
+    }
+  }
+}
+
+
+

@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap');
+
+/* --- Global Reset & Foundation --- */
+html,
+body {
+    background-color: #ffffff !important;
+    overflow-x: hidden;
+}
+
+:root {
+  --le-font-body: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --le-font-display: 'Outfit', 'Segoe UI', sans-serif;
+  --le-accent: #f36614;
+  --le-accent-strong: #d95b12;
+  --le-accent-soft: rgba(243, 102, 20, 0.12);
+  --le-text-strong: #1f252c;
+  --le-text-muted: #5c6570;
+  --le-surface-0: #ffffff;
+  --le-surface-1: #f7f6f2;
+  --le-surface-2: #eef2f5;
+  --le-border: #dbe3eb;
+  --le-border-strong: #c8d3df;
+  --le-shadow-soft: 0 10px 26px rgba(17, 24, 39, 0.08);
+  --hero-title-row-transform: -30pt;
+  --max-subtitle-width: 420px;
+  --le-h1-size: 2.5rem;
+  --le-h2-size: 2rem;
+  --le-h3-size: 1.5rem;
+  --le-h4-size: 1rem;
+  --le-h5-size: 0.95rem;
+  --le-h6-size: 0.9rem;
+  --le-taxonomy-content-max-width: 1240px;
+  --le-taxonomy-hero-min-height: 16em;
+  --le-taxonomy-hero-overlap: -84px;
+  --le-desktop-content-top-padding: 2.5rem;
+}
+
+.theme--dark {
+    --le-text-strong: #ecf0f4;
+    --le-text-muted: #a8b0bb;
+    --le-surface-0: #171a1e;
+    --le-surface-1: #1e2328;
+    --le-surface-2: #252c34;
+    --le-border: #313944;
+    --le-border-strong: #3a4552;
+    --le-accent-soft: rgba(243, 102, 20, 0.2);
+    --le-shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.45);
+    html,
+    body {
+        background-color: #1e1e1e !important;
+    }
+}
+
+.v-application, 
+.v-application .v-application--wrap {
+    font-family: var(--le-font-body) !important;
+    color: #2c2c2c !important; /* Slightly softer black */
+    line-height: 1.7 !important; /* Increased from 1.6 */
+    font-size: 18px !important;
+    letter-spacing: -0.01em;
+
+    @at-root .theme--dark & {
+        color: #e0e0e0 !important;
+    }
+}
+
+.v-main .contents {
+    background-color: #faf9f6 !important;
+
+    @at-root .theme--dark & {
+        background-color: #121212 !important;
+    }
+}
+
+/* --- Layout (The Fix) --- */
+.v-main .contents {
+    width: 100% !important; /* Forces it to fill available space */
+    max-width: 900px !important; 
+    margin: 0 auto 20pt auto !important;
+    padding: calc(3rem + 3px) calc(1.5rem + 3px) !important;
+    box-sizing: border-box !important; /* Ensures padding doesn't add to width */
+
+    > div > *:first-child {
+      margin-top: 0;
+    }
+
+    @at-root .theme--dark & {
+      color: mc('grey', '300');
+    }
+}
+
+

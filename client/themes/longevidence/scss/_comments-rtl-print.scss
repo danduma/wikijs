@@ -1,0 +1,127 @@
+// COMMENTS
+// ---------------------------------
+
+.comments {
+  &-container {
+    border-radius: 7px;
+  }
+
+  &-header {
+    color: #FFF;
+    padding: 8px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    background-color: mc('blue-grey', '500');
+    border-radius: 7px 7px 0 0;
+
+    @at-root .theme--dark & {
+      background-color: lighten(mc('blue-grey', '900'), 5%);
+    }
+  }
+
+  &-main {
+    background-color: mc('blue-grey', '50');
+    border-radius: 0 0 7px 7px;
+    padding: 20px;
+
+    @at-root .theme--dark & {
+      background-color: darken(mc('grey', '900'), 5%);
+    }
+  }
+}
+
+// ---------------
+// RTL FIXES
+// Vuetify GH Issue: https://github.com/vuetifyjs/vuetify/issues/6317
+// ---------------
+
+.is-rtl {
+  .page-col-content.is-page-header {
+    @each $size, $width in $grid-breakpoints {
+      @media (min-width: $width) {
+        @for $n from 0 through 12 {
+          &.offset-#{$size}-#{$n} {
+            margin-left: 0;
+            margin-right: ($n / 12 * 100) * 1%;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---------------
+// PRINT OVERRIDES
+// ---------------
+
+@media print {
+  .nav-header,
+  .v-navigation-drawer,
+  .v-btn--fab,
+  .page-col-sd,
+  .v-tooltip__content
+  {
+    display: none !important;
+  }
+
+  .layout {
+    display: block !important;
+  }
+
+  .page-col-content {
+    flex-basis: 100% !important;
+    flex-grow: 1 !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+
+    > .v-toolbar {
+      border: 1px solid mc('grey', '300') !important;
+      border-radius: 7px !important;
+
+      & + .v-divider {
+        display: none !important;
+      }
+    }
+  }
+
+  .v-main {
+    padding: 0 !important;
+    font-size: 14px;
+    background-color: #FFF;
+  }
+
+  .v-main .contents {
+    color: #000;
+    background-color: #FFF;
+
+    @at-root .theme--dark & {
+      color: #000;
+    }
+
+    .prismjs{
+      box-shadow: none;
+      background-color: #FFF;
+
+      @at-root .theme--dark & {
+        background-color: #FFF;
+      }
+
+      > code {
+        color: #000;
+        box-shadow: none;
+        text-shadow: none;
+        white-space: pre-wrap !important;
+        overflow-wrap: break-word !important;
+      }
+    }
+  }
+
+  .comments-container {
+    display: none;
+  }
+
+  .page-edit-shortcuts {
+    display: none;
+  }
+}
+

@@ -1,0 +1,662 @@
+
+/* Hero Section with Background Image */
+.custom-home-page .hero-section {
+    position: relative;
+    // background-color: #fdfbf7; 
+    background-color: #ffffff; 
+
+    background-size: cover; /* Changed from 66vw auto to cover for better modern look */
+    background-position: center center;
+    background-repeat: no-repeat;
+    min-height: 475px;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center the content container */
+    padding: 0 !important; /* Remove padding here, handle in content */
+    border-bottom: none !important;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+
+    &::before {
+            /* Gradient overlay for text readability */
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, rgba(254, 247, 240, 0.95) 0%, rgba(255, 215, 176, 0.503) 50%, rgba(255,255,255,0) 100%);
+        z-index: 1;
+    }
+
+    @at-root .theme--dark.custom-home-page .hero-section,
+    .theme--dark .custom-home-page .hero-section {
+        background-color: #3c3c3c;
+        &::before {
+            background: linear-gradient(90deg, rgba(60,60,60,0.9) 0%, rgba(60,60,60,0.55) 40%, rgba(60,60,60,0.12) 70%, rgba(60,60,60,0) 100%);
+        }
+    }
+}
+
+@media (min-width: 1024px) {
+    .custom-home-page .v-main .contents > .container,
+    .custom-home-page .v-main .contents > .container--fluid,
+    .custom-home-page .v-main .contents > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .custom-home-page .hero-section { order: 1; }
+    .custom-home-page .split-section { order: 2; }
+    .custom-home-page .explore-container { order: 3; }
+}
+
+.custom-home-page .hero-section--legacy {
+    background-image: var(--hero-legacy-image, none);
+}
+
+.custom-home-page .hero-section--dna {
+    /* Default / Tubular 3D Background (Happier) */
+    background-image:
+        linear-gradient(115deg, #f1e2d8 0%, #e8cdbd 18%, #e5b18c 42%, #d98c5f 72%, #f08c5a 100%);
+
+    /* Fix selector for when theme--dark and custom-home-page are on the same element */
+    @at-root .theme--dark.custom-home-page .hero-section--dna,
+    .theme--dark .custom-home-page .hero-section--dna {
+        /* Soft gray to copper transition for dark mode */
+        background-image:
+            linear-gradient(115deg, #3a3a3a 0%, #484848 25%, #7e4b36 55%, #f08c5a 100%) !important;
+    }
+
+    /* Wave Ribbon Background (Darker) */
+    &.hero-dna-wave-ribbon {
+        background-image:
+            linear-gradient(110deg, #ffffff 0%, #f7e0d6 15%, #dcbab0 40%, #c18e76 70%, #8d5d4b 100%);
+
+        @at-root .theme--dark.custom-home-page .hero-section--dna.hero-dna-wave-ribbon,
+        .theme--dark .custom-home-page .hero-section--dna.hero-dna-wave-ribbon {
+            background-image:
+                linear-gradient(110deg, #3a3a3a 0%, #424242 35%, #4c4c4c 70%, #565656 100%) !important;
+        }
+    }
+}
+
+/* Hero Paths + N Overlay */
+.custom-home-page .hero-paths-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+    --hero-paths-color: rgba(255, 255, 255, 0.6);
+}
+
+@at-root .theme--dark.custom-home-page .hero-paths-overlay,
+.theme--dark .custom-home-page .hero-paths-overlay {
+    --hero-paths-color: rgba(255, 255, 255, 0.6);
+}
+
+.custom-home-page .hero-paths-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .custom-home-page .hero-paths-overlay {
+        opacity: 0.5;
+    }
+}
+
+/* 3D DNA Helix Container */
+.dna-helix-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+@keyframes dnaHelixSpin {
+    0% { transform: rotateZ(45deg) rotateX(15deg) rotateY(0deg); }
+    100% { transform: rotateZ(45deg) rotateX(15deg) rotateY(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dna-helix__structure { animation: none; }
+}
+
+/* Dark theme DNA */
+@at-root .theme--dark {
+    .dna-helix__base, 
+    .dna-helix__base::before {
+        background: linear-gradient(to bottom, #6d4c41 0%, #a1887f 50%, #6d4c41 100%);
+    }
+
+    .dna-helix__strand,
+    .dna-helix__strand::before {
+        background: linear-gradient(to bottom, 
+            #5d4037 0%, 
+            #8d6e63 45%, 
+            #8d6e63 55%,
+            #5d4037 100%);
+    }
+}
+
+.custom-home-page .hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: left !important;
+    align-items: stretch !important;
+    
+    /* Layout matching .split-section for alignment */
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 5% 3rem; /* Add padding here to match */
+    
+    display: flex;
+    flex-direction: column;
+    
+    /* Removed Glassmorphism card effect */
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+
+    @at-root .theme--dark & {
+            background: transparent;
+            border-color: transparent;
+    }
+    
+    /* Limit width of text content children */
+    > h1, > h2, > h3, > h4, > h5, > h6, 
+    > ul, > ol, > dl, > blockquote, 
+    > figure, > .btn, > .v-btn {
+        max-width: 650px;
+        width: 100%;
+    }
+
+    /* 
+       Specific constraint for generic paragraphs that DOES NOT target 
+       paragraphs containing the search bar or other full-width elements.
+       Since we can't reliably use :has() everywhere yet, we unconstrain P 
+       by default and rely on specific classes for text (like .hero-subtitle).
+    */
+    > p {
+        width: 100%;
+        // max-width: 100%;
+    }
+
+    /* Force search bar to be centered and wider */
+    .search-inline, search-inline {
+        max-width: 760px !important;
+        width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        align-self: center !important;
+    }
+}
+
+.custom-home-page .hero-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: var(--hero-title-size) !important;
+    line-height: 1.05 !important;
+    margin-bottom: 1.25rem !important;
+    text-shadow: none !important; /* Clean look */
+    color: #111;
+    letter-spacing: -0.03em;
+    margin-left: -3px; /* Optical alignment for big type */
+
+    @at-root .theme--dark.custom-home-page .hero-title,
+    .theme--dark .custom-home-page .hero-title {
+        color: #ffffff !important;
+        text-shadow: none !important;
+    }
+}
+
+.custom-home-page .hero-subtitle {
+    font-size: 1.35rem !important;
+    color: #444 !important;
+    max-width: var(--max-subtitle-width);
+    margin: 0 !important;
+    margin-left: 3px !important; /* Align with split-col edge + hero logo */
+    text-shadow: none !important;
+    font-weight: 400;
+    line-height: 1.5;
+    
+    @at-root .theme--dark.custom-home-page .hero-subtitle,
+    .theme--dark .custom-home-page .hero-subtitle {
+        color: #f2f2f2 !important;
+        text-shadow: none !important;
+    }
+}
+
+/* Hero Logo */
+.custom-home-page .hero-logo {
+    height: var(--hero-title-size);
+    width: auto;
+    margin-right: 15px;
+    vertical-align: middle;
+    display: inline-block; /* Show logo */
+}
+
+/* Adjust title row to flex for logo+text */
+.custom-home-page .hero-title-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.custom-home-page .hero-title {
+    font-size: var(--hero-title-size) !important;
+    line-height: 1.1 !important;
+    margin: 0 !important; /* Reset margin since it's in flex row */
+    text-shadow: none !important;
+    color: #1a1a1a;
+
+    @at-root .theme--dark.custom-home-page .hero-title,
+    .theme--dark .custom-home-page .hero-title {
+        color: #ffffff !important;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.35) !important;
+    }
+}
+
+/* Section Title Styling */
+.custom-home-page .section-title {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 1.75rem !important;
+    font-weight: 400 !important;
+    color: #222 !important;
+    margin-bottom: 2rem !important;
+    margin-top: 1rem !important;
+    padding: 0 !important;
+    border: none !important;
+    letter-spacing: -0.02em;
+    position: relative;
+
+    /* Decorative underline */
+    &::after {
+        content: '';
+        display: block;
+        width: 60px;
+        height: 3px;
+        background: #f36614;
+        position: absolute;
+        bottom: -12px;
+        left: 0;
+        border-radius: 2px;
+    }
+
+    @at-root .theme--dark & {
+        color: #e0e0e0 !important;
+    }
+}
+
+/* Three-Column Cards - List Style Override */
+.custom-home-page .split-col .protocol-card {
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    transition: background-color 0.2s ease;
+
+    @at-root .theme--dark & {
+        background: transparent;
+        border-bottom-color: rgba(255,255,255,0.05);
+        box-shadow: none;
+    }
+}
+
+.custom-home-page .split-col .protocol-card:hover {
+    transform: none;
+    box-shadow: inset 4px 0 0 #f36614;
+    background-color: rgba(0,0,0,0.06);
+    
+    @at-root .theme--dark.custom-home-page .split-col .protocol-card:hover,
+    .theme--dark .custom-home-page .split-col .protocol-card:hover {
+        background-color: rgba(255,255,255,0.1);
+        box-shadow: inset 4px 0 0 #f36614;
+    }
+}
+
+/* Remove border from last item */
+.custom-home-page .split-col a:last-child .protocol-card {
+    border-bottom: none;
+}
+
+/* Updated Icon Box Styles for List View */
+.custom-home-page .split-col .protocol-header .icon-box {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%; /* Circular as per design */
+    margin-right: 0.5rem;
+}
+
+.custom-home-page .split-col .protocol-header .icon-box img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Specific Colors for each column's icons */
+.custom-home-page .split-col:nth-child(1) .protocol-header .icon-box {
+    background: rgba(59, 130, 246, 0.1); /* Light Blue bg */
+}
+.custom-home-page .split-col:nth-child(1) .protocol-header .icon-box img {
+    filter: invert(38%) sepia(93%) saturate(1510%) hue-rotate(202deg) brightness(101%) contrast(96%) !important; /* Blue Filter */
+}
+
+.custom-home-page .split-col:nth-child(2) .protocol-header .icon-box {
+    background: rgba(16, 185, 129, 0.1); /* Light Green bg */
+}
+.custom-home-page .split-col:nth-child(2) .protocol-header .icon-box img {
+    filter: invert(53%) sepia(68%) saturate(464%) hue-rotate(113deg) brightness(91%) contrast(93%) !important; /* Green Filter */
+}
+
+.custom-home-page .split-col:nth-child(3) .protocol-header .icon-box {
+    background: rgba(245, 158, 11, 0.1); /* Light Amber bg */
+}
+.custom-home-page .split-col:nth-child(3) .protocol-header .icon-box img {
+    filter: invert(72%) sepia(35%) saturate(3022%) hue-rotate(359deg) brightness(101%) contrast(96%) !important; /* Amber Filter */
+}
+
+/* Dark Mode Icon Overrides */
+@at-root .theme--dark {
+    .custom-home-page .split-col:nth-child(1) .protocol-header .icon-box { background: rgba(59, 130, 246, 0.2); }
+    .custom-home-page .split-col:nth-child(2) .protocol-header .icon-box { background: rgba(16, 185, 129, 0.2); }
+    .custom-home-page .split-col:nth-child(3) .protocol-header .icon-box { background: rgba(245, 158, 11, 0.2); }
+    
+    /* Make icons white in dark mode for better contrast */
+    .custom-home-page .split-col .protocol-header .icon-box img {
+        filter: brightness(0) invert(1) !important;
+    }
+}
+
+.custom-home-page .split-col .protocol-title {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 2px !important;
+}
+
+.custom-home-page .split-col .protocol-header {
+    margin-bottom: 0.25rem;
+}
+
+.custom-home-page .split-col .protocol-subtitle {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 0 !important;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@at-root .theme--dark.custom-home-page .split-col .protocol-subtitle,
+.theme--dark .custom-home-page .split-col .protocol-subtitle {
+    color: #cfcfcf;
+}
+
+/* Explore by Topic Section */
+.custom-home-page .explore-container {
+    padding: 0rem 5% 3rem !important;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+    .custom-home-page .explore-container {
+        margin-top: -70px;
+    }
+}
+
+.custom-home-page .explore-container h2.section-title {
+    font-size: 1.6rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Topic Cards Grid */
+.custom-home-page .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (min-width: 1200px) {
+    .custom-home-page .topic-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* Base Topic Card Styles */
+.custom-home-page .topic-card {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    position: relative;
+    overflow: hidden;
+    padding: 1.1rem 1.1rem 0.6rem;
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-decoration: none !important;
+    color: inherit !important;
+    min-height: 150px;
+    border: 2px solid rgba(0,0,0,0.06) !important;
+    background-color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03); /* Subtle initial shadow */
+}
+
+.custom-home-page .topic-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08); /* Smoother hover shadow */
+    border-color: rgba(0,0,0,0.0);
+}
+
+/* Darker Curved Background Highlight Circle*/
+.custom-home-page .topic-card::after {
+    content: "";
+    position: absolute;
+    bottom: -190px;
+    right: -130px;
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+    border-radius: 50%; /* Perfect circle */
+    z-index: 0;
+    pointer-events: none;
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    opacity: 0.5;
+}
+
+.custom-home-page .topic-card:hover::after {
+    transform: scale(1.2) translate(-20px, -20px);
+}
+
+/* Topic Card Content */
+.custom-home-page .topic-card-content {
+    flex: 1;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+    max-width: none;
+}
+
+.custom-home-page .topic-card-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    margin-top: 0;
+    color: #1a202c;
+    line-height: 1.25;
+    font-family: 'Lora', serif !important;
+    z-index: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.25em * 2);
+}
+
+.custom-home-page .topic-card-description {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #4a5568;
+    margin: 0;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden;
+    max-height: 6em;
+    max-width: 100%;
+    opacity: 0.85;
+    z-index: 1;
+    padding-top: 0rem !important;
+}
+
+/* Topic Card Illustration */
+.custom-home-page img.topic-card-image {
+    position: relative !important;
+    width: 72px !important;
+    height: 72px !important;
+    object-fit: contain !important;
+    z-index: 2;
+    padding: 0 !important;
+    margin: 0 !important;
+    pointer-events: none;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    float: none !important;
+    display: block !important;
+    z-index: 2;
+    flex: 0 0 auto;
+    // margin-left: 0.75rem;
+    // margin-top: 5.5rem;
+    bottom: -3.5rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .custom-home-page .topic-card {
+        min-height: 130px;
+        padding: 0.75rem 0.75rem 0.45rem;
+    }
+
+    .custom-home-page .topic-card::after {
+      width: 280px;
+      height: 350px;
+      bottom: -200px;
+      right: -130px;
+    }
+
+    .custom-home-page img.topic-card-image {
+        width: 60px !important;
+        height: 60px !important;
+        margin-left: 0.6rem;
+        margin-top: 3.1rem;
+    }
+}
+
+/* ===== CATEGORY COLOR SCHEMES ===== */
+
+/* Lifestyle & Wellness - Teal/Mint */
+.custom-home-page .topic-card--lifestyle {
+    background: linear-gradient(135deg, #B8E6E0 0%, #A8DCD6 100%) !important;
+    background-color: #d1f5f0 !important;
+}
+.custom-home-page .topic-card--lifestyle .topic-card-title {
+    color: #1a4a45 !important;
+}
+.custom-home-page .topic-card--lifestyle .topic-card-description {
+    color: #2a5a55 !important;
+}
+
+/* Biohacking - Light Green/Sage */
+.custom-home-page .topic-card--biohacking {
+    background-color: #dcedc8 !important;
+}
+.custom-home-page .topic-card--biohacking .topic-card-title {
+    color: #1e4620 !important;
+}
+.custom-home-page .topic-card--biohacking .topic-card-description {
+    color: #2e5630 !important;
+}
+
+/* Clinical Treatments - Blue/Teal */
+.custom-home-page .topic-card--clinical {
+    background-color: #e1f5fe !important;
+}
+.custom-home-page .topic-card--clinical .topic-card-title {
+    color: #1a3d4a !important;
+}
+.custom-home-page .topic-card--clinical .topic-card-description {
+    color: #2a4d5a !important;
+}
+
+/* Frontier Treatments - Coral/Peach */
+.custom-home-page .topic-card--frontier {
+    background-color: #ffe0b2 !important;
+}
+.custom-home-page .topic-card--frontier .topic-card-title {
+    color: #5a3020 !important;
+}
+.custom-home-page .topic-card--frontier .topic-card-description {
+    color: #6a4030 !important;
+}
+
+/* Dark mode adjustments for topic cards */
+@at-root .theme--dark {
+    .custom-home-page .topic-card--lifestyle {
+        background: linear-gradient(135deg, #1a3532 0%, #15302d 100%);
+    }
+    .custom-home-page .topic-card--lifestyle .topic-card-title,
+    .custom-home-page .topic-card--lifestyle .topic-card-description {
+        color: #a8e6e0 !important;
+    }
+
+    .custom-home-page .topic-card--biohacking {
+        background: linear-gradient(135deg, #1a2e1c 0%, #152818 100%);
+    }
+    .custom-home-page .topic-card--biohacking .topic-card-title,
+    .custom-home-page .topic-card--biohacking .topic-card-description {
+        color: #a8e6ab !important;
+    }
+
+    .custom-home-page .topic-card--clinical {
+        background: linear-gradient(135deg, #1a2e35 0%, #152830 100%);
+    }
+    .custom-home-page .topic-card--clinical .topic-card-title,
+    .custom-home-page .topic-card--clinical .topic-card-description {
+        color: #a8d6e6 !important;
+    }
+
+    .custom-home-page .topic-card--frontier {
+        background: linear-gradient(135deg, #352a22 0%, #30251d 100%);
+    }
+    .custom-home-page .topic-card--frontier .topic-card-title,
+    .custom-home-page .topic-card--frontier .topic-card-description {
+        color: #ffd6c7 !important;
+    }
+}
+
+// ---------------------------------
+// SIDE COMMENTS

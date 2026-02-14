@@ -1,0 +1,336 @@
+.le-login-screen {
+  --le-accent: #f36614;
+  --le-accent-hover: #db580f;
+  --le-accent-dark: #ff9a5f;
+  --le-text: #252c35;
+  --le-muted: #6f7986;
+  --le-panel-bg: #f7f8fa;
+  --le-panel-border: #e1e4ea;
+  --le-control-border: #cfd5de;
+  background: #eceef1;
+
+  > .v-main__wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 64px);
+    padding: 16px 14px 16px;
+  }
+
+  .le-auth-page {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .le-auth-shell {
+    width: min(100%, 610px);
+    min-height: calc(100vh - 120px);
+    border-radius: 22px !important;
+    background: var(--le-panel-bg) !important;
+    border: 1px solid var(--le-panel-border);
+    box-shadow: 0 20px 34px rgba(20, 26, 36, 0.12) !important;
+  }
+
+  .le-auth-content {
+    width: 100%;
+    padding: 78px 76px 76px;
+  }
+
+  .le-auth-title {
+    font-family: 'Lora', 'Times New Roman', serif;
+    font-size: clamp(2.2rem, 4.1vw, 3.35rem);
+    line-height: 1.06;
+    font-weight: 500;
+    text-align: center;
+    color: #111722;
+    margin-bottom: 44px;
+  }
+
+  .le-auth-alert {
+    border-radius: 10px;
+    margin-bottom: 16px !important;
+  }
+
+  .le-auth-social {
+    display: grid;
+    gap: 14px;
+  }
+
+  .le-social-btn {
+    min-height: 46px !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--le-control-border) !important;
+    background: #ffffff !important;
+    color: var(--le-text) !important;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(42, 50, 66, 0.08) !important;
+
+    .v-btn__content {
+      gap: 12px;
+    }
+  }
+
+  .le-social-btn__icon {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .le-social-btn__text {
+    font-family: 'Outfit', 'Avenir Next', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .le-auth-divider {
+    margin: 30px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--le-muted);
+    font-family: 'Outfit', 'Avenir Next', sans-serif;
+    font-size: 0.92rem;
+    letter-spacing: 0.06em;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: #d2d8e0;
+    }
+  }
+
+  .le-auth-form {
+    display: grid;
+    gap: 12px;
+  }
+
+  .le-auth-note {
+    text-align: center;
+    margin-bottom: 0;
+    color: #606976;
+  }
+
+  .le-auth-field {
+    .v-input__control > .v-input__slot {
+      min-height: 48px !important;
+      border-radius: 10px !important;
+      border-color: var(--le-control-border) !important;
+      background: #fff !important;
+    }
+
+    .v-input__slot {
+      margin-bottom: 0 !important;
+    }
+
+    .v-input__slot fieldset {
+      border-color: var(--le-control-border) !important;
+    }
+
+    input {
+      font-size: 0.98rem !important;
+      color: var(--le-text) !important;
+    }
+
+    input::placeholder {
+      color: #8d97a4 !important;
+      opacity: 1;
+    }
+
+    .v-input__append-inner {
+      margin-top: 0 !important;
+      align-self: center;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .le-auth-show-btn {
+    border: 0;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    line-height: 1;
+    padding: 0 0 0 4px;
+    font-family: 'Outfit', 'Avenir Next', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--le-accent);
+    cursor: pointer;
+  }
+
+  .le-auth-submit {
+    margin-top: 8px;
+    min-height: 52px !important;
+    border-radius: 7px !important;
+    font-family: 'Outfit', 'Avenir Next', sans-serif;
+    font-size: 1.03rem;
+    font-weight: 500;
+    background-color: var(--le-accent) !important;
+    border-color: var(--le-accent) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--le-accent-hover) !important;
+      border-color: var(--le-accent-hover) !important;
+    }
+  }
+
+  .le-auth-links {
+    text-align: center;
+    margin-top: 22px;
+
+    p {
+      margin-bottom: 20px;
+      color: var(--le-text);
+      font-size: 0.94rem;
+      line-height: 1.42;
+    }
+  }
+
+  .le-auth-link {
+    color: var(--le-accent);
+    text-decoration: none;
+    font-family: 'Lora', 'Times New Roman', serif;
+    font-weight: 600;
+    font-size: 0.94rem;
+  }
+}
+
+.le-auth-tfa {
+  padding: 28px;
+  text-align: center;
+
+  &__icon {
+    width: 66px;
+    margin-bottom: 16px;
+  }
+
+  &__field {
+    input {
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  &__qr {
+    background: #fff;
+    padding: 8px;
+    border-radius: 10px;
+    width: 216px;
+    height: 216px;
+    margin: 0 auto;
+  }
+}
+
+.theme--dark {
+  .le-login-screen {
+    background: #111722;
+
+    .le-auth-shell {
+      background: #151f2e !important;
+      border-color: #334358;
+      box-shadow: 0 28px 48px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .le-auth-title {
+      color: #eef4ff;
+    }
+
+    .le-social-btn {
+      background: #1a2434 !important;
+      border-color: #405067 !important;
+      color: #eef4ff !important;
+    }
+
+    .le-auth-divider {
+      color: #a6b2c8;
+
+      &::before,
+      &::after {
+        background-color: #44546c;
+      }
+    }
+
+    .le-auth-field {
+      .v-input__control > .v-input__slot {
+        background: #1b2637 !important;
+        border-color: #465a74 !important;
+      }
+
+      input {
+        color: #eef3ff !important;
+      }
+    }
+
+    .le-auth-note,
+    .le-auth-links p {
+      color: #d3dbe8;
+    }
+
+    .le-auth-link,
+    .le-auth-show-btn {
+      color: var(--le-accent-dark);
+    }
+  }
+
+  .le-auth-tfa {
+    background: #121827;
+    color: #e5ebff;
+
+    &__qr {
+      background: #f7f7f9;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .le-login-screen {
+    > .v-main__wrap {
+      padding: 0;
+    }
+
+    .le-auth-shell {
+      width: 100%;
+      min-height: calc(100vh - 64px);
+      border-radius: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    .le-auth-content {
+      padding: 26px 16px 24px;
+    }
+
+    .le-auth-title {
+      font-size: clamp(1.65rem, 6vw, 2.05rem);
+      margin-bottom: 24px;
+    }
+
+    .le-social-btn {
+      min-height: 48px !important;
+    }
+
+    .le-auth-field .v-input__control > .v-input__slot,
+    .le-auth-submit {
+      min-height: 48px !important;
+    }
+  }
+}
+

@@ -62,12 +62,13 @@ module.exports = {
   /**
    * Create New Comment
    */
-  async create ({ page, commentPageId, commentPagePath, replyTo, content, selector, selectedText, user }) {
+  async create ({ page, commentPageId, commentPagePath, replyTo, content, blockId, selector, selectedText, user }) {
     WIKI.logger.info(`(COMMENTS/CONTEXTUAL) Creating new comment with selector: ${selector || 'none'}, text: ${selectedText || 'none'}`)
     // -> Build New Comment
     const newComment = {
       content,
       render: DOMPurify.sanitize(mkdown.render(content)),
+      blockId: blockId || null,
       selector: selector || null,
       selectedText: selectedText || null,
       replyTo,

@@ -8,6 +8,33 @@ export function findSelectorElement (selector) {
   }
 }
 
+export function escapeAttrValue (value) {
+  if (!value) return ''
+  if (typeof window !== 'undefined' && window.CSS && typeof window.CSS.escape === 'function') {
+    return window.CSS.escape(value)
+  }
+  return String(value).replace(/["\\]/g, '\\$&')
+}
+
+export function findBlockElement (blockId) {
+  if (!blockId) return null
+  try {
+    return document.querySelector(`[data-block-id="${escapeAttrValue(blockId)}"]`)
+  } catch (err) {
+    console.warn('Invalid blockId selector:', blockId, err)
+    return null
+  }
+}
+
+export function findCommentElement (comment) {
+  if (!comment) return null
+  if (comment.blockId) {
+    const byBlock = findBlockElement(comment.blockId)
+    if (byBlock) return byBlock
+  }
+  return findSelectorElement(comment.selector)
+}
+
 export function getElementLastRect (el) {
   if (!el) return null
   const rects = el.getClientRects()

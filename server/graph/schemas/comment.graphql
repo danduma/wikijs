@@ -50,6 +50,7 @@ type CommentMutation {
     pageLocale: String
     replyTo: Int
     content: String!
+    blockId: String
     selector: String
     selectedText: String
     guestName: String
@@ -106,6 +107,7 @@ type CommentPost {
   pagePath: String!
   content: String! @auth(requires: ["read:comments", "write:comments", "manage:comments", "manage:system"])
   render: String!
+  blockId: String
   selector: String
   selectedText: String
   replyTo: Int

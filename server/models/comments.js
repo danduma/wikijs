@@ -20,6 +20,7 @@ module.exports = class Comment extends Model {
         id: {type: 'integer'},
         content: {type: 'string'},
         render: {type: 'string'},
+        blockId: {type: ['string', 'null']},
         selector: {type: ['string', 'null']},
         selectedText: {type: ['string', 'null']},
         replyTo: {type: 'integer'},
@@ -70,7 +71,7 @@ module.exports = class Comment extends Model {
   /**
    * Post New Comment
    */
-  static async postNewComment ({ pageId, pagePath, pageLocale, replyTo, content, selector, selectedText, guestName, guestEmail, user, ip }) {
+  static async postNewComment ({ pageId, pagePath, pageLocale, replyTo, content, blockId, selector, selectedText, guestName, guestEmail, user, ip }) {
     console.error(`(MODELS/COMMENTS) postNewComment: selector=${selector || 'none'}, text=${selectedText || 'none'}`)
     const canonicalLocale = _.get(WIKI, 'config.lang.code', 'en')
     const threadKeyIncludesLocale = _.get(WIKI, 'data.commentProvider.config.threadKeyIncludesLocale', false)
@@ -187,6 +188,7 @@ module.exports = class Comment extends Model {
       commentPagePath: pagePath,
       replyTo,
       content,
+      blockId: blockId || null,
       selector: selector || null,
       selectedText: selectedText || null,
       user: {

@@ -1,5 +1,6 @@
 const _ = require('lodash')
 const cheerio = require('cheerio')
+const commentBlocksHelper = require('../helpers/comment-blocks')
 
 /* global WIKI */
 
@@ -35,6 +36,26 @@ module.exports = async (pageId) => {
         input: output
       })
     }
+
+    // Inject stable comment block anchors.
+    const canonicalLocale = _.get(WIKI, 'config.lang.code', 'en')
+    let canonicalBlockIds = []
+    if (page.localeCode !== canonicalLocale) {
+      const canonicalPage = await WIKI.models.pages.query().select('render')
+        .findOne({ localeCode: canonicalLocale, path: page.path })
+      const canonicalRender = _.get(canonicalPage, 'render', '')
+      canonicalBlockIds = commentBlocksHelper.extractBlockIds(canonicalRender)
+      if (canonicalBlockIds.length < 1 && canonicalRender) {
+        canonicalBlockIds = commentBlocksHelper.annotateHtmlWithBlockIds({
+          html: canonicalRender
+        }).blockIds
+      }
+    }
+    const blockResult = commentBlocksHelper.annotateHtmlWithBlockIds({
+      html: output,
+      useBlockIdsInOrder: canonicalBlockIds
+    })
+    output = blockResult.html
 
     // Parse TOC
     const $ = cheerio.load(output)

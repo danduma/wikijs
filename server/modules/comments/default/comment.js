@@ -62,11 +62,12 @@ module.exports = {
   /**
    * Create New Comment
    */
-  async create ({ page, commentPageId, commentPagePath, replyTo, content, user }) {
+  async create ({ page, commentPageId, commentPagePath, replyTo, content, blockId, user }) {
     // -> Build New Comment
     const newComment = {
       content,
       render: DOMPurify.sanitize(mkdown.render(content)),
+      blockId: blockId || null,
       replyTo,
       pageId: commentPageId || page.id,
       pagePath: commentPagePath || commentPathHelper.canonicalCommentPath(page.path, page.localeCode).key,

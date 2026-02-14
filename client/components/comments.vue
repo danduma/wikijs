@@ -191,9 +191,9 @@
 
             .comments-post-name.caption: strong {{cm.authorName}}
             .comments-post-date.overline.grey--text {{cm.createdAt | moment('from') }} #[em(v-if='cm.createdAt !== cm.updatedAt') - {{$t('common:comments.modified', { reldate: $options.filters.moment(cm.updatedAt, 'from') })}}]
-            .comments-post-context.caption.grey--text(v-if='cm.selector && isContextualProvider')
-              v-icon(small, @click='highlightElement(cm.selector)', color='primary') mdi-target
-              span.ml-1(style='cursor: pointer; text-decoration: underline;', @click='highlightElement(cm.selector)') View Context
+            .comments-post-context.caption.grey--text(v-if='(cm.blockId || cm.selector) && isContextualProvider')
+              v-icon(small, @click='highlightComment(cm)', color='primary') mdi-target
+              span.ml-1(style='cursor: pointer; text-decoration: underline;', @click='highlightComment(cm)') View Context
 
             .comments-post-content.mt-3(v-if='commentEditId !== cm.id', v-html='cm.render')
             .comments-post-editcontent.mt-3(v-else)
@@ -362,7 +362,9 @@ import { get } from 'vuex-pathify'
 import validate from 'validate.js'
 import _ from 'lodash'
 import CommentVoteButtons from './comments/CommentVoteButtons.vue'
-import { findSelectorElement, getElementPagePositionFromElement, getElementViewportPositionFromElement } from '../helpers/comments-positioning'
+import { escapeAttrValue, findCommentElement, getElementPagePositionFromElement, getElementViewportPositionFromElement } from '../helpers/comments-positioning'
+
+/* global siteConfig */
 
 export default {
   props: {
@@ -391,6 +393,7 @@ export default {
       replyToId: 0,
       replyContent: '',
       selectedText: '',
+      selectedBlockId: '',
       selectedSelector: '',
       commentProviderKey: null,
       showFloatingBtn: false,
@@ -399,8 +402,10 @@ export default {
         left: '0px'
       },
       pendingSelector: '',
+      pendingBlockId: '',
       pendingText: '',
       currentSelector: '',
+      currentBlockId: '',
       currentText: '',
       showThreadDialog: false,
       activeThread: null,
@@ -695,6 +700,7 @@ export default {
                 list(locale: $locale, path: $path) {
                   id
                   render
+                  blockId
                   selector
                   selectedText
                   replyTo
@@ -797,6 +803,7 @@ export default {
               $pageId: Int!
               $replyTo: Int
               $content: String!
+              $blockId: String
               $selector: String
               $guestName: String
               $guestEmail: String
@@ -806,6 +813,7 @@ export default {
                   pageId: $pageId
                   replyTo: $replyTo
                   content: $content
+                  blockId: $blockId
                   selector: $selector
                   guestName: $guestName
                   guestEmail: $guestEmail
@@ -825,6 +833,7 @@ export default {
             pageId: this.pageId,
             replyTo: 0,
             content: this.newcomment,
+            blockId: this.selectedBlockId || null,
             selector: this.selectedSelector,
             guestName: this.guestName,
             guestEmail: this.guestEmail
@@ -840,6 +849,7 @@ export default {
 
           this.newcomment = ''
           this.selectedText = ''
+          this.selectedBlockId = ''
           this.selectedSelector = ''
           await this.fetch()
           this.$nextTick(() => {
@@ -1174,6 +1184,26 @@ export default {
       if (!target || !target.closest) return null
       return target.closest('p, li, blockquote, h1, h2, h3, h4, h5, h6, pre, table, figure') || target
     },
+    getBlockAnchorElement (target) {
+      if (!target) return null
+      let el = target
+      if (el.nodeType === Node.TEXT_NODE) el = el.parentElement
+      if (!el || !el.closest) return null
+
+      const contentArea = el.closest('.contents') || el.closest('.page-content')
+      if (!contentArea) return null
+
+      const block = el.closest('[data-block-id]')
+      if (block && contentArea.contains(block)) return block
+
+      return this.getLongPressAnchorElement(el)
+    },
+    getSelectorForAnchor (el) {
+      if (!el) return ''
+      const blockId = el.getAttribute && el.getAttribute('data-block-id')
+      if (blockId) return `[data-block-id="${escapeAttrValue(blockId)}"]`
+      return this.getCSSSelector(el)
+    },
     triggerLongPress (e) {
       if (!this.longPressTarget || this.longPressFired) return
       this.longPressFired = true
@@ -1181,11 +1211,14 @@ export default {
       const touch = (e.touches && e.touches[0]) ? e.touches[0] : null
       if (!touch) return
 
-      const anchor = this.getLongPressAnchorElement(this.longPressTarget)
-      const selector = this.getCSSSelector(anchor)
+      const anchor = this.getBlockAnchorElement(this.longPressTarget)
+      const selector = this.getSelectorForAnchor(anchor)
+      const blockId = anchor && anchor.getAttribute ? (anchor.getAttribute('data-block-id') || '') : ''
 
       this.selectedText = ''
+      this.selectedBlockId = blockId
       this.selectedSelector = selector
+      this.pendingBlockId = blockId
       this.pendingSelector = selector
       this.pendingText = ''
 
@@ -1242,8 +1275,11 @@ export default {
         if (contentArea) {
           const rect = e.target.getBoundingClientRect()
           this.selectedText = '[Image]'
-          this.selectedSelector = this.getCSSSelector(e.target)
+          const anchor = this.getBlockAnchorElement(e.target)
+          this.selectedBlockId = anchor && anchor.getAttribute ? (anchor.getAttribute('data-block-id') || '') : ''
+          this.selectedSelector = this.getSelectorForAnchor(anchor || e.target)
           this.pendingSelector = this.selectedSelector
+          this.pendingBlockId = this.selectedBlockId
           this.pendingText = this.selectedText
 
           console.log('Image clicked, showing floating button:', { selector: this.selectedSelector })
@@ -1271,10 +1307,13 @@ export default {
       this.isDragging = false
       this.dragPosition = null
       this.selectedText = ''
+      this.selectedBlockId = ''
       this.selectedSelector = ''
       this.pendingSelector = ''
+      this.pendingBlockId = ''
       this.pendingText = ''
       this.currentSelector = ''
+      this.currentBlockId = ''
       this.currentText = ''
       this.clearActiveSelectionHighlight()
       this.removeSelectionMarkers()
@@ -1357,9 +1396,12 @@ export default {
         const rect = (rects.length > 0) ? rects[rects.length - 1] : (targetRect || container.getBoundingClientRect())
 
         if (rect) {
-          // Get the CSS selector for the selected element
+          const anchor = this.getBlockAnchorElement(container)
+          const blockId = anchor && anchor.getAttribute ? (anchor.getAttribute('data-block-id') || '') : ''
           this.selectedText = selectedText
-          this.selectedSelector = this.getCSSSelector(container)
+          this.selectedBlockId = blockId
+          this.selectedSelector = this.getSelectorForAnchor(anchor || container)
+          this.pendingBlockId = this.selectedBlockId
           this.pendingSelector = this.selectedSelector
           this.pendingText = this.selectedText
 
@@ -1411,19 +1453,23 @@ export default {
       }
       return path.join(' > ')
     },
-    highlightElement (selector) {
-      if (!selector) {
-        console.warn('highlightElement called with empty selector')
+    highlightComment (comment) {
+      if (!comment) return
+      this.highlightElement(comment.selector, comment.blockId)
+    },
+    highlightElement (selector, blockId = null) {
+      if (!selector && !blockId) {
+        console.warn('highlightElement called with empty selector/blockId')
         return
       }
 
-      console.log('Attempting to highlight selector:', selector)
+      console.log('Attempting to highlight context:', { selector, blockId })
 
       try {
-        let element = document.querySelector(selector)
+        let element = findCommentElement({ selector, blockId })
 
         // If not found, try to find by text content as a fallback
-        if (!element && selector.includes('nth-of-type')) {
+        if (!element && selector && selector.includes('nth-of-type')) {
           // Try a simpler version of the selector
           const simpler = selector.split(' > ').pop().split(':')[0]
           console.log('Exact selector failed, trying simpler match:', simpler)
@@ -1474,6 +1520,7 @@ export default {
       this.newThreadContent = ''
 
       this.currentSelector = this.selectedSelector || this.pendingSelector || ''
+      this.currentBlockId = this.selectedBlockId || this.pendingBlockId || ''
       this.currentText = this.selectedText || this.pendingText || ''
 
       // Set dialog to true early to prevent selection handlers from clearing our data
@@ -1598,7 +1645,8 @@ export default {
       this.isNewThread = false
       this.activeThread = comment
       this.newThreadContent = ''
-      this.currentSelector = comment.selector || ''
+      this.currentSelector = comment.selector || (comment.blockId ? `[data-block-id="${escapeAttrValue(comment.blockId)}"]` : '')
+      this.currentBlockId = comment.blockId || ''
       this.currentText = ''
       this.showThreadDialog = true
 
@@ -1609,8 +1657,8 @@ export default {
         marker.style.backgroundColor = 'rgba(144, 164, 174, 0.4)'
         marker.style.boxShadow = '0 0 0 2px rgba(144, 164, 174, 0.6)'
         marker.style.borderRadius = '3px'
-      } else if (!comment.selectedText) {
-        // ONLY fallback if there was no specific text selected (commenting on the whole element)
+      } else {
+        // Fallback to block-level highlight when exact selected text is unavailable (e.g. different locale).
         this.applyActiveSelectionHighlight(this.currentSelector)
       }
 
@@ -1636,20 +1684,23 @@ export default {
       const selectorToSend = this.isNewThread ?
         (this.currentSelector || this.selectedSelector || this.pendingSelector || null) :
         null
+      const blockIdToSend = this.isNewThread ?
+        (this.currentBlockId || this.selectedBlockId || this.pendingBlockId || null) :
+        null
 
       const textToSend = this.isNewThread ?
         (this.currentText || this.selectedText || this.pendingText || null) :
         null
 
-      console.log('Submitting comment. isNewThread:', this.isNewThread, 'selector:', selectorToSend, 'text:', textToSend)
+      console.log('Submitting comment. isNewThread:', this.isNewThread, 'blockId:', blockIdToSend, 'selector:', selectorToSend, 'text:', textToSend)
 
       this.isBusy = true
       try {
         const resp = await this.$apollo.mutate({
           mutation: gql`
-          mutation ($pageId: Int!, $replyTo: Int, $content: String!, $selector: String, $selectedText: String) {
+          mutation ($pageId: Int!, $replyTo: Int, $content: String!, $blockId: String, $selector: String, $selectedText: String) {
             comments {
-              create (pageId: $pageId, replyTo: $replyTo, content: $content, selector: $selector, selectedText: $selectedText) {
+              create (pageId: $pageId, replyTo: $replyTo, content: $content, blockId: $blockId, selector: $selector, selectedText: $selectedText) {
                 responseResult { succeeded message }
                 id
               }
@@ -1660,6 +1711,7 @@ export default {
             pageId: this.pageId,
             replyTo: this.isNewThread ? 0 : this.activeThread.id,
             content: this.newThreadContent,
+            blockId: blockIdToSend,
             selector: selectorToSend,
             selectedText: textToSend
           }
@@ -1715,16 +1767,22 @@ export default {
         }
       })
 
-      // Group root comments by selector
-      const contextualRoots = this.comments.filter(c => c.selector && (!c.replyTo || c.replyTo === 0))
+      // Group root comments by anchor
+      const contextualRoots = this.comments.filter(c => (c.blockId || c.selector) && (!c.replyTo || c.replyTo === 0))
 
       contextualRoots.forEach(comment => {
         try {
-          const el = findSelectorElement(comment.selector)
+          const el = findCommentElement(comment)
           if (el) {
             // Apply precise highlight if text is available
             if (comment.selectedText) {
-              this.highlightTextWithinElement(el, comment.selectedText, comment.id)
+              const matched = this.highlightTextWithinElement(el, comment.selectedText, comment.id)
+              if (!matched) {
+                el.classList.add('comment-highlight')
+                el.style.backgroundColor = 'rgba(144, 164, 174, 0.15)'
+                el.style.borderRadius = '3px'
+                el.setAttribute('data-ui-id', 'LongevidenceInlineCommentHighlight')
+              }
             } else {
               // Apply pale highlight
               el.classList.add('comment-highlight')
@@ -1769,9 +1827,9 @@ export default {
       })
     },
     highlightTextWithinElement (element, text, commentId) {
-      if (!text || !element) return
+      if (!text || !element) return false
       const cleanText = text.trim()
-      if (cleanText.length === 0) return
+      if (cleanText.length === 0) return false
 
       const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false)
       let node
@@ -1794,10 +1852,12 @@ export default {
             range.surroundContents(marker)
           } catch (e) {
             console.warn('Could not surround text with marker:', cleanText, e)
+            return false
           }
-          break
+          return true
         }
       }
+      return false
     }
   },
   mounted () {

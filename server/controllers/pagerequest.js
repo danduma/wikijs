@@ -9,6 +9,7 @@ const REQUEST_TEXT_MAX = 5000
 const TITLE_MAX = 160
 const DESCRIPTION_MAX = 5000
 const MENTIONED_PAGES_MAX = 20
+const LOCALE_RE = /^[a-z]{2}(?:-[a-z]{2})?$/i
 
 function isAuthenticatedUser(req) {
   return req.user && req.user.id >= 1 && req.user.id !== 2
@@ -75,6 +76,26 @@ function normalizeMentionedPages(value) {
   return normalized
 }
 
+function normalizePreferredLocale(req) {
+  const raw = String(
+    req.user?.localeCode ||
+    req.i18n?.language ||
+    WIKI.config?.lang?.code ||
+    'en'
+  ).trim().toLowerCase().replace(/_/g, '-')
+  if (!raw) {
+    return 'en'
+  }
+  if (LOCALE_RE.test(raw)) {
+    return raw
+  }
+  const base = raw.split('-', 1)[0]
+  if (LOCALE_RE.test(base)) {
+    return base
+  }
+  return 'en'
+}
+
 function parseUpstreamError(err, fallbackMessage) {
   if (err && err.error) {
     if (typeof err.error === 'string' && err.error.trim()) {
@@ -105,7 +126,7 @@ router.post('/api/page-requests/title-preview', async (req, res) => {
   if (!ensureAuthenticated(req, res)) {
     return
   }
-  const requestText = typeof req.body?.request_text === 'string' ? req.body.request_text.trim() : ''
+  const requestText = typeof req.body?.['request_text'] === 'string' ? req.body['request_text'].trim() : ''
   if (!requestText) {
     return res.status(400).json({ error: 'request_text is required' })
   }
@@ -129,7 +150,8 @@ router.post('/api/page-requests/title-preview', async (req, res) => {
         'X-API-Key': cfg.evergreenApiKey
       },
       body: {
-        request_text: requestText
+        'request_text': requestText,
+        'preferred_locale': normalizePreferredLocale(req)
       },
       json: true,
       timeout: 15000
@@ -138,7 +160,8 @@ router.post('/api/page-requests/title-preview', async (req, res) => {
     if (!title) {
       return res.status(502).json({ error: 'Invalid title response from page request service' })
     }
-    return res.json({ title })
+    const suggestions = Array.isArray(response?.suggestions) ? response.suggestions : []
+    return res.json({ title, suggestions })
   } catch (err) {
     WIKI.logger.warn(`Page request title-preview failed: ${err.message}`)
     const statusCode = Number(err.statusCode) >= 400 ? Number(err.statusCode) : 502
@@ -185,8 +208,8 @@ router.post('/api/page-requests', async (req, res) => {
       body: {
         title,
         description,
-        mentioned_pages: normalizeMentionedPages(req.body?.mentioned_pages),
-        requested_by: normalizeRequestedBy(req)
+        'mentioned_pages': normalizeMentionedPages(req.body?.['mentioned_pages']),
+        'requested_by': normalizeRequestedBy(req)
       },
       json: true,
       timeout: 20000

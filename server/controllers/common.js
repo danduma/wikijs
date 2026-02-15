@@ -1,11 +1,14 @@
 const express = require('express')
 const router = express.Router()
 const pageHelper = require('../helpers/page')
+const ignoreHelper = require('../helpers/ignore')
 const _ = require('lodash')
 const CleanCSS = require('clean-css')
 const moment = require('moment')
 const qs = require('querystring')
 const crypto = require('crypto')
+const path = require('path')
+const fs = require('fs-extra')
 
 /* global WIKI */
 
@@ -39,6 +42,77 @@ const buildPageUrl = (page) => {
   return `/${page.path}`
 }
 
+const getSitemapIgnoreTargets = async () => {
+  const targets = []
+  const storageTargets = _.get(WIKI, 'models.storage.targets', [])
+
+  for (const target of storageTargets) {
+    if (target.key === 'git') {
+      const repoPath = path.resolve(WIKI.ROOTPATH, _.get(target, 'config.localRepoPath', path.join(WIKI.config.dataPath, 'repo')))
+      targets.push({
+        key: 'git',
+        repoPath,
+        alwaysNamespace: _.get(target, 'config.alwaysNamespace', false)
+      })
+    } else if (target.key === 'disk') {
+      const repoPath = path.resolve(WIKI.ROOTPATH, _.get(target, 'config.path', ''))
+      targets.push({
+        key: 'disk',
+        repoPath
+      })
+    }
+  }
+
+  if (!targets.some(t => t.key === 'git')) {
+    targets.push({
+      key: 'git',
+      repoPath: path.resolve(WIKI.ROOTPATH, WIKI.config.dataPath, 'repo'),
+      alwaysNamespace: false
+    })
+  }
+
+  const uniqueTargets = _.uniqBy(targets.filter(t => !_.isEmpty(t.repoPath)), t => `${t.key}:${t.repoPath}`)
+  const resolvedTargets = []
+  for (const target of uniqueTargets) {
+    const ignoreFilePath = path.join(target.repoPath, '.wikijsignore')
+    if (!(await fs.pathExists(ignoreFilePath))) {
+      continue
+    }
+    const checker = await ignoreHelper.getIgnoreChecker(target.repoPath)
+    resolvedTargets.push({
+      ...target,
+      checker
+    })
+  }
+
+  return resolvedTargets
+}
+
+const buildIgnorePathsForPage = (page, target) => {
+  const fileName = `${page.path}.${pageHelper.getFileExtension(page.contentType)}`
+  if (target.key === 'git') {
+    if (target.alwaysNamespace || (WIKI.config.lang.namespacing && WIKI.config.lang.code !== page.localeCode)) {
+      return [`${page.localeCode}/${fileName}`]
+    }
+    return [fileName]
+  }
+  if (target.key === 'disk') {
+    if (WIKI.config.lang.code !== page.localeCode) {
+      return [`${page.localeCode}/${fileName}`]
+    }
+    return [fileName]
+  }
+  return [fileName]
+}
+
+const isPageIgnoredForSitemap = (page, ignoreTargets) => {
+  if (!ignoreTargets || ignoreTargets.length < 1) return false
+  return ignoreTargets.some(target => {
+    const relPaths = buildIgnorePathsForPage(page, target)
+    return relPaths.some(relPath => ignoreHelper.matches(target.checker, relPath))
+  })
+}
+
 /**
  * Robots.txt
  */
@@ -66,6 +140,7 @@ router.get('/sitemap.xml', async (req, res, next) => {
       const pages = await WIKI.models.pages.query()
         .column([
           'pages.path',
+          'pages.contentType',
           'pages.localeCode',
           'pages.isPublished',
           'pages.isPrivate',
@@ -84,12 +159,16 @@ router.get('/sitemap.xml', async (req, res, next) => {
         .orderBy('pages.updatedAt', 'desc')
 
       const now = moment()
+      const ignoreTargets = await getSitemapIgnoreTargets()
       const entries = pages
         .filter(page => {
           if (!_.isEmpty(page.publishStartDate) && moment(page.publishStartDate).isAfter(now)) {
             return false
           }
           if (!_.isEmpty(page.publishEndDate) && moment(page.publishEndDate).isBefore(now)) {
+            return false
+          }
+          if (isPageIgnoredForSitemap(page, ignoreTargets)) {
             return false
           }
           return WIKI.auth.checkAccess(guestUser, ['read:pages'], {

@@ -45,32 +45,68 @@
           v-if='searchEnabled && $vuetify.breakpoint.smAndDown'
           v-model='searchMenuMobileShown'
           fullscreen
-          transition='dialog-bottom-transition'
+          transition='fade-transition'
           :close-on-content-click='false'
         )
           template(v-slot:activator='{ on, attrs }')
             v-btn(icon, v-bind='attrs', v-on='on')
               v-icon mdi-magnify
-          v-card.search-mobile-sheet(tile)
-            v-toolbar.search-mobile-toolbar(flat, color='white')
-              v-btn(icon, @click='searchMenuMobileShown = false')
-                v-icon mdi-arrow-left
-              v-text-field(
+          .mobile-search-overlay-shell
+            .mobile-search-overlay-header
+              a.mobile-search-overlay-brand(
+                :href='resolveMobileOverlayPath(`home`)'
+                @click='searchMenuMobileShown = false'
+              )
+                v-img.mobile-search-overlay-logo(v-if='siteLogoUrl', :src='siteLogoUrl', contain, max-height='30', max-width='160')
+                span.mobile-search-overlay-title(v-else) {{ siteTitle || 'Longevipedia' }}
+              v-btn.mobile-search-overlay-close(icon, large, @click='searchMenuMobileShown = false', aria-label='Close search')
+                v-icon(size='30') mdi-close-circle-outline
+
+            .mobile-search-overlay-search
+              v-text-field.mobile-search-overlay-input(
                 v-model='searchQuery'
-                placeholder='Search...'
+                placeholder='What do you want to learn about?'
                 solo
                 flat
+                dense
+                rounded
                 hide-details
-                autofocus
+                prepend-inner-icon='mdi-magnify'
                 clearable
+                autofocus
               )
-            v-divider
-            .search-mobile-overlay
-              search-overlay(
-                :query='searchQuery'
-                :is-mobile='true'
-                @close='searchMenuMobileShown = false'
-              )
+
+            .mobile-search-overlay-body
+              .mobile-search-overlay-results(v-if='searchQuery && searchQuery.trim().length > 1')
+                search-overlay(
+                  :query='searchQuery'
+                  :is-mobile='true'
+                  @close='searchMenuMobileShown = false'
+                )
+              .mobile-search-overlay-discovery(v-else)
+                section.mobile-search-overlay-section
+                  .mobile-search-overlay-section-header
+                    h3.mobile-search-overlay-section-title Topics
+                  .mobile-search-overlay-link-list
+                    a.mobile-search-overlay-link-item(
+                      v-for='topic in mobileSearchTopics'
+                      :key='topic.path'
+                      :href='resolveMobileOverlayPath(topic.path)'
+                      @click='searchMenuMobileShown = false'
+                    ) {{ topic.title }}
+
+                section.mobile-search-overlay-section
+                  .mobile-search-overlay-section-header
+                    h3.mobile-search-overlay-section-title Trending
+                  .mobile-search-overlay-link-list
+                    a.mobile-search-overlay-link-item.mobile-search-overlay-link-item--card(
+                      v-for='item in mobileTrendingItems'
+                      :key='item.path'
+                      :href='resolveMobileOverlayPath(item.path)'
+                      @click='searchMenuMobileShown = false'
+                    )
+                      .mobile-search-overlay-link-title {{ item.title }}
+                      p.mobile-search-overlay-link-subtitle {{ item.subtitle }}
 
         v-tooltip(bottom, v-if='commentsEnabled && commentsPerms.read')
           template(v-slot:activator='{ on }')
@@ -691,6 +727,34 @@ export default {
       medicalDisclaimerShown: false,
       searchMenuShown: false,
       searchMenuMobileShown: false,
+      mobileSearchTopics: [
+        { title: 'Lifestyle & Wellness', path: 'pages/lifestyle-wellness' },
+        { title: 'Biohacking', path: 'pages/biohacking' },
+        { title: 'Frontier interventions', path: 'pages/frontier-treatments' },
+        { title: 'Clinical treatments', path: 'pages/clinical-treatments' }
+      ],
+      mobileTrendingItems: [
+        {
+          title: 'Frontier Treatments',
+          path: 'pages/frontier-treatments',
+          subtitle: 'NAD+ boosting molecules for anti-aging and longevity enhancement...'
+        },
+        {
+          title: 'Clinical Treatments',
+          path: 'pages/clinical-treatments',
+          subtitle: 'PRP (Platelet-Rich Plasma), therapy, mechanisms, evidence, and preparation...'
+        },
+        {
+          title: 'Biohacking',
+          path: 'pages/biohacking',
+          subtitle: 'Specific biomarkers related to chronic inflammation and aging processes...'
+        },
+        {
+          title: 'Lifestyle & Wellness',
+          path: 'pages/lifestyle-wellness',
+          subtitle: 'Nutrition is the study of how foods and beverages influence health, energy, growth, and well-being...'
+        }
+      ],
       searchQuery: '',
       searchMenuWidth: null,
       searchOutsideClickHandler: null,
@@ -701,6 +765,8 @@ export default {
   },
   computed: {
     isAuthenticated: get('user/authenticated'),
+    siteTitle: get('site/title'),
+    siteLogoUrl: get('site/logoUrl'),
     commentsCount: get('page/commentsCount'),
     commentsPerms: get('page/effectivePermissions@comments'),
     editShortcutsObj: get('page/editShortcuts'),
@@ -1080,6 +1146,17 @@ export default {
     }
   },
   methods: {
+    resolveMobileOverlayPath (path) {
+      if (!path) {
+        return '/'
+      }
+
+      if (this.$helpers && typeof this.$helpers.resolvePath === 'function') {
+        return this.$helpers.resolvePath(path)
+      }
+
+      return path.charAt(0) === '/' ? path : `/${path}`
+    },
     tocItemKey (tocItem, tocIdx) {
       const anchorKey = _.isString(tocItem.anchor) ? tocItem.anchor.replace(/^#/, '') : ''
       if (anchorKey) {

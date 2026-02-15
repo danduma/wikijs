@@ -1,6 +1,6 @@
-query ($query: String!) {
+query ($query: String!, $locale: String) {
   pages {
-    search(query:$query) {
+    search(query:$query, locale:$locale) {
       results {
         id
         title

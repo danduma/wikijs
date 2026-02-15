@@ -79,8 +79,8 @@
         .caption.grey--text Explore interventions, conditions, and more
 
     .request-page-prompt.text-center.py-4.px-4
-      .grey--text {{ $t('common:search.cantFindPrompt') }}
-      a.request-page-link.d-block.mt-1(@click.prevent='goToRequestPage') {{ $t('common:search.requestNewPage') }}
+      .caption.grey--text {{ $t('common:search.cantFindPrompt') }}
+      a.request-page-link.caption.d-block.mt-1(@click.prevent='goToRequestPage') {{ $t('common:search.requestNewPage') }}
 
     v-divider
 
@@ -239,7 +239,8 @@ export default {
       query: searchPagesQuery,
       variables() {
         return {
-          query: this.query
+          query: this.query,
+          locale: this.$store.state.page.locale
         }
       },
       fetchPolicy: 'network-only',

@@ -56,7 +56,7 @@
 
 <script>
 import _ from 'lodash'
-import { sync } from 'vuex-pathify'
+import { sync, get } from 'vuex-pathify'
 import { OrbitSpinner } from 'epic-spinners'
 
 import searchPagesQuery from 'gql/common/common-pages-query-search.gql'
@@ -83,6 +83,7 @@ export default {
     searchIsLoading: sync('site/searchIsLoading'),
     searchRestrictLocale: sync('site/searchRestrictLocale'),
     searchRestrictPath: sync('site/searchRestrictPath'),
+    pageLocale: get('page/locale'),
     results() {
       const currentIndex = (this.pagination - 1) * this.perPage
       return this.response.results ? _.slice(this.response.results, currentIndex, currentIndex + this.perPage) : []
@@ -151,7 +152,8 @@ export default {
       query: searchPagesQuery,
       variables() {
         return {
-          query: this.search
+          query: this.search,
+          locale: this.pageLocale
         }
       },
       fetchPolicy: 'network-only',

@@ -39,12 +39,27 @@
 
               template(v-if='mode === `view` && locales.length > 0')
                 v-divider
-                v-list-group.mobile-language-group(no-action, prepend-icon='mdi-web')
-                  template(v-slot:activator)
-                    v-list-item-title {{$t('common:header.language')}}
-                  v-list-item(v-for='(lc, idx) of locales', :key='`mobile-locale-${idx}`', @click='changeLocale(lc)')
-                    v-list-item-action(style='min-width:auto;'): v-chip(:color='lc.code === locale ? `blue` : `grey`', small, label, dark) {{lc.code.toUpperCase()}}
-                    v-list-item-title {{lc.name}}
+                v-list-item
+                  v-list-item-icon: v-icon(color='grey') mdi-web
+                  v-list-item-content
+                    v-autocomplete(
+                      :items='locales'
+                      :value='locale'
+                      item-text='name'
+                      item-value='code'
+                      :filter='localeFilter'
+                      :placeholder='$t(`common:header.language`)'
+                      flat
+                      solo
+                      hide-details
+                      dense
+                      @change='handleLocaleChange'
+                      :menu-props='{ offsetY: true, transition: "slide-y-transition", zIndex: 1000 }'
+                    )
+                      template(v-slot:item='{ item }')
+                        v-list-item-content
+                          v-list-item-title {{ item.name }}
+                          v-list-item-subtitle.caption.grey--text(v-if='item.englishName && item.englishName !== item.name') {{ item.englishName }}
 
               template(v-if='hasAnyPagePermissions && path && mode !== `edit`')
                 v-divider
@@ -209,7 +224,7 @@
           //- LANGUAGES
 
           template(v-if='mode === `view` && locales.length > 0')
-            v-menu(offset-y, bottom, transition='slide-y-transition', max-height='320px', min-width='210px', left)
+            v-menu(offset-y, bottom, transition='slide-y-transition', max-height='320px', min-width='300px', left, :close-on-content-click='false')
               template(v-slot:activator='{ on: menu, attrs }')
                 v-tooltip(bottom)
                   template(v-slot:activator='{ on: tooltip }')
@@ -223,12 +238,27 @@
                       :aria-label='$t(`common:header.language`)'
                       )
                       v-icon(color='grey') mdi-web
+                      v-icon(small, color='grey') mdi-chevron-down
                   span {{$t('common:header.language')}}
-              v-list(nav)
-                template(v-for='(lc, idx) of locales')
-                  v-list-item(@click='changeLocale(lc)')
-                    v-list-item-action(style='min-width:auto;'): v-chip(:color='lc.code === locale ? `blue` : `grey`', small, label, dark) {{lc.code.toUpperCase()}}
-                    v-list-item-title {{lc.name}}
+              v-card
+                v-autocomplete(
+                  :items='locales'
+                  :value='locale'
+                  item-text='name'
+                  item-value='code'
+                  :filter='localeFilter'
+                  prepend-inner-icon='mdi-magnify'
+                  :placeholder='$t(`common:header.search`)'
+                  flat
+                  solo
+                  hide-details
+                  autofocus
+                  @change='handleLocaleChange'
+                )
+                  template(v-slot:item='{ item }')
+                    v-list-item-content
+                      v-list-item-title {{ item.name }}
+                      v-list-item-subtitle.caption.grey--text(v-if='item.englishName && item.englishName !== item.name') {{ item.englishName }}
             v-divider(vertical)
 
           //- PAGE ACTIONS
@@ -707,6 +737,20 @@ export default {
       const cur = this.appearanceModeNormalized
       const next = (cur === 'light') ? 'dark' : 'light'
       setAppearanceMode(next, this.$store)
+    },
+    localeFilter (item, queryText, itemText) {
+      const textOne = item.name.toLowerCase()
+      const textTwo = item.englishName ? item.englishName.toLowerCase() : ''
+      const searchText = queryText.toLowerCase()
+
+      return textOne.indexOf(searchText) > -1 ||
+        textTwo.indexOf(searchText) > -1
+    },
+    handleLocaleChange (code) {
+      const locale = this.locales.find(l => l.code === code)
+      if (locale) {
+        this.changeLocale(locale)
+      }
     }
   }
 }

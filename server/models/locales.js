@@ -116,7 +116,7 @@ module.exports = class Locale extends Model {
       }
     }
     const navLocalesRaw = await WIKI.models.locales.query()
-      .select('code', 'nativeName AS name')
+      .select('code', 'name as englishName', 'nativeName as name')
       .whereIn('code', WIKI.config.lang.namespaces)
       .orderBy('code')
     const navLocalesFromDb = navLocalesRaw.map(locale => ({

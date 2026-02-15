@@ -172,6 +172,74 @@ module.exports = class User extends Model {
   // Model Methods
   // ------------------------------------------------
 
+  static getConfiguredLocaleCodes() {
+    return _.uniq([
+      ..._.get(WIKI.config, 'lang.namespaces', []),
+      _.get(WIKI.config, 'lang.code', ''),
+      'en'
+    ].filter(code => _.isString(code) && code.length > 0))
+  }
+
+  static detectPreferredLocale({ req }) {
+    const fallbackLocale = 'en'
+    const configuredLocales = this.getConfiguredLocaleCodes()
+    const configuredByNormalizedCode = new Map()
+    const configuredByLanguage = new Map()
+
+    configuredLocales.forEach(code => {
+      const normalizedCode = _.toLower(_.replace(code, /_/g, '-'))
+      if (!configuredByNormalizedCode.has(normalizedCode)) {
+        configuredByNormalizedCode.set(normalizedCode, code)
+      }
+
+      const languageCode = normalizedCode.split('-')[0]
+      if (languageCode && !configuredByLanguage.has(languageCode)) {
+        configuredByLanguage.set(languageCode, code)
+      }
+    })
+
+    const acceptedLanguages = (req && _.isFunction(req.acceptsLanguages)) ? req.acceptsLanguages() : []
+    if (!Array.isArray(acceptedLanguages) || acceptedLanguages.length < 1) {
+      return fallbackLocale
+    }
+
+    for (const acceptedLanguage of acceptedLanguages) {
+      if (!_.isString(acceptedLanguage) || acceptedLanguage.length < 1) {
+        continue
+      }
+
+      const normalizedAcceptedLanguage = _.toLower(_.replace(acceptedLanguage, /_/g, '-'))
+      if (configuredByNormalizedCode.has(normalizedAcceptedLanguage)) {
+        return configuredByNormalizedCode.get(normalizedAcceptedLanguage)
+      }
+
+      const acceptedLanguageCode = normalizedAcceptedLanguage.split('-')[0]
+      if (configuredByLanguage.has(acceptedLanguageCode)) {
+        return configuredByLanguage.get(acceptedLanguageCode)
+      }
+    }
+
+    return fallbackLocale
+  }
+
+  static async setInitialLocale({ user, context }) {
+    if (!user || user.id < 1 || user.id === 2 || user.lastLoginAt) {
+      return user
+    }
+
+    const localeCode = this.detectPreferredLocale(context)
+    if (_.isEmpty(localeCode) || localeCode === user.localeCode) {
+      return user
+    }
+
+    await WIKI.models.users.query().patch({
+      localeCode
+    }).where('id', user.id)
+    user.localeCode = localeCode
+
+    return user
+  }
+
   static async processProfile({ profile, providerKey }) {
     const provider = _.get(WIKI.auth.strategies, providerKey, {})
     provider.info = _.find(WIKI.data.authentication, ['key', provider.stategyKey])
@@ -416,6 +484,7 @@ module.exports = class User extends Model {
     return new Promise((resolve, reject) => {
       context.req.login(user, { session: false }, async errc => {
         if (errc) { return reject(errc) }
+        await WIKI.models.users.setInitialLocale({ user, context })
         const jwtToken = await WIKI.models.users.refreshToken(user)
         resolve({ jwt: jwtToken.token, redirect })
       })
@@ -512,7 +581,7 @@ module.exports = class User extends Model {
       if (!usr.isActive) {
         throw new WIKI.Error.AuthAccountBanned()
       }
-      
+
       await WIKI.models.users.query().patch({
         password: newPassword,
         mustChangePwd: false

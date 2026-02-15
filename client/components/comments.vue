@@ -1,17 +1,20 @@
 <template lang="pug">
   div
-    //- Contextual selection FAB must escape theme sidebars that use CSS transforms.
-    //- Render it using attach-to-body dialogs (Vuetify portals) so `position: fixed` is relative to the viewport.
-    v-dialog(
+    //- Contextual selection FAB
+    v-menu(
       v-model='showFloatingBtn'
       v-if='isContextualProvider'
       attach='.v-application'
-      hide-overlay
-      persistent
-      :retain-focus='false'
-      content-class='contextual-fab-dialog'
+      absolute
+      :position-x='floatingBtnX'
+      :position-y='floatingBtnY'
+      :close-on-content-click='false'
+      :close-on-click='false'
+      z-index='2200'
+      content-class='contextual-fab-menu'
+      transition='scale-transition'
     )
-      div.contextual-fab-wrapper(:style='floatingBtnStyle', ref='contextualFab', data-ui-id='LongevidenceContextualCommentFab')
+      div.contextual-fab-wrapper(ref='contextualFab', data-ui-id='LongevidenceContextualCommentFab')
         v-btn.floating-comment-btn(
           fab
           x-small
@@ -471,6 +474,14 @@ export default {
     activeThreadReplies () {
       if (!this.activeThread) return []
       return this.comments.filter(c => c.replyTo === this.activeThread.id)
+    },
+    floatingBtnX () {
+      if (!this.floatingBtnStyle || !this.floatingBtnStyle.left) return 0
+      return parseInt(this.floatingBtnStyle.left, 10) + window.pageXOffset
+    },
+    floatingBtnY () {
+      if (!this.floatingBtnStyle || !this.floatingBtnStyle.top) return 0
+      return parseInt(this.floatingBtnStyle.top, 10) + window.pageYOffset
     },
     threadWindowStyle () {
       if (this.dragPosition) {
@@ -1897,6 +1908,7 @@ export default {
 }
 
 .contextual-fab-dialog,
+.contextual-fab-menu,
 .contextual-thread-dialog {
   // Ensure the dialog wrapper doesn't introduce layout, shadows, or fonts
   // when we position the actual UI ourselves via inline styles.
@@ -1906,6 +1918,7 @@ export default {
   // Vuetify's dialog content wrapper can still affect layout/appearance.
   &,
   .v-dialog__content,
+  .v-menu__content,
   .v-overlay__content,
   .v-overlay__scrim {
     box-shadow: none !important;

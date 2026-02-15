@@ -5,10 +5,39 @@ const _ = require('lodash')
 const CleanCSS = require('clean-css')
 const moment = require('moment')
 const qs = require('querystring')
+const crypto = require('crypto')
 
 /* global WIKI */
 
 const tmplCreateRegex = /^[0-9]+(,[0-9]+)?$/
+const sitemapCacheTTL = 60 * 1000
+const sitemapCache = {
+  generatedAt: 0,
+  body: '',
+  etag: '',
+  lastModified: ''
+}
+
+const xmlEscapeMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  '\'': '&apos;'
+}
+const xmlEscapeRegex = /[&<>"']/g
+
+const escapeXml = (value) => _.toString(value).replace(xmlEscapeRegex, chr => xmlEscapeMap[chr])
+
+const buildPageUrl = (page) => {
+  if (WIKI.config.lang.namespacing) {
+    return `/${page.localeCode}/${page.path}`
+  }
+  if (page.path === 'home') {
+    return '/'
+  }
+  return `/${page.path}`
+}
 
 /**
  * Robots.txt
@@ -19,6 +48,108 @@ router.get('/robots.txt', (req, res, next) => {
     res.send('User-agent: *\nDisallow: /')
   } else {
     res.status(200).end()
+  }
+})
+
+/**
+ * Sitemap.xml
+ */
+router.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const hostBase = _.trimEnd(WIKI.config.host, '/')
+    const nowTs = Date.now()
+    if (nowTs - sitemapCache.generatedAt > sitemapCacheTTL || !sitemapCache.body) {
+      const guestUser = (WIKI.auth.guest && WIKI.auth.guest.id === 2) ?
+        WIKI.auth.guest :
+        await WIKI.models.users.getGuestUser()
+
+      const pages = await WIKI.models.pages.query()
+        .column([
+          'pages.path',
+          'pages.localeCode',
+          'pages.isPublished',
+          'pages.isPrivate',
+          'pages.publishStartDate',
+          'pages.publishEndDate',
+          'pages.updatedAt'
+        ])
+        .withGraphFetched('tags')
+        .modifyGraph('tags', builder => {
+          builder.select('tag')
+        })
+        .where({
+          'pages.isPrivate': false,
+          'pages.isPublished': true
+        })
+        .orderBy('pages.updatedAt', 'desc')
+
+      const now = moment()
+      const entries = pages
+        .filter(page => {
+          if (!_.isEmpty(page.publishStartDate) && moment(page.publishStartDate).isAfter(now)) {
+            return false
+          }
+          if (!_.isEmpty(page.publishEndDate) && moment(page.publishEndDate).isBefore(now)) {
+            return false
+          }
+          return WIKI.auth.checkAccess(guestUser, ['read:pages'], {
+            locale: page.localeCode,
+            path: page.path,
+            tags: _.get(page, 'tags', [])
+          })
+        })
+        .map(page => {
+          const loc = `${hostBase}${buildPageUrl(page)}`
+          const lastmod = moment(page.updatedAt).isValid() ? moment(page.updatedAt).toISOString() : null
+          return { loc, lastmod }
+        })
+
+      if (!WIKI.config.lang.namespacing && !entries.some(e => e.loc === `${hostBase}/`)) {
+        const canReadHome = WIKI.auth.checkAccess(guestUser, ['read:pages'], {
+          locale: WIKI.config.lang.code,
+          path: 'home',
+          tags: []
+        })
+        if (canReadHome) {
+          entries.push({
+            loc: `${hostBase}/`,
+            lastmod: null
+          })
+        }
+      }
+
+      const body = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        ...entries
+          .sort((a, b) => a.loc.localeCompare(b.loc))
+          .map(entry => [
+            '<url>',
+            `<loc>${escapeXml(entry.loc)}</loc>`,
+            entry.lastmod ? `<lastmod>${escapeXml(entry.lastmod)}</lastmod>` : '',
+            '</url>'
+          ].filter(Boolean).join('')),
+        '</urlset>'
+      ].join('\n')
+
+      sitemapCache.generatedAt = nowTs
+      sitemapCache.body = body
+      sitemapCache.etag = crypto.createHash('sha1').update(body).digest('hex')
+      sitemapCache.lastModified = _.chain(entries).map('lastmod').compact().max().value() || moment().toISOString()
+    }
+
+    res.set('Cache-Control', 'public, max-age=0, must-revalidate')
+    res.set('ETag', `"${sitemapCache.etag}"`)
+    res.set('Last-Modified', new Date(sitemapCache.lastModified).toUTCString())
+    res.type('application/xml')
+
+    if (req.fresh) {
+      return res.status(304).end()
+    }
+
+    res.status(200).send(sitemapCache.body)
+  } catch (err) {
+    next(err)
   }
 })
 

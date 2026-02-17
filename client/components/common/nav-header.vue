@@ -47,13 +47,13 @@
                       :value='locale'
                       item-text='name'
                       item-value='code'
-                      :filter='localeFilter'
+                      :filter='filterLocales'
                       :placeholder='$t(`common:header.language`)'
                       flat
                       solo
                       hide-details
                       dense
-                      @change='handleLocaleChange'
+                      @change='onLocaleChange'
                       :menu-props='{ offsetY: true, transition: "slide-y-transition", zIndex: 1000 }'
                     )
                       template(v-slot:item='{ item }')
@@ -143,13 +143,19 @@
                   v-icon(v-if='picture.kind === `initials`', color='grey') mdi-account-circle
                   v-avatar(v-else-if='picture.kind === `image`', :size='34')
                     v-img(:src='picture.url', @error='markAvatarImageFailed')
+                      template(v-slot:placeholder)
+                        v-layout(fill-height, align-center, justify-center, ma-0)
+                          v-icon(color='grey') mdi-account-circle
               v-list(nav)
                 v-list-item.py-3.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
                   v-list-item-avatar
-                    v-avatar.blue(v-if='picture.kind === `initials`', :size='40')
+                    v-avatar.orange(v-if='picture.kind === `initials`', :size='40')
                       span.white--text.subheading {{picture.initials}}
                     v-avatar(v-else-if='picture.kind === `image`', :size='40')
                       v-img(:src='picture.url', @error='markAvatarImageFailed')
+                        template(v-slot:placeholder)
+                          v-layout(fill-height, align-center, justify-center, ma-0, class='orange')
+                            span.white--text.subheading {{picture.initials}}
                   v-list-item-content
                     v-list-item-title {{name}}
                     v-list-item-subtitle {{email}}
@@ -243,17 +249,17 @@
               v-card
                 v-autocomplete(
                   :items='locales'
-                  :value='locale'
                   item-text='name'
                   item-value='code'
-                  :filter='localeFilter'
+                  :filter='filterLocales'
                   prepend-inner-icon='mdi-magnify'
                   :placeholder='$t(`common:header.search`)'
                   flat
                   solo
                   hide-details
+                  dense
                   autofocus
-                  @change='handleLocaleChange'
+                  @change='onLocaleChange'
                 )
                   template(v-slot:item='{ item }')
                     v-list-item-content
@@ -353,14 +359,20 @@
                     v-icon(v-if='picture.kind === `initials`', color='grey') mdi-account-circle
                     v-avatar(v-else-if='picture.kind === `image`', :size='34')
                       v-img(:src='picture.url', @error='markAvatarImageFailed')
+                        template(v-slot:placeholder)
+                          v-layout(fill-height, align-center, justify-center, ma-0)
+                            v-icon(color='grey') mdi-account-circle
                 span {{$t('common:header.account')}}
             v-list(nav)
               v-list-item.py-3.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
                 v-list-item-avatar
-                  v-avatar.blue(v-if='picture.kind === `initials`', :size='40')
+                  v-avatar.orange(v-if='picture.kind === `initials`', :size='40')
                     span.white--text.subheading {{picture.initials}}
                   v-avatar(v-else-if='picture.kind === `image`', :size='40')
                     v-img(:src='picture.url', @error='markAvatarImageFailed')
+                      template(v-slot:placeholder)
+                        v-layout(fill-height, align-center, justify-center, ma-0, class='orange')
+                          span.white--text.subheading {{picture.initials}}
                 v-list-item-content
                   v-list-item-title {{name}}
                   v-list-item-subtitle {{email}}
@@ -405,6 +417,7 @@ import { setAppearanceMode } from '../../helpers/theme-manager'
 /* global siteConfig, siteLangs */
 
 export default {
+  name: 'NavHeader',
   components: {
     PageDelete: () => import('./page-delete.vue'),
     PageConvert: () => import('./page-convert.vue')
@@ -738,7 +751,7 @@ export default {
       const next = (cur === 'light') ? 'dark' : 'light'
       setAppearanceMode(next, this.$store)
     },
-    localeFilter (item, queryText, itemText) {
+    filterLocales (item, queryText, itemText) {
       const textOne = item.name.toLowerCase()
       const textTwo = item.englishName ? item.englishName.toLowerCase() : ''
       const searchText = queryText.toLowerCase()
@@ -746,7 +759,7 @@ export default {
       return textOne.indexOf(searchText) > -1 ||
         textTwo.indexOf(searchText) > -1
     },
-    handleLocaleChange (code) {
+    onLocaleChange (code) {
       const locale = this.locales.find(l => l.code === code)
       if (locale) {
         this.changeLocale(locale)

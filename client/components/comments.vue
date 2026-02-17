@@ -476,14 +476,17 @@ export default {
       return this.comments.filter(c => c.replyTo === this.activeThread.id)
     },
     floatingBtnX () {
+      if (typeof window === 'undefined') return 0
       if (!this.floatingBtnStyle || !this.floatingBtnStyle.left) return 0
       return parseInt(this.floatingBtnStyle.left, 10) + window.pageXOffset
     },
     floatingBtnY () {
+      if (typeof window === 'undefined') return 0
       if (!this.floatingBtnStyle || !this.floatingBtnStyle.top) return 0
       return parseInt(this.floatingBtnStyle.top, 10) + window.pageYOffset
     },
     threadWindowStyle () {
+      if (typeof window === 'undefined') return {}
       if (this.dragPosition) {
         return {
           position: 'fixed',

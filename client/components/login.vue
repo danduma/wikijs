@@ -347,8 +347,15 @@ export default {
       this.screen = 'changePwd'
       this.continuationToken = this.changePwdContinuationToken
     }
+    window.addEventListener('pageshow', this.onPageShow)
+  },
+  beforeDestroy () {
+    window.removeEventListener('pageshow', this.onPageShow)
   },
   methods: {
+    onPageShow () {
+      this.isLoading = false
+    },
     /**
      * LOGIN
      */

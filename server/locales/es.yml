@@ -8,5 +8,39 @@
 #     search: 'Buscar'
 #     language: 'Idioma'
 
-common: {}
+common:
+  actions:
+    back: 'Atrás'
+    next: 'Siguiente'
+    finish: 'Finalizar'
+  header:
+    welcomeGuide: 'Guía de Bienvenida'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Bienvenido a Longevipedia'
+        subtitle: 'La mayor enciclopedia de intervenciones de longevidad.'
+        body: 'Tu viaje para comprender la ciencia del envejecimiento comienza aquí.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Encuentra lo que necesitas'
+        subtitle: 'Navega por tema o categoría.'
+        body: 'Explora secciones como <strong>Estilo de Vida</strong>, <strong>Biohacking</strong> y <strong>Tratamientos Clínicos</strong> usando la barra lateral.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: '¿No lo encuentras?'
+        subtitle: 'Te cubrimos las espaldas.'
+        body: 'Usa la búsqueda para encontrar intervenciones específicas. Si falta algo, busca el enlace <strong>Solicitar Nueva Página</strong> al final de los resultados.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Únete a la discusión'
+        subtitle: 'Comparte tus conocimientos.'
+        body: 'Resalta cualquier texto en una página para dejar un comentario o iniciar una discusión con la comunidad.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: '¿Listo para explorar?'
+        subtitle: 'Empecemos.'
+        body: 'Sumérgete y descubre las intervenciones que podrían moldear tu futuro.'
+        button: 'Empezar'
 membership: {}

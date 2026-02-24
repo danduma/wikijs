@@ -364,21 +364,79 @@ const transformCallouts = ($) => {
   })
 }
 
+const RISKY_HEADING_PATTERNS = [
+  /\b(dosage|dosing|dose|protocol|protocols|regimen|stack|cycle|cycling|administration|how to take|usage)\b/i,
+  /\b(dosificacion|dosificación|dosis|protocolo|protocolos|pauta|administracion|administración|como tomar|cómo tomar)\b/i
+]
+
+const getHeadingText = ($, headingNode) => {
+  const cloned = $(headingNode).clone()
+  cloned.find('.toc-anchor, .medical-disclaimer-pill').remove()
+  return cloned.text().replace(/\s+/g, ' ').trim()
+}
+
+const isRiskyHeading = ($, headingNode) => {
+  if (!isHeading(headingNode)) return false
+  if (headingNode.name === 'h1') return false
+  const headingText = getHeadingText($, headingNode)
+  if (!headingText) return false
+  return RISKY_HEADING_PATTERNS.some(pattern => pattern.test(headingText))
+}
+
 const buildMedicalDisclaimer = ($, headingNode) => {
   if (!isHeading(headingNode)) return
   const $heading = $(headingNode)
+  if ($heading.find('.medical-disclaimer-pill').length > 0) return
 
-  const pill = $('<span class="medical-disclaimer-pill">Medical disclaimer</span>')
+  const pill = $('<button type="button" class="medical-disclaimer-pill">Medical disclaimer</button>')
   $heading.append(pill)
+}
+
+const attachMedicalDisclaimer = ($) => {
+  const explicitMarkers = $('.medical-disclaimer').toArray()
+
+  if (explicitMarkers.length > 0) {
+    let targetHeading = null
+    const firstMarker = explicitMarkers[0]
+
+    if (isHeading(firstMarker)) {
+      targetHeading = firstMarker
+    } else {
+      targetHeading = $(firstMarker).nextAll('h2, h3, h4, h5, h6').first()[0] || null
+    }
+
+    explicitMarkers.forEach(node => {
+      if (isHeading(node)) {
+        removeClass($, node, 'medical-disclaimer')
+      } else {
+        $(node).remove()
+      }
+    })
+
+    if (!targetHeading) {
+      targetHeading = $('h2, h3, h4, h5, h6').toArray().find(node => isRiskyHeading($, node)) || null
+    }
+
+    if (targetHeading) {
+      buildMedicalDisclaimer($, targetHeading)
+    }
+    return
+  }
+
+  const firstRiskyHeading = $('h2, h3, h4, h5, h6')
+    .toArray()
+    .find(node => isRiskyHeading($, node))
+
+  if (firstRiskyHeading) {
+    buildMedicalDisclaimer($, firstRiskyHeading)
+  }
 }
 
 module.exports = {
   init (input) {
     const $ = cheerio.load(input, { decodeEntities: true })
 
-    $('.medical-disclaimer').each((idx, node) => {
-      buildMedicalDisclaimer($, node)
-    })
+    attachMedicalDisclaimer($)
 
     $('.faq-section').each((idx, node) => {
       buildFaq($, node)

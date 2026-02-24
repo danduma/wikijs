@@ -354,4 +354,16 @@ Server files are watched and auto-restart on changes, but:
 - **Feature Requests**: https://js.wiki/feedback/
 - **Discord Chat**: https://discord.gg/rcxt9QS2jd
 
-IMPORTANT: If the longevidence theme is present in /client/themes, this is the main theme for the website you should edit
+## Theme Development
+
+If a custom theme is present in `client/themes/` (other than `default/`), that is the main theme for the website and you should edit it.
+
+### CRITICAL: Git rules for custom themes
+
+Custom themes under `client/themes/` (other than `default/`) are **gitignored in this repository** because they are maintained in their own separate git repos. The `.gitignore` contains `client/themes/*` with only `!client/themes/default/` exempted.
+
+**DO NOT** run `git add`, `git stage`, or otherwise track any files inside custom theme directories in this repo. Never use `git add .`, `git add -A`, or any broad staging command that would capture theme files. If you need to stage changes, stage files individually by path and **make sure none of them are inside `client/themes/` (other than `default/`)**.
+
+If you accidentally stage a custom theme file, remove it from the index immediately with `git rm --cached <file>` — do NOT commit it.
+
+Violating this rule corrupts the commit history of the main repo with files that belong to a different repository.

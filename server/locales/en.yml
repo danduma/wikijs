@@ -21,8 +21,8 @@ common:
         title: 'Welcome to Longevipedia'
         subtitle: 'Every single intervention to live longer, better, in one place.'
         body: 'From nutrition, supplements and meditation to peptides, clinical interventions and gene therapy.'
-      - icon: 'mdi-compass-outline'
-        iconColor: 'teal'
+      - icon: 'mdi-dna'
+        iconColor: 'blue'
         title: 'Find What You Need'
         subtitle: 'Browse by topic or category.'
         body: 'Explore sections like <strong>Lifestyle</strong>, <strong>Biohacking</strong>, and <strong>Clinical Treatments</strong> using the sidebar navigation.'
@@ -45,7 +45,7 @@ common:
   medical:
     title: Medical Disclaimer
     pill: Medical disclaimer
-    intro: 'Our medical disclaimer via our <b>terms of service</b>:'
+    intro: 'Read our <a href="/_assets/legal/medical-disclaimer.html" target="_blank" rel="noopener">medical disclaimer</a> and <a href="/_assets/legal/terms.html" target="_blank" rel="noopener">terms of service</a>:'
     text: 'All material, text, images, downloads, attachments, and any other content whatsoever contained on or within Longevipedia.net is for informational purposes only and is not intended to substitute the advice, diagnosis, or treatment from a qualified medical professional. The User should always speak to the User''s doctor, physician, or other qualified medical professional with any medical questions the User may have. Longevipedia.net and its editors do not advocate nutritional supplementation over proper medical advice or treatment, and no page on Longevipedia.net advocates nutritional supplementation over proper medical advice or treatment. If the User is using any pharmaceuticals or drugs given to the User by a doctor or received with a prescription, the User must consult with the doctor in question or an equally qualified medical professional prior to using any nutritional supplementation. If the User is undergoing medical therapies, then the User must consult with the User''s respective therapist or medical professional about possible interactions between the User''s treatment (including pharmaceuticals and/or drugs) and possible nutritional supplements or practices mentioned on Longevipedia.net and its content.'
   conversion:
     title: 'Continue reading'

@@ -23,3 +23,9 @@ props:
     hint: Optional. Matches the defaults version from PostHog's snippet (e.g. 2025-11-30).
     default: "2025-11-30"
     order: 3
+  personProfiles:
+    type: String
+    title: Person Profiles
+    hint: Optional. Set to identified_only (recommended) or always.
+    default: identified_only
+    order: 4

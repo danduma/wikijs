@@ -76,6 +76,7 @@ html(lang=siteConfig.lang)
     script(
       type='text/javascript'
       src='<%= htmlWebpackPlugin.files.js[index] %>'
+      defer=true
       integrity=config.security.securitySRI ? '<%= htmlWebpackPlugin.files.jsIntegrity[index] %>' : false
       crossorigin='<%= webpackConfig.output.crossOriginLoading %>'
       )
@@ -83,6 +84,7 @@ html(lang=siteConfig.lang)
     script(
       type='text/javascript'
       src='<%= htmlWebpackPlugin.files.js[index] %>'
+      defer=true
       )
       <% } %>
     <% } %>

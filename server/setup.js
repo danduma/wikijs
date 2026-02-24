@@ -3,7 +3,6 @@ const { v4: uuid } = require('uuid')
 const bodyParser = require('body-parser')
 const compression = require('compression')
 const express = require('express')
-const favicon = require('serve-favicon')
 const http = require('http')
 const Promise = require('bluebird')
 const fs = require('fs-extra')
@@ -11,10 +10,27 @@ const _ = require('lodash')
 const crypto = Promise.promisifyAll(require('crypto'))
 const pem2jwk = require('pem-jwk').pem2jwk
 const semver = require('semver')
+const themingHelper = require('./helpers/theming')
 
 /* global WIKI */
 
 module.exports = () => {
+  const sendFavicon = (req, res) => {
+    const themeKey = _.get(WIKI, 'config.theming.theme')
+    const themeFaviconPath = themeKey
+      ? path.join(themingHelper.getThemesDir(), themeKey, 'static', 'favicon.ico')
+      : null
+    const fallbackFaviconPath = path.join(WIKI.ROOTPATH, 'assets', 'favicon.ico')
+    const faviconPath = (themeFaviconPath && fs.existsSync(themeFaviconPath)) ? themeFaviconPath : fallbackFaviconPath
+
+    if (!fs.existsSync(faviconPath)) {
+      return res.sendStatus(404)
+    }
+
+    res.set('Cache-Control', 'no-cache')
+    return res.sendFile(faviconPath)
+  }
+
   WIKI.config.site = {
     path: '',
     title: 'Wiki.js'
@@ -33,7 +49,8 @@ module.exports = () => {
   // Public Assets
   // ----------------------------------------
 
-  app.use(favicon(path.join(WIKI.ROOTPATH, 'assets', 'favicon.ico')))
+  app.get('/favicon.ico', sendFavicon)
+  app.head('/favicon.ico', sendFavicon)
   app.use('/_assets', express.static(path.join(WIKI.ROOTPATH, 'assets')))
 
   // ----------------------------------------

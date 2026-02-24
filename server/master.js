@@ -6,7 +6,7 @@ const cors = require('cors')
 const express = require('express')
 const session = require('express-session')
 const KnexSessionStore = require('connect-session-knex')(session)
-const favicon = require('serve-favicon')
+const fs = require('fs')
 const path = require('path')
 const _ = require('lodash')
 const themingHelper = require('./helpers/theming')
@@ -14,6 +14,22 @@ const themingHelper = require('./helpers/theming')
 /* global WIKI */
 
 module.exports = async () => {
+  const sendFavicon = (req, res) => {
+    const themeKey = _.get(WIKI, 'config.theming.theme')
+    const themeFaviconPath = themeKey
+      ? path.join(themingHelper.getThemesDir(), themeKey, 'static', 'favicon.ico')
+      : null
+    const fallbackFaviconPath = path.join(WIKI.ROOTPATH, 'assets', 'favicon.ico')
+    const faviconPath = (themeFaviconPath && fs.existsSync(themeFaviconPath)) ? themeFaviconPath : fallbackFaviconPath
+
+    if (!fs.existsSync(faviconPath)) {
+      return res.sendStatus(404)
+    }
+
+    res.set('Cache-Control', 'no-cache')
+    return res.sendFile(faviconPath)
+  }
+
   // ----------------------------------------
   // Load core modules
   // ----------------------------------------
@@ -54,7 +70,8 @@ module.exports = async () => {
   // Public Assets
   // ----------------------------------------
 
-  app.use(favicon(path.join(WIKI.ROOTPATH, 'assets', 'favicon.ico')))
+  app.get('/favicon.ico', sendFavicon)
+  app.head('/favicon.ico', sendFavicon)
   app.use('/_assets/svg/twemoji', async (req, res, next) => {
     try {
       WIKI.asar.serve('twemoji', req, res, next)
@@ -150,7 +167,11 @@ module.exports = async () => {
   app.use('/_og', ctrl.ogimage)
 
   app.use(async (req, res, next) => {
-    const theme = await themingHelper.ensureValidThemeSelection({ fallbackTheme: 'default', persist: true })
+    const [theme, langs, analyticsCode] = await Promise.all([
+      themingHelper.ensureValidThemeSelection({ fallbackTheme: 'default', persist: true }),
+      WIKI.models.locales.getNavLocales({ cache: true }),
+      WIKI.models.analytics.getCode({ cache: true })
+    ])
     res.locals.siteConfig = {
       title: WIKI.config.title,
       theme,
@@ -167,8 +188,8 @@ module.exports = async () => {
       logoUrl: WIKI.config.logoUrl,
       publicAppBase: process.env.PUBLIC_APP_BASE_URL || ''
     }
-    res.locals.langs = await WIKI.models.locales.getNavLocales({ cache: true })
-    res.locals.analyticsCode = await WIKI.models.analytics.getCode({ cache: true })
+    res.locals.langs = langs
+    res.locals.analyticsCode = analyticsCode
     next()
   })
 

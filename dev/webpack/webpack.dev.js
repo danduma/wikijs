@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const yargs = require('yargs').argv
 const _ = require('lodash')
+const currentTheme = _.defaultTo(yargs.theme, 'default')
 
 const { VueLoaderPlugin } = require('vue-loader')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
@@ -224,8 +225,9 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'client/static' },
-        { from: 'client/themes/longevidence/static', to: 'theme/longevidence', noErrorOnMissing: true },
-        { from: 'client/themes/longevidence/legal', to: 'legal' },
+        { from: `client/themes/${currentTheme}/static/favicon.ico`, to: 'favicon.ico', noErrorOnMissing: true },
+        { from: `client/themes/${currentTheme}/static`, to: `theme/${currentTheme}`, noErrorOnMissing: true },
+        { from: `client/themes/${currentTheme}/legal`, to: 'legal', noErrorOnMissing: true },
         { from: './node_modules/prismjs/components', to: 'js/prism' }
       ]
     }),
@@ -256,7 +258,7 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('development'),
-      'process.env.CURRENT_THEME': JSON.stringify(_.defaultTo(yargs.theme, 'default'))
+      'process.env.CURRENT_THEME': JSON.stringify(currentTheme)
     }),
     new WriteFilePlugin(),
     new webpack.HotModuleReplacementPlugin(),

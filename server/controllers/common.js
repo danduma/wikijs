@@ -633,6 +633,45 @@ router.get('/_userav/:uid', async (req, res, next) => {
  * View document / asset
  */
 router.get('/*', async (req, res, next) => {
+  const routeStart = process.hrtime.bigint()
+  const serverTimingMetrics = []
+  let serverTimingFinalized = false
+  const timeStart = () => process.hrtime.bigint()
+  const timeDurationMs = (start) => Number(process.hrtime.bigint() - start) / 1e6
+  const addServerTiming = (name, start) => {
+    serverTimingMetrics.push({
+      name,
+      dur: Math.max(0, Math.round(timeDurationMs(start) * 100) / 100)
+    })
+  }
+  const finalizeServerTiming = () => {
+    if (serverTimingFinalized || res.headersSent) return
+    serverTimingFinalized = true
+    serverTimingMetrics.push({
+      name: 'total',
+      dur: Math.max(0, Math.round(timeDurationMs(routeStart) * 100) / 100)
+    })
+    res.set('Server-Timing', serverTimingMetrics.map(metric => `${metric.name};dur=${metric.dur}`).join(', '))
+  }
+  const timeAsync = async (name, fn) => {
+    const start = timeStart()
+    const result = await fn()
+    addServerTiming(name, start)
+    return result
+  }
+  const renderWithServerTiming = async (view, locals) => {
+    const renderStart = timeStart()
+    const html = await new Promise((resolve, reject) => {
+      res.render(view, locals, (err, out) => {
+        if (err) return reject(err)
+        resolve(out)
+      })
+    })
+    addServerTiming('render', renderStart)
+    finalizeServerTiming()
+    res.send(html)
+  }
+
   const stripExt = _.some(WIKI.config.pageExtensions, ext => _.endsWith(req.path, `.${ext}`))
   const pageArgs = pageHelper.parsePath(req.path, { stripExt })
   const isPage = (stripExt || pageArgs.path.indexOf('.') === -1)
@@ -647,12 +686,12 @@ router.get('/*', async (req, res, next) => {
 
     try {
       // -> Get Page from cache
-      const page = await WIKI.models.pages.getPage({
+      const page = await timeAsync('get_page', () => WIKI.models.pages.getPage({
         path: pageArgs.path,
         locale: pageArgs.locale,
         userId: req.user.id,
         isPrivate: false
-      })
+      }))
       pageArgs.tags = _.get(page, 'tags', [])
 
       // -> Effective Permissions
@@ -709,10 +748,11 @@ router.get('/*', async (req, res, next) => {
           currentBreadcrumbPath = currentBreadcrumbPath ? `${currentBreadcrumbPath}/${part}` : part
           breadcrumbPaths.push(currentBreadcrumbPath)
         }
-        const breadcrumbTitles = _.fromPairs((await WIKI.models.knex.table('pageTree')
+        const breadcrumbRows = await timeAsync('breadcrumbs_q', () => WIKI.models.knex.table('pageTree')
           .where('localeCode', page.localeCode)
           .whereIn('path', breadcrumbPaths)
-          .select('path', 'title')).map(t => [t.path, t.title]))
+          .select('path', 'title'))
+        const breadcrumbTitles = _.fromPairs(breadcrumbRows.map(t => [t.path, t.title]))
 
         const breadcrumbs = [{ path: '/', name: 'Home' }]
         let currentPath = ''
@@ -730,7 +770,12 @@ router.get('/*', async (req, res, next) => {
 
         // -> Build sidebar navigation
         let sdi = 1
-        const sidebar = (await WIKI.models.navigation.getTree({ cache: true, locale: pageArgs.locale, groups: req.user.groups })).map(n => ({
+        const sidebarTree = await timeAsync('nav_tree', () => WIKI.models.navigation.getTree({
+          cache: true,
+          locale: pageArgs.locale,
+          groups: req.user.groups
+        }))
+        const sidebar = sidebarTree.map(n => ({
           i: `sdi-${sdi++}`,
           k: n.kind,
           l: n.label,
@@ -764,7 +809,7 @@ router.get('/*', async (req, res, next) => {
         // -> Anonymous view limiting
         let anonViewLimit = null
         if (WIKI.anonViewLimit && WIKI.anonViewLimit.isEnabled()) {
-          anonViewLimit = await WIKI.anonViewLimit.evaluate(req, res, pageArgs, page)
+          anonViewLimit = await timeAsync('anon_limit', () => WIKI.anonViewLimit.evaluate(req, res, pageArgs, page))
           if (anonViewLimit && anonViewLimit.limitReached) {
             page.render = WIKI.anonViewLimit.truncateContent(page.render, anonViewLimit.truncatePercent)
             if (anonViewLimit.noIndex) {
@@ -784,7 +829,7 @@ router.get('/*', async (req, res, next) => {
           }
 
           // -> Render legacy view
-          res.render('legacy/page', {
+          return await renderWithServerTiming('legacy/page', {
             page,
             sidebar,
             injectCode,
@@ -821,14 +866,21 @@ router.get('/*', async (req, res, next) => {
           let pageFilename = WIKI.config.lang.namespacing ? `${pageArgs.locale}/${page.path}` : page.path
           pageFilename += page.contentType === 'markdown' ? '.md' : '.html'
 
-          const effectiveTier = await WIKI.models.membershipTiers.getEffectiveForUser(req.user)
-          const membershipInfo = {
-            maxRows: effectiveTier ? effectiveTier.maxLongevidataRows : 4,
-            tierKey: effectiveTier ? effectiveTier.key : 'free'
+          // Skip membership resolution on the landing page to minimize render latency.
+          let membershipInfo = {
+            maxRows: 4,
+            tierKey: 'free'
+          }
+          if (page.path !== 'home') {
+            const effectiveTier = await timeAsync('membership', () => WIKI.models.membershipTiers.getEffectiveForUser(req.user))
+            membershipInfo = {
+              maxRows: effectiveTier ? effectiveTier.maxLongevidataRows : 4,
+              tierKey: effectiveTier ? effectiveTier.key : 'free'
+            }
           }
 
           // -> Render view
-          res.render('page', {
+          return await renderWithServerTiming('page', {
             page,
             sidebar,
             injectCode,
@@ -847,7 +899,7 @@ router.get('/*', async (req, res, next) => {
           localeCode: pageArgs.locale,
           path: 'home'
         }))
-        res.render('welcome', { locale: pageArgs.locale })
+        return await renderWithServerTiming('welcome', { locale: pageArgs.locale })
       } else {
         _.set(res.locals, 'pageMeta.title', 'Page Not Found')
         if (effectivePermissions.pages.write) {

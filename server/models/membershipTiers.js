@@ -3,6 +3,20 @@ const moment = require('moment')
 
 /* global WIKI */
 
+const TIER_CACHE_TTL = 30 * 1000
+const tierLookupCache = {
+  defaultTier: null,
+  guestTier: null,
+  byId: new Map()
+}
+
+const isCacheHit = (entry) => entry && entry.expiresAt > Date.now()
+const readCache = (entry) => isCacheHit(entry) ? entry.value : null
+const writeCache = (value) => ({
+  value,
+  expiresAt: Date.now() + TIER_CACHE_TTL
+})
+
 /**
  * Membership tiers model
  */
@@ -60,9 +74,46 @@ module.exports = class MembershipTier extends Model {
   }
 
   static async getDefault() {
+    const cachedDefault = readCache(tierLookupCache.defaultTier)
+    if (cachedDefault) {
+      return cachedDefault
+    }
+
     let tier = await this.query().where({ isDefault: true, isActive: true }).first()
     if (!tier) {
       tier = await this.query().where({ isActive: true }).orderBy('sortOrder', 'asc').first()
+    }
+    if (tier) {
+      tierLookupCache.defaultTier = writeCache(tier)
+      tierLookupCache.byId.set(tier.id, writeCache(tier))
+    }
+    return tier
+  }
+
+  static async getGuestTier() {
+    const cachedGuest = readCache(tierLookupCache.guestTier)
+    if (cachedGuest) {
+      return cachedGuest
+    }
+
+    const guestTier = await this.query().where({ key: 'guest', isActive: true }).first()
+    if (guestTier) {
+      tierLookupCache.guestTier = writeCache(guestTier)
+      tierLookupCache.byId.set(guestTier.id, writeCache(guestTier))
+    }
+    return guestTier
+  }
+
+  static async getActiveTierById(id) {
+    const cachedTier = readCache(tierLookupCache.byId.get(id))
+    if (cachedTier) {
+      return cachedTier
+    }
+
+    const tier = await this.query().findById(id)
+    if (tier && tier.isActive) {
+      tierLookupCache.byId.set(id, writeCache(tier))
+      return tier
     }
     return tier
   }
@@ -88,7 +139,7 @@ module.exports = class MembershipTier extends Model {
       // 1. Handle Guest / System User
       if (!user || !user.id || user.id === 2) {
         // Check for specific 'guest' tier first
-        const guestTier = await this.query().where({ key: 'guest', isActive: true }).first()
+        const guestTier = await this.getGuestTier()
         if (guestTier) {
           return guestTier
         }
@@ -107,7 +158,7 @@ module.exports = class MembershipTier extends Model {
         return getDefaultTierSafe()
       }
 
-      const tier = await this.query().findById(userData.membershipTierId)
+      const tier = await this.getActiveTierById(userData.membershipTierId)
       if (!tier || !tier.isActive) {
         return getDefaultTierSafe()
       }

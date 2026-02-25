@@ -30,7 +30,7 @@ common:
         iconColor: 'orange darken-1'
         title: 'Can''t Find It?'
         subtitle: 'Request a new page and it will be with you in minutes'
-        body: 'If the information you''re looking for is not '
+        body: 'Get the most in-depth research done for you immediately and contribute to longevipedia so others get to benefit as well!'
       - icon: 'mdi-comment-text-multiple-outline'
         iconColor: 'pink lighten-1'
         title: 'Join the Discussion'

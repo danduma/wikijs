@@ -4,9 +4,9 @@ services:
     working_dir: /wiki
     volumes:
       - .:/wiki:ro
-      - ./data:/wiki/data
-      - wikijs_assets:/wiki/assets
-      - wikijs_webpack_cache:/wiki/.webpack-cache
+      - ../longevience-wiki/data:/wiki/data
+      - ../longevience-wiki/assets:/wiki/assets
+      - ../longevience-wiki/.webpack-cache:/wiki/.webpack-cache
     # Install build tools for native modules (sqlite3 needs build tools)
     command: sh -c "apk add --no-cache git openssh-client python3 make g++ && npm run dev"
     ports:
@@ -14,7 +14,3 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-
-volumes:
-  wikijs_assets:
-  wikijs_webpack_cache:

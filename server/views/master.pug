@@ -41,10 +41,8 @@ html(lang=siteConfig.lang)
         link(rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap')
 
     //- Preload vendor bundle so it downloads before runtime.js requests it
-    <% var vendorChunk = htmlWebpackPlugin.files.chunks && (htmlWebpackPlugin.files.chunks['vendor'] || htmlWebpackPlugin.files.chunks['vendors']); %>
-    <% if (vendorChunk) { %>
-    link(rel='preload' href='<%= vendorChunk.entry %>' as='script')
-    <% } %>
+    link(rel='preload' href='/_assets/js/vendor.ff0079a0fad14ee7a6b0.js' as='script')
+
 
     //- Site Properties
     script.
@@ -71,42 +69,34 @@ html(lang=siteConfig.lang)
         )
 
     //- CSS
-    <% for (var index in htmlWebpackPlugin.files.css) { %>
-      <% if (htmlWebpackPlugin.files.cssIntegrity) { %>
+    
+      
     link(
       type='text/css'
       rel='stylesheet'
-      href='<%= htmlWebpackPlugin.files.css[index] %>'
-      integrity=config.security.securitySRI ? '<%= htmlWebpackPlugin.files.cssIntegrity[index] %>' : false
-      crossorigin='<%= webpackConfig.output.crossOriginLoading %>'
+      href='/_assets/css/app.d5c918f3df16bbcf5592.css'
     )
-      <% } else { %>
-    link(
-      type='text/css'
-      rel='stylesheet'
-      href='<%= htmlWebpackPlugin.files.css[index] %>'
-    )
-      <% } %>
-    <% } %>
+      
+    
 
     //- JS
-    <% for (var index in htmlWebpackPlugin.files.js) { %>
-      <% if (htmlWebpackPlugin.files.jsIntegrity) { %>
+    
+      
     script(
       type='text/javascript'
-      src='<%= htmlWebpackPlugin.files.js[index] %>'
+      src='/_assets/js/runtime.924429522687f10c85ad.js'
       defer=true
-      integrity=config.security.securitySRI ? '<%= htmlWebpackPlugin.files.jsIntegrity[index] %>' : false
-      crossorigin='<%= webpackConfig.output.crossOriginLoading %>'
       )
-      <% } else { %>
+      
+    
+      
     script(
       type='text/javascript'
-      src='<%= htmlWebpackPlugin.files.js[index] %>'
+      src='/_assets/js/app.c8d9f94366aab4a5bbca.js'
       defer=true
       )
-      <% } %>
-    <% } %>
+      
+    
 
     != analyticsCode.head
 

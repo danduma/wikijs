@@ -40,12 +40,6 @@ html(lang=siteConfig.lang)
       noscript
         link(rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap')
 
-    //- Preload vendor bundle so it downloads before runtime.js requests it
-    <% var vendorChunk = htmlWebpackPlugin.files.chunks && (htmlWebpackPlugin.files.chunks['vendor'] || htmlWebpackPlugin.files.chunks['vendors']); %>
-    <% if (vendorChunk) { %>
-    link(rel='preload' href='<%= vendorChunk.entry %>' as='script')
-    <% } %>
-
     //- Site Properties
     script.
       var siteConfig = !{JSON.stringify(siteConfig)}

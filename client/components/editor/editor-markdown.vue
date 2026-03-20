@@ -171,6 +171,7 @@ import { get, sync } from 'vuex-pathify'
 import markdownHelp from './markdown/help.vue'
 import gql from 'graphql-tag'
 import DOMPurify from 'dompurify'
+import Velocity from 'velocity-animate'
 
 /* global siteConfig, siteLangs */
 
@@ -561,14 +562,14 @@ export default {
       if (!this.previewShown || cm.somethingSelected()) { return }
       let currentLine = cm.getCursor().line
       if (currentLine < 3) {
-        this.Velocity(this.$refs.editorPreview, 'stop', true)
-        this.Velocity(this.$refs.editorPreview.firstChild, 'scroll', { offset: '-50', duration: 1000, container: this.$refs.editorPreviewContainer })
+        Velocity(this.$refs.editorPreview, 'stop', true)
+        Velocity(this.$refs.editorPreview.firstChild, 'scroll', { offset: '-50', duration: 1000, container: this.$refs.editorPreviewContainer })
       } else {
         let closestLine = _.findLast(linesMap, n => n <= currentLine)
         let destElm = this.$refs.editorPreview.querySelector(`[data-line='${closestLine}']`)
         if (destElm) {
-          this.Velocity(this.$refs.editorPreview, 'stop', true)
-          this.Velocity(destElm, 'scroll', { offset: '-100', duration: 1000, container: this.$refs.editorPreviewContainer })
+          Velocity(this.$refs.editorPreview, 'stop', true)
+          Velocity(destElm, 'scroll', { offset: '-100', duration: 1000, container: this.$refs.editorPreviewContainer })
         }
       }
     }, 500),

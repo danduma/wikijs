@@ -2,7 +2,6 @@
 
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import VueClipboards from 'vue-clipboards'
 import { ApolloClient } from 'apollo-client'
 import { BatchHttpLink } from 'apollo-link-batch-http'
 import { ApolloLink, split } from 'apollo-link'
@@ -12,9 +11,7 @@ import { InMemoryCache } from 'apollo-cache-inmemory'
 import { getMainDefinition } from 'apollo-utilities'
 import VueApollo from 'vue-apollo'
 import Vuetify from 'vuetify/lib'
-import Velocity from 'velocity-animate'
 import Vuescroll from 'vuescroll/dist/vuescroll-native'
-import Hammer from 'hammerjs'
 import moment from 'moment-timezone'
 import VueMoment from 'vue-moment'
 import store from './store'
@@ -40,7 +37,6 @@ import { initThemeManager } from './helpers/theme-manager'
 
 window.WIKI = null
 window.boot = boot
-window.Hammer = Hammer
 
 moment.locale(siteConfig.lang)
 
@@ -136,14 +132,11 @@ Vue.config.productionTip = false
 
 Vue.use(VueRouter)
 Vue.use(VueApollo)
-Vue.use(VueClipboards)
 Vue.use(localization.VueI18Next)
 Vue.use(helpers)
 Vue.use(Vuetify)
 Vue.use(VueMoment, { moment })
 Vue.use(Vuescroll)
-
-Vue.prototype.Velocity = Velocity
 
 const getThemeKey = () => (siteConfig && siteConfig.theme) ? siteConfig.theme : 'default'
 const importThemeComponent = (componentPath) => {

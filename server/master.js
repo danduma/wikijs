@@ -16,9 +16,9 @@ const themingHelper = require('./helpers/theming')
 module.exports = async () => {
   const sendFavicon = (req, res) => {
     const themeKey = _.get(WIKI, 'config.theming.theme')
-    const themeFaviconPath = themeKey
-      ? path.join(themingHelper.getThemesDir(), themeKey, 'static', 'favicon.ico')
-      : null
+    const themeFaviconPath = themeKey ?
+      path.join(themingHelper.getThemesDir(), themeKey, 'static', 'favicon.ico') :
+      null
     const fallbackFaviconPath = path.join(WIKI.ROOTPATH, 'assets', 'favicon.ico')
     const faviconPath = (themeFaviconPath && fs.existsSync(themeFaviconPath)) ? themeFaviconPath : fallbackFaviconPath
 

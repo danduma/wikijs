@@ -297,7 +297,7 @@ module.exports = {
     symlinks: true,
     alias: {
       '@': path.join(process.cwd(), 'client'),
-      'vue$': 'vue/dist/vue.runtime.esm.js',
+      'vue$': 'vue/dist/vue.esm.js',
       'gql': path.join(process.cwd(), 'client/graph'),
       // Duplicates fixes:
       'apollo-link': path.join(process.cwd(), 'node_modules/apollo-link'),

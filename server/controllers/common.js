@@ -121,7 +121,25 @@ router.get('/robots.txt', (req, res, next) => {
   if (_.includes(WIKI.config.seo.robots, 'noindex')) {
     res.send('User-agent: *\nDisallow: /')
   } else {
-    res.status(200).end()
+    const host = _.trimEnd(WIKI.config.host, '/')
+    res.send([
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /login',
+      'Disallow: /login/',
+      'Disallow: /logout',
+      'Disallow: /register',
+      'Disallow: /signup',
+      'Disallow: /verify/',
+      'Disallow: /login-reset/',
+      'Disallow: /graphql',
+      'Disallow: /_api/',
+      'Disallow: /_og/',
+      'Disallow: /ph/',
+      'Disallow: /t/',
+      '',
+      `Sitemap: ${host}/sitemap.xml`
+    ].join('\n'))
   }
 })
 

@@ -64,6 +64,9 @@ COPY --chown=node:node ./dev/build/config.yml ./config.yml
 COPY --chown=node:node ./package.json ./package.json
 COPY --chown=node:node ./LICENSE ./LICENSE
 
+# Strip dev flag so devMode is false in production
+RUN node -e "const fs=require('fs'),p=JSON.parse(fs.readFileSync('./package.json','utf8')); delete p.dev; fs.writeFileSync('./package.json',JSON.stringify(p,null,2))"
+
 # Copy compiled client themes from assets stage (includes custom themes)
 COPY --chown=node:node --from=assets /wiki/client/themes ./client/themes
 

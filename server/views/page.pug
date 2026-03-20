@@ -8,6 +8,27 @@ block head
   if config.features.featurePageComments && effectivePermissions.comments.read
     != comments.head
 
+  //- Article OpenGraph overrides
+  meta(property='og:type', content='article')
+  if page.createdAt
+    meta(property='article:published_time', content=new Date(page.createdAt).toISOString())
+  if page.updatedAt
+    meta(property='article:modified_time', content=new Date(page.updatedAt).toISOString())
+  if page.authorName
+    meta(property='article:author', content=page.authorName)
+  if page.tags && page.tags.length
+    each tag in page.tags
+      meta(property='article:tag', content=tag.title || tag.tag)
+
+  //- Article + BreadcrumbList JSON-LD
+  - const _pageHost = (config.host || '').replace(/\/$/, '')
+  - const _pageUrl = pageMeta.url
+  - const _articleSchema = { '@context': 'https://schema.org', '@type': 'MedicalWebPage', '@id': _pageUrl + '#article', name: page.title, headline: page.title, description: page.description || '', url: _pageUrl, datePublished: page.createdAt, dateModified: page.updatedAt, inLanguage: page.localeCode, author: { '@type': 'Person', name: page.authorName || 'Longevipedia' }, publisher: { '@type': 'Organization', '@id': _pageHost + '/#organization', name: config.title, url: _pageHost, logo: { '@type': 'ImageObject', url: _pageHost + (config.logoUrl || '/images/longevipedia_logo_image_transparent.png') } }, mainEntityOfPage: { '@type': 'WebPage', '@id': _pageUrl }, isPartOf: { '@id': _pageHost + '/#website' }, speakable: { '@type': 'SpeakableSpecification', cssSelector: ['h1', 'h2', '.wiki-content p'] } }
+  - const _bcItems = breadcrumbs.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: b.name, item: i === 0 ? _pageHost : _pageHost + b.path }))
+  - const _bcSchema = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: _bcItems }
+  script(type='application/ld+json') !{JSON.stringify(_articleSchema)}
+  script(type='application/ld+json') !{JSON.stringify(_bcSchema)}
+
 block body
   #root
     page(

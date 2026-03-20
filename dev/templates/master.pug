@@ -27,6 +27,24 @@ html(lang=siteConfig.lang)
     link(rel='mask-icon', href='/_assets/favicons/safari-pinned-tab.svg', color='#1976d2')
     link(rel='manifest', href='/_assets/manifest.json')
 
+    //- Resource Hints
+    link(rel='preconnect' href='https://fonts.googleapis.com')
+    link(rel='preconnect' href='https://fonts.gstatic.com' crossorigin='')
+    if config.theming.iconset === 'fa' || config.theming.iconset === 'fa4'
+      link(rel='preconnect' href='https://use.fontawesome.com')
+      link(rel='preconnect' href='https://cdn.jsdelivr.net')
+
+    //- Google Fonts (non-blocking, loaded early for longevidence theme)
+    if config.theming.theme === 'longevidence'
+      link(rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' media='print' onload="this.media='all'")
+      noscript
+        link(rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap')
+
+    //- Preload vendor bundle so it downloads before runtime.js requests it
+    <% if (htmlWebpackPlugin.files.chunks && htmlWebpackPlugin.files.chunks.vendor) { %>
+    link(rel='preload' href='<%= htmlWebpackPlugin.files.chunks.vendor.entry %>' as='script')
+    <% } %>
+
     //- Site Properties
     script.
       var siteConfig = !{JSON.stringify(siteConfig)}

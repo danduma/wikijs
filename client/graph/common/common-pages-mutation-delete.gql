@@ -1,6 +1,6 @@
-mutation($id: Int!) {
+mutation($id: Int, $slug: String, $locale: String) {
   pages {
-    delete(id: $id) {
+    delete(id: $id, slug: $slug, locale: $locale) {
       responseResult {
         succeeded
         errorCode

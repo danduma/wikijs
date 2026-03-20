@@ -69,10 +69,13 @@ export default {
       this.$store.commit(`loadingStart`, 'page-delete')
       this.$nextTick(async () => {
         try {
+          const pageId = Number.isInteger(this.pageId) ? this.pageId : null
           const resp = await this.$apollo.mutate({
             mutation: deletePageMutation,
             variables: {
-              id: this.pageId
+              id: pageId,
+              slug: this.pagePath,
+              locale: this.pageLocale
             }
           })
           if (_.get(resp, 'data.pages.delete.responseResult.succeeded', false)) {

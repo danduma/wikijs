@@ -880,7 +880,35 @@ module.exports = class Page extends Model {
    * @returns {Promise} Promise with no value
    */
   static async deletePage(opts) {
-    const page = await WIKI.models.pages.getPageFromDb(_.has(opts, 'id') ? opts.id : opts)
+    let page = null
+    const hasId = _.isFinite(opts.id)
+    const hasSlug = _.isString(opts.slug) && !_.isEmpty(_.trim(opts.slug))
+
+    if (hasId) {
+      page = await WIKI.models.pages.getPageFromDb(_.toSafeInteger(opts.id))
+    } else if (hasSlug) {
+      const parsedSlug = pageHelper.parsePath(opts.slug, { stripExt: true })
+      const targetPath = parsedSlug.path
+      const targetLocale = _.trim(_.get(opts, 'locale', '')) || (_.get(parsedSlug, 'explicitLocale') ? parsedSlug.locale : '')
+
+      if (targetLocale) {
+        page = await WIKI.models.pages.getPageFromDb({
+          path: targetPath,
+          locale: targetLocale
+        })
+      } else {
+        const matches = await WIKI.models.pages.query()
+          .column(['id', 'path', 'localeCode'])
+          .where('path', targetPath)
+
+        if (matches.length === 1) {
+          page = await WIKI.models.pages.getPageFromDb(matches[0].id)
+        } else if (matches.length > 1) {
+          throw new Error('Multiple pages match this slug. Provide a locale to delete a specific page.')
+        }
+      }
+    }
+
     if (!page) {
       throw new WIKI.Error.PageNotFound()
     }

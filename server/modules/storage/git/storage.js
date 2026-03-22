@@ -18,6 +18,16 @@ const commonDisk = require('../disk/common')
 module.exports = {
   git: null,
   repoPath: path.resolve(WIKI.ROOTPATH, WIKI.config.dataPath, 'repo'),
+  getDirtyTrackedFiles(status) {
+    return _.get(status, 'files', []).filter(file => file.working_dir !== '?' || file.index !== '?')
+  },
+  formatStatusFiles(files) {
+    return files.map(file => {
+      const workingDir = file.working_dir && file.working_dir !== ' ' ? file.working_dir : '-'
+      const index = file.index && file.index !== ' ' ? file.index : '-'
+      return `${index}${workingDir} ${file.path}`
+    })
+  },
   async activated() {
     // not used
   },
@@ -127,7 +137,31 @@ module.exports = {
     // Pull rebase
     if (_.includes(['sync', 'pull'], this.mode)) {
       WIKI.logger.info(`(STORAGE/GIT) Performing pull rebase from origin on branch ${this.config.branch}...`)
-      await this.git.pull('origin', this.config.branch, ['--rebase'])
+      const status = await this.git.status()
+      const dirtyTrackedFiles = this.getDirtyTrackedFiles(status)
+      const pullOptions = ['--rebase']
+
+      if (dirtyTrackedFiles.length > 0) {
+        pullOptions.push('--autostash')
+        WIKI.logger.warn(`(STORAGE/GIT) Local tracked changes detected before pull. Enabling autostash for ${dirtyTrackedFiles.length} file(s).`)
+
+        const dirtyFilesList = this.formatStatusFiles(dirtyTrackedFiles).slice(0, 20)
+        dirtyFilesList.forEach(file => {
+          WIKI.logger.warn(`(STORAGE/GIT) Dirty file: ${file}`)
+        })
+        if (dirtyTrackedFiles.length > dirtyFilesList.length) {
+          WIKI.logger.warn(`(STORAGE/GIT) ${dirtyTrackedFiles.length - dirtyFilesList.length} additional dirty file(s) not shown.`)
+        }
+      }
+
+      try {
+        await this.git.pull('origin', this.config.branch, pullOptions)
+      } catch (err) {
+        if (dirtyTrackedFiles.length > 0) {
+          err.message = `${err.message} | Dirty tracked files: ${this.formatStatusFiles(dirtyTrackedFiles).join(', ')}`
+        }
+        throw err
+      }
     }
 
     // Push

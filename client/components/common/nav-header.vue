@@ -230,7 +230,7 @@
           //- LANGUAGES
 
           template(v-if='mode === `view` && locales.length > 0')
-            v-menu(offset-y, bottom, transition='slide-y-transition', max-height='320px', min-width='300px', left, :close-on-content-click='false')
+            v-menu(offset-y, bottom, transition='slide-y-transition', min-width='300px', left, :close-on-content-click='false')
               template(v-slot:activator='{ on: menu, attrs }')
                 v-tooltip(bottom)
                   template(v-slot:activator='{ on: tooltip }')
@@ -247,11 +247,8 @@
                       v-icon(small, color='grey') mdi-chevron-down
                   span {{$t('common:header.language')}}
               v-card
-                v-autocomplete(
-                  :items='locales'
-                  item-text='name'
-                  item-value='code'
-                  :filter='filterLocales'
+                v-text-field(
+                  v-model='localeSearch'
                   prepend-inner-icon='mdi-magnify'
                   :placeholder='$t(`common:header.search`)'
                   flat
@@ -259,9 +256,11 @@
                   hide-details
                   dense
                   autofocus
-                  @change='onLocaleChange'
+                  clearable
                 )
-                  template(v-slot:item='{ item }')
+                v-divider
+                v-list(max-height='320px' class='overflow-y-auto' nav)
+                  v-list-item(v-for='item in filteredLocales' :key='item.code' @click='onLocaleChange(item.code)')
                     v-list-item-content
                       v-list-item-title {{ item.name }}
                       v-list-item-subtitle.caption.grey--text(v-if='item.englishName && item.englishName !== item.name') {{ item.englishName }}
@@ -444,6 +443,7 @@ export default {
       convertPageModal: false,
       deletePageModal: false,
       locales: siteLangs,
+      localeSearch: '',
       isDevMode: false,
       duplicateOpts: {
         locale: 'en',
@@ -559,6 +559,15 @@ export default {
         default:
           return 'Appearance mode: Night'
       }
+    },
+    filteredLocales () {
+      if (!this.localeSearch) return this.locales
+      const queryText = this.localeSearch.toLowerCase()
+      return this.locales.filter(item => {
+        const textOne = item.name.toLowerCase()
+        const textTwo = item.englishName ? item.englishName.toLowerCase() : ''
+        return textOne.indexOf(queryText) > -1 || textTwo.indexOf(queryText) > -1
+      })
     }
   },
   created () {

@@ -1,0 +1,51 @@
+# Repo-owned French locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Afficher les étiquettes'
+    displayTagsHint: 'Afficher les étiquettes sous le titre de la page et dans la barre latérale.'
+    displayReturnToTop: 'Afficher le retour en haut'
+    displayReturnToTopHint: 'Afficher le bouton flottant de retour en haut.'
+
+conversion:
+  title: 'Conversion'
+  subtitle: 'Encouragez les visiteurs à se connecter et à créer un compte.'
+
+common:
+  actions:
+    back: 'Retour'
+    next: 'Suivant'
+    finish: 'Terminer'
+  header:
+    welcomeGuide: 'Guide de bienvenue'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Bienvenue sur Longevipedia'
+        subtitle: 'La plus grande encyclopédie mondiale des interventions de longévité.'
+        body: 'Commencez ici votre exploration de la science du vieillissement.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Trouvez ce qu''il vous faut'
+        subtitle: 'Parcourez par thème ou catégorie.'
+        body: 'Explorez des sections comme <strong>Mode de vie</strong>, <strong>Biohacking</strong> et <strong>Traitements cliniques</strong> grâce à la navigation latérale.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Vous ne trouvez pas ?'
+        subtitle: 'Nous sommes là pour vous aider.'
+        body: 'Utilisez la recherche pour trouver une intervention précise. Si elle manque encore, utilisez <strong>Demander une nouvelle page</strong> à la fin des résultats.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Rejoignez la discussion'
+        subtitle: 'Partagez vos connaissances.'
+        body: 'Surlignez n''importe quel texte d''une page pour laisser un commentaire ou lancer une discussion avec la communauté.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Prêt à explorer ?'
+        subtitle: 'C''est parti.'
+        body: 'Plongez dans les contenus et découvrez les interventions qui pourraient influencer votre avenir.'
+        button: 'Commencer'
+
+membership: {}

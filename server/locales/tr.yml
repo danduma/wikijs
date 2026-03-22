@@ -1,0 +1,51 @@
+# Repo-owned Turkish locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Etiketleri göster'
+    displayTagsHint: 'Etiketleri sayfa başlığının altında ve kenar çubuğunda göster.'
+    displayReturnToTop: 'Yukarı dön düğmesini göster'
+    displayReturnToTopHint: 'Yüzen yukarı dön düğmesini göster.'
+
+conversion:
+  title: 'Dönüşüm'
+  subtitle: 'Ziyaretçileri oturum açmaya ve hesap oluşturmaya teşvik edin.'
+
+common:
+  actions:
+    back: 'Geri'
+    next: 'İleri'
+    finish: 'Bitir'
+  header:
+    welcomeGuide: 'Karşılama Rehberi'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Longevipedia''ya hoş geldiniz'
+        subtitle: 'Uzun ömür müdahaleleri için dünyanın en büyük ansiklopedisi.'
+        body: 'Yaşlanma bilimini keşfetmeye buradan başlayın.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'İhtiyacınız olanı bulun'
+        subtitle: 'Konuya veya kategoriye göre göz atın.'
+        body: '<strong>Yaşam Tarzı</strong>, <strong>Biohacking</strong> ve <strong>Klinik Tedaviler</strong> gibi bölümleri yan menüden keşfedin.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Bulamadınız mı?'
+        subtitle: 'Size yardımcı oluruz.'
+        body: 'Belirli müdahaleleri bulmak için aramayı kullanın. Hâlâ eksikse sonuçların sonunda <strong>Yeni sayfa iste</strong> seçeneğini kullanın.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Tartışmaya katılın'
+        subtitle: 'Bilginizi paylaşın.'
+        body: 'Bir yorum bırakmak veya toplulukla tartışma başlatmak için sayfadaki herhangi bir metni seçin.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Keşfetmeye hazır mısınız?'
+        subtitle: 'Hadi başlayalım.'
+        body: 'Daha derine inin ve geleceğinizi şekillendirebilecek müdahaleleri keşfedin.'
+        button: 'Başla'
+
+membership: {}

@@ -1,0 +1,51 @@
+# Repo-owned Romanian locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Afișează etichetele'
+    displayTagsHint: 'Afișează etichetele sub titlul paginii și în bara laterală.'
+    displayReturnToTop: 'Afișează întoarcerea sus'
+    displayReturnToTopHint: 'Afișează butonul plutitor de întoarcere sus.'
+
+conversion:
+  title: 'Conversie'
+  subtitle: 'Încurajează vizitatorii să se autentifice și să își creeze un cont.'
+
+common:
+  actions:
+    back: 'Înapoi'
+    next: 'Următorul'
+    finish: 'Finalizează'
+  header:
+    welcomeGuide: 'Ghid de bun venit'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Bine ai venit la Longevipedia'
+        subtitle: 'Cea mai mare enciclopedie din lume despre intervențiile pentru longevitate.'
+        body: 'Începe aici explorarea științei îmbătrânirii.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Găsește ce ai nevoie'
+        subtitle: 'Răsfoiește după subiect sau categorie.'
+        body: 'Explorează secțiuni precum <strong>Stil de viață</strong>, <strong>Biohacking</strong> și <strong>Tratamente clinice</strong> folosind navigarea laterală.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Nu găsești?'
+        subtitle: 'Te ajutăm noi.'
+        body: 'Folosește căutarea pentru a găsi intervenții specifice. Dacă încă lipsește ceva, folosește <strong>Solicită o pagină nouă</strong> la finalul rezultatelor.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Intră în discuție'
+        subtitle: 'Împărtășește-ți cunoștințele.'
+        body: 'Selectează orice text dintr-o pagină pentru a lăsa un comentariu sau pentru a începe o discuție cu comunitatea.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Ești gata să explorezi?'
+        subtitle: 'Hai să începem.'
+        body: 'Intră în conținut și descoperă intervențiile care ți-ar putea modela viitorul.'
+        button: 'Începe'
+
+membership: {}

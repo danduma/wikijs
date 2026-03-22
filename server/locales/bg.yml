@@ -1,0 +1,51 @@
+# Repo-owned Bulgarian locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Показвай етикетите'
+    displayTagsHint: 'Показвай етикетите под заглавието на страницата и в страничната лента.'
+    displayReturnToTop: 'Показвай връщане нагоре'
+    displayReturnToTopHint: 'Показвай плаващия бутон за връщане нагоре.'
+
+conversion:
+  title: 'Конверсия'
+  subtitle: 'Насърчавайте посетителите да влизат и да създават профил.'
+
+common:
+  actions:
+    back: 'Назад'
+    next: 'Напред'
+    finish: 'Завърши'
+  header:
+    welcomeGuide: 'Ръководство за добре дошли'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Добре дошли в Longevipedia'
+        subtitle: 'Най-голямата енциклопедия в света за интервенции за дълголетие.'
+        body: 'Започнете тук своето опознаване на науката за стареенето.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Намерете това, което ви трябва'
+        subtitle: 'Разглеждайте по тема или категория.'
+        body: 'Открийте раздели като <strong>Начин на живот</strong>, <strong>Биохакинг</strong> и <strong>Клинични терапии</strong> чрез страничната навигация.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Не намирате?'
+        subtitle: 'Ще помогнем.'
+        body: 'Използвайте търсенето за конкретни интервенции. Ако нещо още липсва, използвайте <strong>Заяви нова страница</strong> в края на резултатите.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Включете се в дискусията'
+        subtitle: 'Споделете знанията си.'
+        body: 'Маркирайте произволен текст на страница, за да оставите коментар или да започнете дискусия с общността.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Готови ли сте да разглеждате?'
+        subtitle: 'Нека започнем.'
+        body: 'Потопете се в съдържанието и открийте интервенции, които може да оформят бъдещето ви.'
+        button: 'Започни'
+
+membership: {}

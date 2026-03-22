@@ -1,0 +1,51 @@
+# Repo-owned German locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Tags anzeigen'
+    displayTagsHint: 'Tags unter dem Seitentitel und in der Seitenleiste anzeigen.'
+    displayReturnToTop: 'Zurück-nach-oben anzeigen'
+    displayReturnToTopHint: 'Den schwebenden Zurück-nach-oben-Button anzeigen.'
+
+conversion:
+  title: 'Conversion'
+  subtitle: 'Besucher dazu ermutigen, sich anzumelden und ein Konto zu erstellen.'
+
+common:
+  actions:
+    back: 'Zurück'
+    next: 'Weiter'
+    finish: 'Fertig'
+  header:
+    welcomeGuide: 'Willkommensleitfaden'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Willkommen bei Longevipedia'
+        subtitle: 'Die weltweit größte Enzyklopädie für Langlebigkeitsinterventionen.'
+        body: 'Beginnen Sie hier Ihre Reise durch die Wissenschaft des Alterns.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Finden Sie, was Sie brauchen'
+        subtitle: 'Nach Thema oder Kategorie stöbern.'
+        body: 'Entdecken Sie Bereiche wie <strong>Lifestyle</strong>, <strong>Biohacking</strong> und <strong>Klinische Behandlungen</strong> über die Seitennavigation.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Nicht gefunden?'
+        subtitle: 'Wir helfen weiter.'
+        body: 'Nutzen Sie die Suche für gezielte Interventionen. Wenn etwas fehlt, verwenden Sie am Ende der Ergebnisse <strong>Neue Seite anfragen</strong>.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'An der Diskussion teilnehmen'
+        subtitle: 'Teilen Sie Ihr Wissen.'
+        body: 'Markieren Sie beliebigen Text auf einer Seite, um einen Kommentar zu hinterlassen oder eine Diskussion mit der Community zu starten.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Bereit zum Erkunden?'
+        subtitle: 'Los geht''s.'
+        body: 'Tauchen Sie ein und entdecken Sie Interventionen, die Ihre Zukunft beeinflussen könnten.'
+        button: 'Loslegen'
+
+membership: {}

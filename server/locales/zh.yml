@@ -1,0 +1,51 @@
+# Repo-owned Simplified Chinese locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: '显示标签'
+    displayTagsHint: '在页面标题下方和侧边栏中显示标签。'
+    displayReturnToTop: '显示返回顶部'
+    displayReturnToTopHint: '显示浮动的返回顶部按钮。'
+
+conversion:
+  title: '转化'
+  subtitle: '鼓励访客登录并创建账户。'
+
+common:
+  actions:
+    back: '返回'
+    next: '下一步'
+    finish: '完成'
+  header:
+    welcomeGuide: '欢迎指南'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: '欢迎来到 Longevipedia'
+        subtitle: '全球最大的长寿干预百科全书。'
+        body: '从这里开始探索衰老科学。'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: '找到你需要的内容'
+        subtitle: '按主题或分类浏览。'
+        body: '使用侧边栏探索 <strong>生活方式</strong>、<strong>生物黑客</strong> 和 <strong>临床治疗</strong> 等板块。'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: '找不到想要的内容？'
+        subtitle: '我们来帮你。'
+        body: '使用搜索查找具体干预措施。如果仍然缺失，请在搜索结果底部使用 <strong>请求新页面</strong>。'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: '加入讨论'
+        subtitle: '分享你的知识。'
+        body: '高亮页面中的任意文本即可发表评论，或与社区发起讨论。'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: '准备开始探索了吗？'
+        subtitle: '让我们开始吧。'
+        body: '深入探索，发现可能改变你未来的干预措施。'
+        button: '开始'
+
+membership: {}

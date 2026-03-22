@@ -1,0 +1,51 @@
+# Repo-owned Portuguese locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Mostrar etiquetas'
+    displayTagsHint: 'Mostrar as etiquetas por baixo do título da página e na barra lateral.'
+    displayReturnToTop: 'Mostrar voltar ao topo'
+    displayReturnToTopHint: 'Mostrar o botão flutuante de voltar ao topo.'
+
+conversion:
+  title: 'Conversão'
+  subtitle: 'Incentive os visitantes a iniciar sessão e a criar uma conta.'
+
+common:
+  actions:
+    back: 'Voltar'
+    next: 'Seguinte'
+    finish: 'Concluir'
+  header:
+    welcomeGuide: 'Guia de boas-vindas'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Bem-vindo à Longevipedia'
+        subtitle: 'A maior enciclopédia do mundo sobre intervenções para a longevidade.'
+        body: 'Comece aqui a explorar a ciência do envelhecimento.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Encontre o que precisa'
+        subtitle: 'Navegue por tema ou categoria.'
+        body: 'Explore secções como <strong>Estilo de Vida</strong>, <strong>Biohacking</strong> e <strong>Tratamentos Clínicos</strong> através da navegação lateral.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Não encontra?'
+        subtitle: 'Nós ajudamos.'
+        body: 'Use a pesquisa para encontrar intervenções específicas. Se ainda faltar algo, use <strong>Pedir nova página</strong> no fim dos resultados.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Junte-se à discussão'
+        subtitle: 'Partilhe o seu conhecimento.'
+        body: 'Selecione qualquer texto numa página para deixar um comentário ou iniciar uma discussão com a comunidade.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Pronto para explorar?'
+        subtitle: 'Vamos começar.'
+        body: 'Mergulhe no conteúdo e descubra intervenções que podem moldar o seu futuro.'
+        button: 'Começar'
+
+membership: {}

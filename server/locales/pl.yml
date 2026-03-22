@@ -1,0 +1,51 @@
+# Repo-owned Polish locale overrides.
+# Any key defined here overrides the same key from DB / Graph locale data.
+
+admin:
+  theme:
+    displayTags: 'Pokaż tagi'
+    displayTagsHint: 'Pokaż tagi pod tytułem strony i na pasku bocznym.'
+    displayReturnToTop: 'Pokaż powrót na górę'
+    displayReturnToTopHint: 'Pokaż pływający przycisk powrotu na górę.'
+
+conversion:
+  title: 'Konwersja'
+  subtitle: 'Zachęcaj odwiedzających do logowania i tworzenia kont.'
+
+common:
+  actions:
+    back: 'Wstecz'
+    next: 'Dalej'
+    finish: 'Zakończ'
+  header:
+    welcomeGuide: 'Przewodnik powitalny'
+  welcomeGuide:
+    slides:
+      - icon: 'mdi-dna'
+        iconColor: 'primary'
+        title: 'Witamy w Longevipedia'
+        subtitle: 'Największa na świecie encyklopedia interwencji wspierających długowieczność.'
+        body: 'Tutaj zaczniesz odkrywać naukę o starzeniu.'
+      - icon: 'mdi-compass-outline'
+        iconColor: 'teal'
+        title: 'Znajdź to, czego potrzebujesz'
+        subtitle: 'Przeglądaj według tematu lub kategorii.'
+        body: 'Odkrywaj sekcje takie jak <strong>Lifestyle</strong>, <strong>Biohacking</strong> i <strong>Terapie kliniczne</strong> za pomocą bocznej nawigacji.'
+      - icon: 'mdi-file-search-outline'
+        iconColor: 'orange darken-1'
+        title: 'Nie możesz znaleźć?'
+        subtitle: 'Pomożemy Ci.'
+        body: 'Użyj wyszukiwarki, aby znaleźć konkretne interwencje. Jeśli czegoś nadal brakuje, skorzystaj z <strong>Poproś o nową stronę</strong> na końcu wyników.'
+      - icon: 'mdi-comment-text-multiple-outline'
+        iconColor: 'pink lighten-1'
+        title: 'Dołącz do dyskusji'
+        subtitle: 'Podziel się swoją wiedzą.'
+        body: 'Zaznacz dowolny tekst na stronie, aby dodać komentarz lub rozpocząć dyskusję ze społecznością.'
+      - icon: 'mdi-rocket-launch'
+        iconColor: 'purple accent-2'
+        title: 'Gotowy do odkrywania?'
+        subtitle: 'Zaczynajmy.'
+        body: 'Wejdź głębiej i poznaj interwencje, które mogą wpłynąć na Twoją przyszłość.'
+        button: 'Zacznij'
+
+membership: {}
